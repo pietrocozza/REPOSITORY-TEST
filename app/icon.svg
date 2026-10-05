@@ -1,9 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <path d="M8 30 C8 14 20 6 32 6 C44 6 56 14 56 30 Z" fill="#C9812E" stroke="#1A1A1A" stroke-width="3.5" stroke-linejoin="round"/>
-  <ellipse cx="24" cy="17" rx="3" ry="1.8" fill="#FFF4E0" transform="rotate(-20 24 17)"/>
-  <ellipse cx="36" cy="14" rx="3" ry="1.8" fill="#FFF4E0"/>
-  <ellipse cx="44" cy="21" rx="3" ry="1.8" fill="#FFF4E0" transform="rotate(25 44 21)"/>
-  <path d="M5 33 H59 L59 37 H53 L50 42 L47 37 H17 L14 41 L11 37 H5 Z" fill="#FFA41F" stroke="#1A1A1A" stroke-width="3" stroke-linejoin="round"/>
-  <rect x="6" y="38" width="52" height="10" rx="5" fill="#7A3E1D" stroke="#1A1A1A" stroke-width="3.5"/>
-  <path d="M7 51 H57 L55 56 Q54 59 51 59 H13 Q10 59 9 56 Z" fill="#C9812E" stroke="#1A1A1A" stroke-width="3.5" stroke-linejoin="round"/>
+  <rect width="64" height="64" rx="14" fill="#0E0C0A"/>
+  <path d="M12 30 C12 18 21 12 32 12 C43 12 52 18 52 30 Z" fill="#FFB020"/>
+  <rect x="10" y="34" width="44" height="7" rx="3.5" fill="#E23D28"/>
+  <path d="M12 45 H52 Q52 52 45 52 H19 Q12 52 12 45 Z" fill="#FFB020"/>
 </svg>

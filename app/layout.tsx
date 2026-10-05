@@ -1,14 +1,13 @@
 import type { Metadata, Viewport } from 'next'
-import { Fraunces, Manrope } from 'next/font/google'
+import { Anton, Manrope } from 'next/font/google'
 import Providers from '@/components/Providers'
 import './globals.css'
 
-// Fraunces: serif variabile con un tocco "morbido" e un po' eccentrico
-const display = Fraunces({
-  variable: '--font-fraunces',
+// Anton: display condensato e pesante, per i titoli
+const display = Anton({
+  variable: '--font-anton',
   subsets: ['latin'],
-  axes: ['SOFT', 'WONK', 'opsz'],
-  style: ['normal', 'italic'],
+  weight: '400',
 })
 
 const testo = Manrope({
@@ -37,7 +36,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#FFF4E0',
+  themeColor: '#0E0C0A',
 }
 
 // Eseguito prima del primo disegno: se la schermata di caricamento è già stata vista

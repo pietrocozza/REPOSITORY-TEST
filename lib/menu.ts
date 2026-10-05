@@ -1,150 +1,39 @@
-import type { LayerId } from '@/components/burger/layers'
-
-// Menu del locale (inventato). I prezzi sono in euro.
-
-export type Burger = {
-  id: string
-  nome: string
-  descrizione: string
-  prezzo: number
-  /** Strati dall'alto verso il basso: servono per disegnare l'illustrazione */
-  strati: LayerId[]
-  badge?: string
-}
+// Menu del locale (inventato). Prezzi in euro.
+// "foto" è il percorso dentro public/images/ (vedi README per le foto da fornire).
 
 export type Prodotto = {
   id: string
   nome: string
   descrizione: string
   prezzo: number
-  icona: 'patatine' | 'anelli' | 'spicchi' | 'tiramisu' | 'cheesecake' | 'gelato'
+  foto: string
+  tipo: 'burger' | 'contorno'
 }
 
-export const BURGERS: Burger[] = [
-  {
-    id: 'peperino',
-    nome: 'Il Peperino',
-    descrizione:
-      'Il nostro classico: doppio smash di manzo maremmano, cheddar fuso e salsa della casa. Duro come la pietra di Viterbo? No, morbido come un abbraccio.',
-    prezzo: 11.5,
-    strati: ['bunTop', 'lettuce', 'tomato', 'cheese', 'patty', 'sauce', 'bunBottom'],
-    badge: 'Il più amato',
-  },
-  {
-    id: 'papale',
-    nome: 'Il Papale',
-    descrizione:
-      'Così ricco che nel 1268 ci avrebbero messo tre anni a decidere se mangiarlo. Bacon, uovo e doppio formaggio.',
-    prezzo: 14,
-    strati: ['bunTop', 'egg', 'bacon', 'cheese', 'patty', 'cheese', 'sauce', 'bunBottom'],
-    badge: 'Conclave di sapori',
-  },
-  {
-    id: 'cimino',
-    nome: 'Il Cimino',
-    descrizione:
-      'Granella di nocciole dei Monti Cimini, pecorino della Tuscia e cipolla caramellata. Croccante fuori, montanaro dentro.',
-    prezzo: 13,
-    strati: ['bunTop', 'hazelnut', 'onion', 'pecorino', 'patty', 'sauce', 'bunBottom'],
-  },
-  {
-    id: 'pellegrino',
-    nome: 'Il Pellegrino',
-    descrizione:
-      'Leggero come chi cammina sulla Francigena (ma con il bacon, perché la strada è lunga).',
-    prezzo: 12,
-    strati: ['bunTop', 'lettuce', 'tomato', 'onion', 'bacon', 'patty', 'bunBottom'],
-  },
-  {
-    id: 'macchina',
-    nome: 'La Macchina',
-    descrizione:
-      'Alto come la Macchina di Santa Rosa: tre smash, tre formaggi, zero paura. Da portare in spalla.',
-    prezzo: 16.5,
-    strati: ['bunTop', 'cheese', 'patty', 'pecorino', 'patty', 'cheese', 'patty', 'bacon', 'sauce', 'bunBottom'],
-    badge: 'Solo per facchini',
-  },
-  {
-    id: 'orto',
-    nome: "L'Orto",
-    descrizione:
-      "Burger di legumi e patate dell'Alto Viterbese, verdure dell'orto e un filo d'olio di Canino. Anche i vegetariani hanno fame.",
-    prezzo: 11,
-    strati: ['bunTop', 'lettuce', 'tomato', 'onion', 'veggie', 'sauce', 'bunBottom'],
-    badge: 'Vegetariano',
-  },
+export const BURGERS: Prodotto[] = [
+  { id: 'peperino', nome: 'Il Peperino', descrizione: 'Doppio smash maremmano, pecorino fuso, salsa della casa.', prezzo: 11.5, foto: 'menu/burger-1.webp', tipo: 'burger' },
+  { id: 'papale', nome: 'Il Papale', descrizione: 'Bacon, uovo, doppio formaggio. Senza mezze misure.', prezzo: 14, foto: 'menu/burger-2.webp', tipo: 'burger' },
+  { id: 'cimino', nome: 'Il Cimino', descrizione: 'Nocciole dei Cimini, cipolla caramellata, pecorino.', prezzo: 13, foto: 'menu/burger-3.webp', tipo: 'burger' },
+  { id: 'pellegrino', nome: 'Il Pellegrino', descrizione: 'Lattuga, pomodoro, bacon croccante. Il classico.', prezzo: 12, foto: 'menu/burger-4.webp', tipo: 'burger' },
+  { id: 'macchina', nome: 'La Macchina', descrizione: 'Tre smash, tre formaggi. Solo per grandi appetiti.', prezzo: 16.5, foto: 'menu/burger-5.webp', tipo: 'burger' },
+  { id: 'orto', nome: "L'Orto", descrizione: 'Burger di legumi, verdure, olio di Canino. Vegetariano.', prezzo: 11, foto: 'menu/burger-6.webp', tipo: 'burger' },
 ]
 
 export const CONTORNI: Prodotto[] = [
-  {
-    id: 'patatine',
-    nome: "Patatine dell'Alto Viterbese",
-    descrizione: 'Tagliate a mano, fritte due volte. La seconda per essere sicuri.',
-    prezzo: 4.5,
-    icona: 'patatine',
-  },
-  {
-    id: 'anelli',
-    nome: 'Anelli di cipolla',
-    descrizione: 'Croccanti, dorati, impossibili da dividere con chi ami.',
-    prezzo: 5,
-    icona: 'anelli',
-  },
-  {
-    id: 'spicchi',
-    nome: 'Spicchi al rosmarino',
-    descrizione: "Con buccia, rosmarino e olio di Canino. Il nonno approverebbe.",
-    prezzo: 5,
-    icona: 'spicchi',
-  },
+  { id: 'patatine', nome: 'Patatine', descrizione: "Patate dell'Alto Viterbese, fritte due volte.", prezzo: 4.5, foto: 'menu/patatine.webp', tipo: 'contorno' },
+  { id: 'anelli', nome: 'Anelli di cipolla', descrizione: 'Pastella croccante, cuore dolce.', prezzo: 5, foto: 'menu/anelli-cipolla.webp', tipo: 'contorno' },
 ]
 
-export const DOLCI: Prodotto[] = [
-  {
-    id: 'tiramisu',
-    nome: 'Tiramisù alle nocciole',
-    descrizione: 'Mascarpone, caffè e nocciole dei Cimini. Ti tira su, appunto.',
-    prezzo: 5.5,
-    icona: 'tiramisu',
-  },
-  {
-    id: 'cheesecake',
-    nome: 'Cheesecake al pecorino dolce',
-    descrizione: 'Sembra una follia, sa di genio. Con miele di castagno.',
-    prezzo: 6,
-    icona: 'cheesecake',
-  },
-  {
-    id: 'gelato',
-    nome: 'Gelato fiordilatte & olio',
-    descrizione: "Un giro d'olio nuovo e un pizzico di sale. Fidati di noi.",
-    prezzo: 4.5,
-    icona: 'gelato',
-  },
-]
+export const PRODOTTI = [...BURGERS, ...CONTORNI]
+export const trovaProdotto = (id: string) => PRODOTTI.find((p) => p.id === id)
 
-export const BIBITE = [
-  { id: 'acqua', nome: 'Acqua naturale', prezzo: 1.5 },
-  { id: 'frizzante', nome: 'Acqua frizzante', prezzo: 1.5 },
-  { id: 'cola', nome: 'Cola artigianale', prezzo: 3 },
-  { id: 'aranciata', nome: 'Aranciata', prezzo: 3 },
-  { id: 'birra', nome: 'Birra artigianale della Tuscia', prezzo: 5.5 },
-] as const
-
-export const COTTURE = [
-  { id: 'sangue', nome: 'Al sangue' },
-  { id: 'media', nome: 'Media' },
-  { id: 'benCotta', nome: 'Ben cotta' },
-] as const
-
-export const EXTRA = [
-  { id: 'doppiaCarne', nome: 'Doppia carne', prezzo: 3 },
-  { id: 'bacon', nome: 'Bacon', prezzo: 1.5 },
-  { id: 'formaggio', nome: 'Formaggio extra', prezzo: 1 },
-  { id: 'uovo', nome: 'Uovo', prezzo: 1.5 },
-] as const
-
-export type ExtraId = (typeof EXTRA)[number]['id']
+/** Il panino protagonista (hero + panino che si apre) e quello della sezione 3 */
+export const PROTAGONISTA = { id: 'peperino', foto: 'hero-burger.webp' }
+export const SECONDO = {
+  id: 'papale',
+  foto: 'secondo-burger.webp',
+  ingredienti: ['Bacon affumicato', 'Uovo al tegamino', 'Doppio pecorino'],
+}
 
 /** Zone di consegna a Viterbo (costi fittizi) */
 export const ZONE = [
@@ -158,7 +47,15 @@ export const ZONE = [
 /** Sopra questa cifra la consegna è gratuita */
 export const SOGLIA_CONSEGNA_GRATIS = 30
 
-export const euro = (n: number) =>
-  n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })
+export const euro = (n: number) => n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })
 
-export const findBurger = (id: string) => BURGERS.find((b) => b.id === id)
+// ───────── Calcoli (usati sia nel browser sia dalla route API) ─────────
+
+export type Riga = { id: string; qty: number }
+
+export const subtotale = (righe: Riga[]) => righe.reduce((s, r) => s + (trovaProdotto(r.id)?.prezzo ?? 0) * r.qty, 0)
+
+export function costoConsegna(zonaId: string | undefined, sub: number) {
+  if (sub >= SOGLIA_CONSEGNA_GRATIS) return 0
+  return ZONE.find((z) => z.id === zonaId)?.costo ?? 0
+}

@@ -1,25 +1,25 @@
-// Musica ed effetti sonori generati nel codice con la Web Audio API.
-// Nessun file audio necessario: se però esiste public/audio/tema.mp3,
-// viene usato quello al posto del motivetto generato.
+// Musica di sottofondo generata nel codice con la Web Audio API:
+// un giro lounge / soul lento e caldo (piano elettrico, basso morbido, spazzole).
+// Se esiste public/audio/tema.mp3, viene usato quello al posto del brano generato.
 
 type Stato = { enabled: boolean; playing: boolean }
 
 const PREF_KEY = 'bp-audio' // "on" / "off": ricorda la scelta per le visite successive
-const MASTER_VOLUME = 0.13
-const BPM = 140
+const MASTER_VOLUME = 0.11
+const BPM = 76
 const STEP = 60 / BPM / 2 // durata di un ottavo
+const SWING = 0.14 // gli ottavi "in levare" arrivano un po' in ritardo
 
 const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12)
 
-// Melodia stile diner / videogioco anni '80: 4 battute da 8 ottavi (C – Am – F – G).
-// I numeri sono note MIDI, null è una pausa.
-const MELODIA: (number | null)[] = [
-  76, 79, 84, 79, 76, 79, 81, 79,
-  76, null, 72, 76, 81, null, 79, 76,
-  77, 81, 84, 81, 77, 81, 84, 86,
-  83, null, 79, null, 74, 79, 83, null,
+// Giro di 4 battute: Rem9 – Sol13 – Domaj9 – Lam9 (note MIDI degli accordi e del basso)
+const ACCORDI = [
+  [53, 57, 60, 64],
+  [53, 59, 64, 69],
+  [52, 55, 59, 62],
+  [55, 60, 64, 71],
 ]
-const BASSO = [48, 45, 41, 43] // una nota fondamentale per battuta
+const BASSO = [38, 43, 36, 45]
 
 class AudioEngine {
   private ctx: AudioContext | null = null
@@ -82,7 +82,10 @@ class AudioEngine {
     this.master.connect(ctx.destination)
     this.musica = ctx.createGain()
     this.musica.gain.value = 1
-    this.musica.connect(this.master)
+    const caldo = ctx.createBiquadFilter()
+    caldo.type = 'lowpass'
+    caldo.frequency.value = 3200
+    this.musica.connect(caldo).connect(this.master)
     // rumore bianco per le percussioni
     const buf = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate)
     const data = buf.getChannelData(0)
@@ -176,62 +179,101 @@ class AudioEngine {
     this.mp3 = el
   }
 
-  // ───────── motivetto generato ─────────
+  // ───────── brano generato ─────────
   private startSequencer() {
     const ctx = this.ctx!
     this.step = 0
     this.nextTime = ctx.currentTime + 0.05
     this.timer = setInterval(() => {
-      // programma le note con un piccolo anticipo: niente scatti anche se la pagina è impegnata
-      while (this.nextTime < ctx.currentTime + 0.12) {
-        this.scheduleStep(this.step, this.nextTime)
+      // le note vengono programmate con un piccolo anticipo: niente scatti
+      while (this.nextTime < ctx.currentTime + 0.15) {
+        const t = this.nextTime + (this.step % 2 ? STEP * SWING : 0)
+        this.scheduleStep(this.step, t)
         this.nextTime += STEP
         this.step = (this.step + 1) % 32
       }
-    }, 25)
+    }, 30)
   }
 
   private scheduleStep(step: number, t: number) {
     const battuta = Math.floor(step / 8)
     const pos = step % 8
-    const nota = MELODIA[step]
-    if (nota !== null) this.tone(midi(nota), t, STEP * 0.9, 'square', 0.07)
-    // basso: fondamentale e ottava, alternati
-    this.tone(midi(BASSO[battuta] + (pos % 2 ? 12 : 0)), t, STEP * 0.8, 'triangle', 0.22)
-    // percussioni leggere
-    if (pos === 0 || pos === 4) this.kick(t)
-    if (pos === 2 || pos === 6) this.noiseHit(t, 1800, 0.12, 0.09)
-    if (pos % 2 === 1) this.noiseHit(t, 7000, 0.035, 0.04)
+    const accordo = ACCORDI[battuta]
+    // piano elettrico: accordo pieno sul primo tempo, ripresa leggera in levare
+    if (pos === 0) accordo.forEach((n, k) => this.piano(midi(n), t + k * 0.012, 2.6, 0.055))
+    if (pos === 3 || pos === 6) accordo.forEach((n) => this.piano(midi(n), t, 0.9, 0.028))
+    // basso morbido
+    if (pos === 0) this.basso(midi(BASSO[battuta]), t, STEP * 3.6)
+    if (pos === 4) this.basso(midi(BASSO[battuta] + 7), t, STEP * 2.4)
+    // batteria discreta: cassa piano, rullante con spazzola, piatto leggero
+    if (pos === 0 || pos === 5) this.kick(t)
+    if (pos === 2 || pos === 6) this.noiseHit(t, 1400, 0.16, 0.035)
+    this.noiseHit(t, 7500, 0.05, pos % 2 ? 0.012 : 0.02)
   }
 
-  private tone(freq: number, t: number, dur: number, type: OscillatorType, vol: number, dest?: AudioNode) {
+  /** suono di piano elettrico: fondamentale + armonica "a campanella" + tremolo */
+  private piano(freq: number, t: number, dur: number, vol: number) {
+    const ctx = this.ctx!
+    const g = ctx.createGain()
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+    const trem = ctx.createGain()
+    trem.gain.value = 1
+    const lfo = ctx.createOscillator()
+    const lfoG = ctx.createGain()
+    lfo.frequency.value = 4.5
+    lfoG.gain.value = 0.12
+    lfo.connect(lfoG).connect(trem.gain)
+    const o1 = ctx.createOscillator()
+    o1.type = 'sine'
+    o1.frequency.value = freq
+    const o2 = ctx.createOscillator()
+    o2.type = 'sine'
+    o2.frequency.value = freq * 4
+    const g2 = ctx.createGain()
+    g2.gain.setValueAtTime(0.18, t)
+    g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.4)
+    o1.connect(g)
+    o2.connect(g2).connect(g)
+    g.connect(trem).connect(this.musica!)
+    ;[o1, o2, lfo].forEach((o) => {
+      o.start(t)
+      o.stop(t + dur + 0.05)
+    })
+  }
+
+  private basso(freq: number, t: number, dur: number) {
     const ctx = this.ctx!
     const o = ctx.createOscillator()
+    const f = ctx.createBiquadFilter()
     const g = ctx.createGain()
-    o.type = type
+    o.type = 'triangle'
     o.frequency.value = freq
+    f.type = 'lowpass'
+    f.frequency.value = 420
     g.gain.setValueAtTime(0.0001, t)
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.01)
+    g.gain.exponentialRampToValueAtTime(0.22, t + 0.03)
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
-    o.connect(g).connect(dest ?? this.musica!)
+    o.connect(f).connect(g).connect(this.musica!)
     o.start(t)
-    o.stop(t + dur + 0.02)
+    o.stop(t + dur + 0.05)
   }
 
   private kick(t: number) {
     const ctx = this.ctx!
     const o = ctx.createOscillator()
     const g = ctx.createGain()
-    o.frequency.setValueAtTime(140, t)
-    o.frequency.exponentialRampToValueAtTime(45, t + 0.12)
-    g.gain.setValueAtTime(0.35, t)
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15)
+    o.frequency.setValueAtTime(90, t)
+    o.frequency.exponentialRampToValueAtTime(45, t + 0.15)
+    g.gain.setValueAtTime(0.2, t)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25)
     o.connect(g).connect(this.musica!)
     o.start(t)
-    o.stop(t + 0.16)
+    o.stop(t + 0.3)
   }
 
-  private noiseHit(t: number, freq: number, dur: number, vol: number, dest?: AudioNode) {
+  private noiseHit(t: number, freq: number, dur: number, vol: number) {
     const ctx = this.ctx!
     const src = ctx.createBufferSource()
     src.buffer = this.noise
@@ -241,40 +283,9 @@ class AudioEngine {
     const g = ctx.createGain()
     g.gain.setValueAtTime(vol, t)
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
-    src.connect(f).connect(g).connect(dest ?? this.musica!)
+    src.connect(f).connect(g).connect(this.musica!)
     src.start(t)
     src.stop(t + dur + 0.02)
-  }
-
-  // ───────── effetti sonori (seguono lo stesso interruttore) ─────────
-  private canPlaySfx() {
-    return !!this.ctx && this.stato.enabled && this.ctx.state === 'running'
-  }
-
-  /** "pop": uno strato del panino si stacca */
-  pop() {
-    if (!this.canPlaySfx()) return
-    const ctx = this.ctx!
-    const t = ctx.currentTime
-    const o = ctx.createOscillator()
-    const g = ctx.createGain()
-    o.type = 'sine'
-    o.frequency.setValueAtTime(700 + Math.random() * 200, t)
-    o.frequency.exponentialRampToValueAtTime(160, t + 0.09)
-    g.gain.setValueAtTime(0.5, t)
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12)
-    o.connect(g).connect(this.master!)
-    o.start(t)
-    o.stop(t + 0.14)
-    this.noiseHit(t, 3000, 0.03, 0.15, this.master!)
-  }
-
-  /** "ding": un panino entra nel carrello */
-  ding() {
-    if (!this.canPlaySfx()) return
-    const t = this.ctx!.currentTime
-    this.tone(1318.5, t, 0.7, 'sine', 0.35, this.master!)
-    this.tone(1975.5, t + 0.08, 0.6, 'sine', 0.2, this.master!)
   }
 }
 

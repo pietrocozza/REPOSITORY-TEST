@@ -1,77 +1,55 @@
-'use client'
+import { INFO, ORARI } from '@/lib/info'
 
-import { motion } from 'motion/react'
-import Magnetic from '@/components/ui/Magnetic'
-import Skyline from '@/components/illustrations/Skyline'
-import { INFO } from '@/lib/info'
-import { scrollToId } from '@/lib/scroll'
-import { useRiduciMovimento } from '@/lib/hooks'
-
-const TITOLO = ['Brace', '&', 'Peperino']
-
+/** Footer compatto: orari, indirizzo, telefono, social (tutti dati fittizi, vedi lib/info.ts) */
 export default function Footer() {
-  const reduce = useRiduciMovimento()
   return (
-    <footer data-bg="#FFF4E0" className="relative overflow-hidden px-4 pt-24 md:px-10 md:pt-32">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex flex-col gap-10 border-t border-nero/15 pt-10 md:flex-row md:items-start md:justify-between">
-          <p className="max-w-sm font-display text-2xl italic leading-snug">
-            Smash burger nel cuore della Tuscia. Fatti a mano, mangiati con le mani.
+    <footer className="border-t border-bordo px-4 pb-28 pt-14 md:px-8 md:pb-10">
+      <div className="mx-auto grid max-w-7xl gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <p className="font-display text-3xl uppercase">
+            Brace <span className="text-ambra">&amp;</span> Peperino
           </p>
-          <ul className="flex flex-wrap gap-3" aria-label="Social (profili fittizi)">
+          <p className="mt-2 text-sm text-crema-muta">{INFO.payoff}.</p>
+        </div>
+        <div>
+          <h2 className="etichetta mb-3 text-crema-muta">Orari</h2>
+          {/* PLACEHOLDER: orari fittizi */}
+          <ul className="space-y-1 text-sm">
+            {ORARI.map((o) => (
+              <li key={o.giorni}>
+                <span className="text-crema-muta">{o.giorni}:</span> {o.orario}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h2 className="etichetta mb-3 text-crema-muta">Dove</h2>
+          {/* PLACEHOLDER: indirizzo e telefono fittizi */}
+          <address className="space-y-1 text-sm not-italic">
+            <p>{INFO.indirizzo}</p>
+            <p>{INFO.citta}</p>
+            <p>
+              <a href={INFO.telefonoHref} className="underline decoration-bordo underline-offset-4 hover:text-ambra">
+                {INFO.telefono}
+              </a>
+            </p>
+          </address>
+        </div>
+        <div>
+          <h2 className="etichetta mb-3 text-crema-muta">Social</h2>
+          {/* PLACEHOLDER: profili social fittizi */}
+          <ul className="flex flex-wrap gap-2">
             {INFO.social.map((s) => (
               <li key={s.nome}>
-                <Magnetic>
-                  {/* PLACEHOLDER: link ai social fittizi, vedi lib/info.ts */}
-                  <a href={s.href} className="flex h-12 items-center rounded-full px-5 text-sm font-semibold ring-1 ring-nero/20 transition-colors hover:bg-nero hover:text-crema">
-                    {s.nome}
-                  </a>
-                </Magnetic>
+                <a href={s.href} className="flex h-11 items-center rounded-full px-4 text-sm ring-1 ring-bordo transition-colors hover:text-ambra hover:ring-ambra/50">
+                  {s.nome}
+                </a>
               </li>
             ))}
           </ul>
         </div>
       </div>
-
-      {/* Titolo gigante: ogni lettera salta quando ci passi sopra */}
-      <p
-        aria-label={INFO.nome}
-        className="mt-16 flex flex-wrap items-baseline justify-center gap-x-[0.18em] font-display text-[19vw] md:text-[clamp(3.4rem,15.5vw,16rem)] leading-[0.85] tracking-[-0.04em] md:mt-24 md:flex-nowrap"
-      >
-        {TITOLO.map((parola, w) => (
-          <span key={w} aria-hidden="true" className={`flex ${w > 0 ? 'italic' : ''} ${w === 1 ? 'text-pomodoro' : ''}`}>
-            {[...parola].map((c, i) => (
-              <motion.span
-                key={i}
-                className="inline-block"
-                initial={{ y: '100%', opacity: 0 }}
-                whileInView={{ y: 0, opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ type: 'spring', stiffness: 200, damping: 15, delay: (w * 5 + i) * 0.04 }}
-                whileHover={reduce ? undefined : { y: '-12%', rotate: i % 2 ? 6 : -6, transition: { type: 'spring', stiffness: 500, damping: 10 } }}
-              >
-                {c}
-              </motion.span>
-            ))}
-          </span>
-        ))}
-      </p>
-
-      <div className="mx-auto mt-14 flex max-w-7xl flex-col gap-3 pb-6 text-sm text-nero/60 md:flex-row md:items-center md:justify-between">
-        <p>© {INFO.nome}. Locale inventato, sito dimostrativo: nessun panino è stato davvero ordinato.</p>
-        <button
-          type="button"
-          onClick={() => scrollToId('top')}
-          className="group flex h-11 w-fit items-center gap-2 font-semibold text-nero"
-        >
-          Torna su
-          <span className="inline-block transition-transform duration-500 group-hover:-translate-y-1">↑</span>
-        </button>
-      </div>
-
-      <div aria-hidden="true" className="-mx-4 md:-mx-10">
-        <Skyline className="h-24 w-full md:h-36" colore="#1A1A1A" riempimento="#1A1A1A" />
-      </div>
+      <p className="mx-auto mt-12 max-w-7xl text-xs text-crema-muta">© {INFO.nome} · Locale inventato, sito dimostrativo.</p>
     </footer>
   )
 }
