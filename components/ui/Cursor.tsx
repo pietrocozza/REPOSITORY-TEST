@@ -10,7 +10,7 @@ type Modo = 'default' | 'link' | 'aggiungi' | 'nascosto'
 
 /**
  * Cursore personalizzato: pallino ambra + anello che segue con una molla.
- * Sulle foto dei cibi (data-cursor="aggiungi") diventa un cerchio con la scritta "Aggiungi".
+ * Sui cibi 3D (data-cursor="aggiungi") diventa un cerchio con la scritta "Aggiungi".
  * Sui dispositivi touch non c'è.
  */
 export default function Cursor() {

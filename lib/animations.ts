@@ -17,7 +17,7 @@ export const PRELOADER = { riempimento: 1.05, dissolvenza: 0.4, ridotta: 0.4 } a
  * La sezione è alta 350vh: i primi istanti sono la hero, poi il panino si apre e si richiude.
  */
 export const APERTURA = {
-  heroFine: 0.1, // titolo e pulsante escono, la foto lascia il posto agli strati
+  heroFine: 0.1, // titolo e pulsante escono, il panino si prepara ad aprirsi
   inizio: 0.12, // il primo strato inizia a staccarsi
   sfasamento: 0.045, // ritardo tra uno strato e il successivo
   durata: 0.2, // quanto impiega ogni strato ad aprirsi

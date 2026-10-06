@@ -1,12 +1,17 @@
 'use client'
 
+import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { AnimatePresence, motion } from 'motion/react'
-import CiboSospeso from '@/components/ui/CiboSospeso'
-import Foto from '@/components/ui/Foto'
 import Riepilogo from '@/components/order/Riepilogo'
 import { EASE_OUT, VIEWPORT_ONCE } from '@/lib/animations'
 import { useCart } from '@/lib/cart'
 import { BURGERS, CONTORNI, euro, type Prodotto } from '@/lib/menu'
+import { RICETTE } from '@/lib/ricette'
+import { useRiduciMovimento } from '@/lib/hooks'
+import type { Soggetto } from '@/components/three/Vetrina3D'
+
+const Vetrina3D = dynamic(() => import('@/components/three/Vetrina3D'), { ssr: false })
 
 /** Sezione 4: menu compatto + riepilogo e modulo d'ordine accanto (sotto su mobile) */
 export default function MenuOrdine() {
@@ -58,15 +63,32 @@ function Gruppo({ titolo, prodotti }: { titolo: string; prodotti: Prodotto[] }) 
 function Card({ prodotto }: { prodotto: Prodotto }) {
   const { aggiungi, righe } = useCart()
   const qty = righe.find((r) => r.id === prodotto.id)?.qty ?? 0
-  const forma = prodotto.id === 'patatine' ? 'patatine' : prodotto.id === 'anelli' ? 'anelli' : 'burger'
+  const reduce = useRiduciMovimento()
+  const [vicino, setVicino] = useState(false)
+  const [entrata, setEntrata] = useState(false)
+  const soggetto: Soggetto = prodotto.tipo === 'contorno' ? { contorno: prodotto.id === 'patatine' ? 'patatine' : 'anelli' } : { ricetta: RICETTE[prodotto.id] }
 
   return (
     <article className="group relative flex h-full items-center gap-4 rounded-3xl bg-superficie p-3 pr-4 ring-1 ring-bordo transition-colors duration-300 hover:ring-ambra/40">
-      <div className="w-24 shrink-0 xl:w-32">
-        <CiboSospeso parallax={0} inclinazione={14} bagliore={0.7} onAggiungi={() => aggiungi(prodotto.id)} etichettaAggiungi={`Aggiungi ${prodotto.nome} al carrello`}>
-          <Foto foto={prodotto.foto} alt={prodotto.nome} larghezza={800} altezza={600} forma={forma} mostraNome={false} sizes="128px" />
-        </CiboSospeso>
-      </div>
+      <motion.button
+        type="button"
+        onClick={() => aggiungi(prodotto.id)}
+        onViewportEnter={() => setEntrata(true)}
+        viewport={{ once: true }}
+        data-cursor="aggiungi"
+        aria-label={`Aggiungi ${prodotto.nome} al carrello`}
+        onPointerEnter={(e) => e.pointerType === 'mouse' && setVicino(true)}
+        onPointerLeave={() => setVicino(false)}
+        onPointerDown={(e) => {
+          if (e.pointerType !== 'mouse') {
+            setVicino(true)
+            setTimeout(() => setVicino(false), 1200)
+          }
+        }}
+        className="relative aspect-square w-28 shrink-0 rounded-2xl xl:w-32"
+      >
+        <Vetrina3D soggetto={soggetto} fermo={reduce} vicino={vicino} entrata={entrata || reduce} />
+      </motion.button>
       <div className="min-w-0 flex-1">
         <h4 className="font-display text-2xl uppercase leading-none">{prodotto.nome}</h4>
         <p className="mt-1.5 line-clamp-2 text-sm leading-snug text-crema-muta">{prodotto.descrizione}</p>

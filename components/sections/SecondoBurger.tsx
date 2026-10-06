@@ -2,13 +2,16 @@
 
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import CiboSospeso from '@/components/ui/CiboSospeso'
-import Foto from '@/components/ui/Foto'
+import dynamic from 'next/dynamic'
 import Magnetic from '@/components/ui/Magnetic'
 import { EASE_OUT, VIEWPORT_ONCE } from '@/lib/animations'
 import { useCart } from '@/lib/cart'
 import { useRiduciMovimento } from '@/lib/hooks'
 import { SECONDO, euro, trovaProdotto } from '@/lib/menu'
+import { RICETTE } from '@/lib/ricette'
+import { usePointer } from '@/components/Providers'
+
+const Vetrina3D = dynamic(() => import('@/components/three/Vetrina3D'), { ssr: false })
 
 /** Sezione 3: il secondo panino in evidenza */
 export default function SecondoBurger() {
@@ -16,6 +19,9 @@ export default function SecondoBurger() {
   const { aggiungi } = useCart()
   const reduce = useRiduciMovimento()
   const [aggiunto, setAggiunto] = useState(false)
+  const [vicino, setVicino] = useState(false)
+  const [entrata, setEntrata] = useState(false)
+  const { nx, ny } = usePointer()
 
   const add = () => {
     aggiungi(prodotto.id)
@@ -27,16 +33,33 @@ export default function SecondoBurger() {
     <section aria-labelledby="secondo-titolo" className="relative flex min-h-svh items-center overflow-hidden px-4 py-24 md:px-8">
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[70%]" style={{ background: 'radial-gradient(50% 60% at 30% 0%, rgba(255,190,110,0.12), transparent 70%)' }} />
       <div className="mx-auto grid w-full max-w-7xl items-center gap-12 md:grid-cols-[1.2fr_1fr] md:gap-16">
-        {/* la foto entra ruotando */}
+        {/* il panino 3D entra ruotando su se stesso */}
         <motion.div
-          initial={reduce ? { opacity: 0 } : { opacity: 0, rotate: -28, scale: 0.7, x: -60 }}
-          whileInView={{ opacity: 1, rotate: 0, scale: 1, x: 0 }}
+          initial={{ opacity: 0, scale: 0.85 }}
+          whileInView={{ opacity: 1, scale: 1 }}
           viewport={VIEWPORT_ONCE}
-          transition={{ duration: 1.3, ease: EASE_OUT }}
+          onViewportEnter={() => setEntrata(true)}
+          transition={{ duration: 1.2, ease: EASE_OUT }}
+          className="relative"
         >
-          <CiboSospeso parallax={70} onAggiungi={add} etichettaAggiungi={`Aggiungi ${prodotto.nome} al carrello`}>
-            <Foto foto={SECONDO.foto} alt={prodotto.nome} larghezza={1600} altezza={1200} forma="burger" sizes="(max-width: 768px) 90vw, 50vw" />
-          </CiboSospeso>
+          <div aria-hidden="true" className="pointer-events-none absolute inset-[8%] rounded-full" style={{ background: 'radial-gradient(closest-side, rgba(255,176,32,0.22), rgba(226,61,40,0.06) 60%, transparent 75%)' }} />
+          <button
+            type="button"
+            onClick={add}
+            data-cursor="aggiungi"
+            aria-label={`Aggiungi ${prodotto.nome} al carrello`}
+            onPointerEnter={(e) => e.pointerType === 'mouse' && setVicino(true)}
+            onPointerLeave={() => setVicino(false)}
+            onPointerDown={(e) => {
+              if (e.pointerType !== 'mouse') {
+                setVicino(true)
+                setTimeout(() => setVicino(false), 1200)
+              }
+            }}
+            className="relative block aspect-square w-full"
+          >
+            <Vetrina3D soggetto={{ ricetta: RICETTE[SECONDO.id] }} grande nx={nx} ny={ny} fermo={reduce} vicino={vicino} entrata={entrata || reduce} />
+          </button>
         </motion.div>
 
         <motion.div

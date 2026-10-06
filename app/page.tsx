@@ -1,5 +1,3 @@
-import { fotoDisponibili } from '@/lib/foto'
-import { FotoProvider } from '@/components/ui/Foto'
 import Preloader from '@/components/Preloader'
 import Cursor from '@/components/ui/Cursor'
 import Grain from '@/components/ui/Grain'
@@ -13,7 +11,7 @@ import BarraOrdine from '@/components/sections/BarraOrdine'
 // Una sola pagina, cinque sezioni: hero + panino che si apre, secondo panino, menu e ordine, footer.
 export default function Home() {
   return (
-    <FotoProvider disponibili={fotoDisponibili()}>
+    <>
       <Preloader />
       <Navbar />
       <main>
@@ -25,6 +23,6 @@ export default function Home() {
       <BarraOrdine />
       <Cursor />
       <Grain />
-    </FotoProvider>
+    </>
   )
 }
