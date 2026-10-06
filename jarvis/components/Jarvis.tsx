@@ -1,15 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Reactor from '@/components/Reactor'
-import { Diagnostica, Registro } from '@/components/Pannelli'
-import { SEGNALE_ERRORE } from '@/lib/protocollo'
+import ReteNeurale from '@/components/ReteNeurale'
+import { chiediAlServer, type Chiedi } from '@/lib/chat'
 import type { Stato, Voce } from '@/lib/stato'
 import {
   ascolta,
   dopoParolaAttivazione,
   estraiFrasi,
-  nomeVoce,
   preparaVoce,
   pronuncia,
   riconoscimentoDisponibile,
@@ -17,11 +15,19 @@ import {
 } from '@/lib/voce'
 
 const MESSAGGI_ERRORE_MIC: Record<string, string> = {
-  'not-allowed': 'Accesso al microfono negato. Consentilo dall’icona del lucchetto nella barra degli indirizzi.',
-  'service-not-allowed': 'Il riconoscimento vocale non è consentito in questo browser.',
+  'not-allowed': 'Accesso al microfono negato. Consentilo dall’icona del lucchetto nella barra degli indirizzi, oppure scrivi.',
+  'service-not-allowed': 'Il riconoscimento vocale non è consentito qui: scrivi nella casella in basso.',
   'audio-capture': 'Nessun microfono trovato.',
   network: 'Il riconoscimento vocale ha bisogno di Internet: controlla la connessione.',
-  'non-supportato': 'Questo browser non riconosce la voce: usa Google Chrome o Microsoft Edge, oppure scrivi qui sotto.',
+  'non-supportato': 'Questo browser non riconosce la voce: usa Google Chrome o Microsoft Edge, oppure scrivi.',
+}
+
+const ETICHETTE: Record<Stato, string> = {
+  spento: 'In standby',
+  pronto: 'In linea',
+  ascolto: 'Ti ascolto',
+  elaborazione: 'Sto pensando',
+  risposta: 'Sto rispondendo',
 }
 
 function saluto() {
@@ -32,7 +38,7 @@ function saluto() {
 
 let prossimoId = 1
 
-export default function Jarvis() {
+export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi }) {
   const [stato, setStato] = useState<Stato>('spento')
   const [voci, setVoci] = useState<Voce[]>([])
   const [parziale, setParziale] = useState('')
@@ -40,10 +46,8 @@ export default function Jarvis() {
   const [errore, setErrore] = useState<string | null>(null)
   const [vocale, setVocale] = useState(true)
   const [parolaAttivazione, setParolaAttivazione] = useState(false)
-  const [latenza, setLatenza] = useState<number | null>(null)
-  const [avvioAlle, setAvvioAlle] = useState<number | null>(null)
   const [microfono, setMicrofono] = useState(true)
-  const [voceSistema, setVoceSistema] = useState('—')
+  const [cronologia, setCronologia] = useState(false)
 
   // Valori letti dentro callback asincrone: tenuti in ref per non leggere versioni vecchie
   const livello = useRef(0)
@@ -56,6 +60,8 @@ export default function Jarvis() {
   const frasiInCoda = useRef(0)
   const flussoFinito = useRef(true)
   const turno = useRef(0) // ogni nuova domanda invalida le callback di quella precedente
+  const sottotitoli = useRef<HTMLDivElement>(null)
+  const righeCronologia = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     statoRef.current = stato
@@ -73,6 +79,7 @@ export default function Jarvis() {
 
   const inviaRef = useRef<(t: string) => void>(() => {})
   const ascoltoContinuoRef = useRef<() => void>(() => {})
+  const avviaAscoltoRef = useRef<(continuo: boolean) => void>(() => {})
 
   const avviaAscolto = useCallback((continuo: boolean) => {
     fermaAscolto.current()
@@ -109,7 +116,7 @@ export default function Jarvis() {
         } else {
           // Solo "Jarvis": risponde e ascolta la domanda
           setStato('risposta')
-          pronuncia('Sì?', { onFine: () => avviaAscolto(false) })
+          pronuncia('Sì?', { onFine: () => avviaAscoltoRef.current(false) })
         }
       },
       onErrore: (codice) => {
@@ -136,7 +143,8 @@ export default function Jarvis() {
 
   useEffect(() => {
     ascoltoContinuoRef.current = ascoltoContinuo
-  }, [ascoltoContinuo])
+    avviaAscoltoRef.current = avviaAscolto
+  }, [ascoltoContinuo, avviaAscolto])
 
   // ───────── Risposta ─────────
 
@@ -184,56 +192,34 @@ export default function Jarvis() {
       const storia = vociRef.current
         .filter((v) => !v.errore && v.testo.trim())
         .map((v) => ({ role: v.ruolo, content: v.testo }))
+        .slice(-30)
       const idRisposta = prossimoId++
       setVoci((vs) => [...vs, { id: prossimoId++, ruolo: 'user', testo: pulita }, { id: idRisposta, ruolo: 'assistant', testo: '' }])
-      const scrivi = (aggiorna: (v: Voce) => Voce) =>
-        setVoci((vs) => vs.map((v) => (v.id === idRisposta ? aggiorna(v) : v)))
 
       const controller = new AbortController()
       richiesta.current = controller
-      const partenza = performance.now()
       let buffer = ''
+      let primo = true
 
       try {
-        const res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messaggi: [...storia, { role: 'user', content: pulita }] }),
+        await chiedi([...storia, { role: 'user', content: pulita }], {
           signal: controller.signal,
+          onTesto: (pezzo) => {
+            if (t !== turno.current) return
+            if (primo) {
+              primo = false
+              if (!vocaleRef.current) setStato('risposta')
+            }
+            setVoci((vs) => vs.map((v) => (v.id === idRisposta ? { ...v, testo: v.testo + pezzo } : v)))
+            if (vocaleRef.current) {
+              buffer += pezzo
+              const { frasi, resto } = estraiFrasi(buffer)
+              buffer = resto
+              frasi.forEach((f) => parla(f, t))
+            }
+          },
         })
-        if (!res.ok || !res.body) {
-          const dati = await res.json().catch(() => null)
-          throw new Error(dati?.errore ?? `Il server ha risposto con errore ${res.status}.`)
-        }
-
-        const lettore = res.body.getReader()
-        const decoder = new TextDecoder()
-        let primo = true
-        for (;;) {
-          const { done, value } = await lettore.read()
-          if (done) break
-          let pezzo = decoder.decode(value, { stream: true })
-          if (primo && pezzo) {
-            primo = false
-            setLatenza(Math.round(performance.now() - partenza))
-            if (!vocaleRef.current) setStato('risposta')
-          }
-          const posErrore = pezzo.indexOf(SEGNALE_ERRORE)
-          if (posErrore >= 0) {
-            const msg = pezzo.slice(posErrore + 1) + decoder.decode()
-            pezzo = pezzo.slice(0, posErrore)
-            if (pezzo) scrivi((v) => ({ ...v, testo: v.testo + pezzo }))
-            throw new Error(msg || 'Errore del server.')
-          }
-          scrivi((v) => ({ ...v, testo: v.testo + pezzo }))
-
-          if (vocaleRef.current) {
-            buffer += pezzo
-            const { frasi, resto } = estraiFrasi(buffer)
-            buffer = resto
-            frasi.forEach((f) => parla(f, t))
-          }
-        }
+        if (t !== turno.current) return
         if (vocaleRef.current && buffer.trim()) parla(buffer, t)
         flussoFinito.current = true
         if (frasiInCoda.current === 0) concludi(t)
@@ -251,7 +237,7 @@ export default function Jarvis() {
         concludi(t)
       }
     },
-    [concludi, parla],
+    [chiedi, concludi, parla],
   )
 
   useEffect(() => {
@@ -274,14 +260,12 @@ export default function Jarvis() {
 
   const attiva = useCallback(() => {
     preparaVoce()
-    setAvvioAlle(Date.now())
     const t = ++turno.current
     setStato('risposta')
     const testoSaluto = saluto()
     setVoci([{ id: prossimoId++, ruolo: 'assistant', testo: testoSaluto }])
     // la sintesi vocale ha bisogno di un attimo per caricare le voci
     setTimeout(() => {
-      setVoceSistema(nomeVoce())
       flussoFinito.current = true
       frasiInCoda.current = 0
       if (vocaleRef.current) parla(testoSaluto, t)
@@ -289,7 +273,7 @@ export default function Jarvis() {
     }, 250)
   }, [parla, concludi])
 
-  const premiNucleo = useCallback(() => {
+  const premiMicrofono = useCallback(() => {
     const s = statoRef.current
     if (s === 'spento') return attiva()
     if (s === 'ascolto' || s === 'elaborazione' || s === 'risposta') return interrompi()
@@ -300,19 +284,18 @@ export default function Jarvis() {
   useEffect(() => {
     const tasto = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement
+      if (e.key === 'Escape') return interrompi()
       if (el.closest('input, textarea, button, [contenteditable]')) return
       if (e.code === 'Space') {
         e.preventDefault()
-        premiNucleo()
-      } else if (e.key === 'Escape') {
-        interrompi()
+        premiMicrofono()
       }
     }
     window.addEventListener('keydown', tasto)
     return () => window.removeEventListener('keydown', tasto)
-  }, [premiNucleo, interrompi])
+  }, [premiMicrofono, interrompi])
 
-  // Mentre ascolta, le barre seguono il volume del microfono
+  // Mentre ascolta, la rete segue il volume del microfono
   useEffect(() => {
     if (stato !== 'ascolto') return
     let chiuso = false
@@ -348,7 +331,7 @@ export default function Jarvis() {
     }
   }, [stato])
 
-  // Mentre parla, le barre "vibrano" con la voce
+  // Mentre parla, la rete "vibra" con la voce
   useEffect(() => {
     if (stato !== 'risposta') return
     const id = setInterval(() => {
@@ -359,6 +342,11 @@ export default function Jarvis() {
       livello.current = 0
     }
   }, [stato])
+
+  // I sottotitoli e la cronologia scorrono da soli verso l'ultima riga
+  useEffect(() => {
+    for (const el of [sottotitoli.current, righeCronologia.current]) if (el) el.scrollTop = el.scrollHeight
+  }, [voci, parziale, cronologia])
 
   // Accendendo la parola d'attivazione si inizia ad ascoltare subito
   const cambiaAttivazione = () => {
@@ -378,92 +366,136 @@ export default function Jarvis() {
     setVocale(!vocale)
   }
 
-  const scambi = voci.filter((v) => v.ruolo === 'user').length
   const attivo = stato !== 'spento'
+  const ultima = [...voci].reverse().find((v) => v.ruolo === 'assistant')
+  const ultimaDomanda = [...voci].reverse().find((v) => v.ruolo === 'user')
 
   return (
-    <main className="hud" data-stato={stato}>
-      <div className="sfondo" aria-hidden="true" />
+    <main className="app" data-stato={stato}>
+      <ReteNeurale stato={stato} livelloRef={livello} />
+      <div className="velo" aria-hidden="true" />
 
-      <header className="barra-alta">
-        <div className="logo">
-          <strong>J.A.R.V.I.S.</strong>
-          <span>Just A Rather Very Intelligent System</span>
+      <header className="testata">
+        <div className="marchio">
+          <strong>JARVIS</strong>
+          <span>Assistente neurale · Claude</span>
         </div>
-        <div className="spia" data-attiva={attivo || undefined}>
-          <i />
-          {attivo ? (parolaAttivazione ? 'IN ASCOLTO DI “JARVIS”' : 'SISTEMA ATTIVO') : 'STANDBY'}
-        </div>
+        <nav className="azioni" aria-label="Impostazioni">
+          <button type="button" className="chip" aria-pressed={vocale} onClick={cambiaVocale}>
+            <span className="led" />
+            Voce
+          </button>
+          <button
+            type="button"
+            className="chip"
+            aria-pressed={parolaAttivazione}
+            onClick={cambiaAttivazione}
+            disabled={!microfono || !attivo}
+            title="Resta in ascolto e risponde quando dici “Jarvis, …”"
+          >
+            <span className="led" />
+            “Jarvis”
+          </button>
+          <button type="button" className="chip" aria-pressed={cronologia} onClick={() => setCronologia(!cronologia)}>
+            Conversazione
+          </button>
+        </nav>
       </header>
 
-      <Diagnostica avvioAlle={avvioAlle} latenza={latenza} voce={voceSistema} microfono={microfono} scambi={scambi} />
-
-      <div className="centro">
-        <Reactor stato={stato} livelloRef={livello} errore={!!errore} onClick={premiNucleo} />
-        <p className="suggerimento">
-          {stato === 'ascolto'
-            ? 'Ti ascolto…'
-            : stato === 'elaborazione'
-              ? 'Elaborazione in corso…'
-              : stato === 'risposta'
-                ? 'Premi il nucleo o Esc per interrompere'
-                : 'Premi il nucleo o la barra spaziatrice per parlare'}
-        </p>
-        {errore && (
-          <p className="avviso-errore" role="alert">
-            {errore}
+      {attivo && (
+        <section className="dialogo" aria-live="polite">
+          <p className="stato">
+            <span className="punto" />
+            {ETICHETTE[stato]}
           </p>
-        )}
-      </div>
+          {(parziale || (stato === 'elaborazione' && ultimaDomanda)) && (
+            <p className="domanda">“{parziale || ultimaDomanda?.testo}”</p>
+          )}
+          {!parziale && stato !== 'elaborazione' && ultima && (
+            <div ref={sottotitoli} className={`sottotitoli${ultima.errore ? ' errore' : ''}`}>
+              {ultima.testo}
+            </div>
+          )}
+          {errore && !ultima?.errore && (
+            <p className="avviso" role="alert">
+              {errore}
+            </p>
+          )}
+        </section>
+      )}
 
-      <Registro voci={voci} parziale={parziale} />
+      {attivo && (
+        <footer className="comandi">
+          <form
+            className="barra"
+            onSubmit={(e) => {
+              e.preventDefault()
+              invia(testo)
+              setTesto('')
+            }}
+          >
+            <button
+              type="button"
+              className="microfono"
+              onClick={premiMicrofono}
+              aria-label={stato === 'pronto' ? 'Parla con Jarvis' : 'Interrompi'}
+              title={stato === 'pronto' ? 'Parla (barra spaziatrice)' : 'Interrompi (Esc)'}
+            >
+              {stato === 'pronto' ? (
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="9" y="3" width="6" height="12" rx="3" />
+                  <path d="M5 11a7 7 0 0 0 14 0M12 18v3" fill="none" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="7" y="7" width="10" height="10" rx="2" />
+                </svg>
+              )}
+            </button>
+            <input
+              id="comando"
+              value={testo}
+              onChange={(e) => setTesto(e.target.value)}
+              placeholder="Chiedi qualcosa a Jarvis…"
+              aria-label="Scrivi a Jarvis"
+              autoComplete="off"
+            />
+            <button type="submit" className="invia" disabled={!testo.trim()} aria-label="Invia">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h13M13 6l6 6-6 6" fill="none" />
+              </svg>
+            </button>
+          </form>
+          <p className="aiuto">Barra spaziatrice per parlare · Esc per interrompere · trascina per ruotare la rete</p>
+        </footer>
+      )}
 
-      <footer className="comandi">
-        <form
-          className="console"
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (!attivo) attiva()
-            invia(testo)
-            setTesto('')
-          }}
-        >
-          <span className="prompt" aria-hidden="true">
-            &gt;
-          </span>
-          <input
-            value={testo}
-            onChange={(e) => setTesto(e.target.value)}
-            placeholder="Scrivi un comando…"
-            aria-label="Scrivi un comando per Jarvis"
-            autoComplete="off"
-          />
-          <button type="submit" disabled={!testo.trim()}>
-            Invia
+      <aside className="cronologia" data-aperta={cronologia || undefined} aria-label="Conversazione" aria-hidden={!cronologia}>
+        <header>
+          <h2>Conversazione</h2>
+          <button type="button" onClick={() => setCronologia(false)} aria-label="Chiudi" tabIndex={cronologia ? 0 : -1}>
+            ✕
           </button>
-        </form>
-        <div className="interruttori">
-          <button type="button" aria-pressed={vocale} onClick={cambiaVocale}>
-            Voce {vocale ? 'ON' : 'OFF'}
-          </button>
-          <button type="button" aria-pressed={parolaAttivazione} onClick={cambiaAttivazione} disabled={!microfono || !attivo}>
-            “Jarvis” {parolaAttivazione ? 'ON' : 'OFF'}
-          </button>
+        </header>
+        <div ref={righeCronologia} className="righe">
+          {voci.length === 0 && <p className="vuoto">Ancora nessun messaggio.</p>}
+          {voci.map((v) => (
+            <article key={v.id} className={`riga ${v.ruolo}${v.errore ? ' errore' : ''}`}>
+              <span>{v.ruolo === 'user' ? 'Tu' : v.errore ? 'Errore' : 'Jarvis'}</span>
+              <p>{v.testo || '…'}</p>
+            </article>
+          ))}
         </div>
-      </footer>
+      </aside>
 
       {!attivo && (
         <div className="avvio">
-          <ol className="righe-avvio" aria-hidden="true">
-            <li>Caricamento moduli cognitivi</li>
-            <li>Calibrazione sintesi vocale</li>
-            <li>Collegamento ai server Anthropic</li>
-            <li>Verifica protocolli di sicurezza</li>
-          </ol>
+          <h1>JARVIS</h1>
+          <p>Assistente personale con intelligenza artificiale</p>
           <button type="button" className="pulsante-avvio" onClick={attiva} autoFocus>
-            Avvia J.A.R.V.I.S.
+            Attiva
           </button>
-          <p>Consiglio: usa Google Chrome o Microsoft Edge per parlare a voce.</p>
+          <small>Per parlare a voce usa Google Chrome o Microsoft Edge</small>
         </div>
       )}
     </main>

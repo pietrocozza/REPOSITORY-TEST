@@ -1,7 +1,8 @@
 # J.A.R.V.I.S.
 
 Assistente personale vocale ispirato a quello di Iron Man, con il "cervello" di **Claude** (Anthropic).
-Gli parli al microfono (o scrivi) e lui ti risponde a voce, in italiano, con un'interfaccia olografica.
+Gli parli al microfono (o scrivi) e lui ti risponde a voce, in italiano. Al centro dello schermo c'è una
+rete di neuroni in 3D: gli impulsi corrono lungo le sinapsi e la rete si accende quando ascolta, pensa e parla.
 
 - **Voce → testo**: riconoscimento vocale del browser (Chrome / Edge)
 - **Cervello**: Claude Opus 5.5 tramite l'API di Anthropic, con ricerca web per meteo, notizie e cose recenti
@@ -29,17 +30,19 @@ Apri `.env.local` e incolla la tua chiave al posto di `sk-ant-...`. Poi:
 npm run dev
 ```
 
-e apri **http://localhost:3000** in Chrome o Edge. Premi **Avvia J.A.R.V.I.S.** e consenti l'uso del microfono.
+e apri **http://localhost:3000** in Chrome o Edge. Premi **Attiva** e consenti l'uso del microfono.
 
 ## Come si usa
 
 | Azione | Come |
 | --- | --- |
-| Parlare | Clicca il nucleo al centro, oppure premi la **barra spaziatrice** |
-| Interrompere | Clicca di nuovo il nucleo, oppure premi **Esc** |
+| Parlare | Pulsante del microfono, oppure **barra spaziatrice** |
+| Interrompere | Di nuovo il pulsante, oppure **Esc** |
+| Ruotare la rete | Trascina con il mouse; rotella per avvicinarti |
 | Scrivere | Casella in basso, poi Invio |
-| Parola d'attivazione | Pulsante **"Jarvis" ON**: resta in ascolto e risponde quando dici *"Jarvis, …"* |
-| Silenziare la voce | Pulsante **Voce ON/OFF** |
+| Parola d'attivazione | Pulsante **"Jarvis"**: resta in ascolto e risponde quando dici *"Jarvis, …"* |
+| Silenziare la voce | Pulsante **Voce** |
+| Rileggere la conversazione | Pulsante **Conversazione** |
 
 ## Personalizzarlo
 
@@ -48,18 +51,19 @@ e apri **http://localhost:3000** in Chrome o Edge. Premi **Avvia J.A.R.V.I.S.** 
 - **Modello**: costante `MODELLO` nello stesso file (es. `claude-sonnet-5-5` costa meno)
 - **Voce**: `lib/voce.ts` sceglie la migliore voce italiana installata; su Windows puoi aggiungerne
   altre da *Impostazioni → Ora e lingua → Voce*. In Edge le voci "Online (Natural)" sono le più realistiche.
-- **Colori e grafica**: variabili in cima ad `app/globals.css`, nucleo animato in `components/Reactor.tsx`
+- **Colori e grafica**: variabili in cima ad `app/globals.css`; la rete 3D (numero di neuroni, colori,
+  comportamento in ogni stato) in cima a `lib/rete-neurale.ts`
 
 ## Come è fatto
 
 ```
 app/page.tsx              → mostra l'interfaccia
 app/api/chat/route.ts     → parla con Claude (la chiave API resta qui, sul server)
-components/Jarvis.tsx     → stato, microfono, voce e invio delle domande
-components/Reactor.tsx    → il nucleo olografico animato
-components/Pannelli.tsx   → pannelli "Diagnostica" e "Registro comunicazioni"
+components/Jarvis.tsx     → interfaccia, stati, microfono, voce e invio delle domande
+components/ReteNeurale.tsx →  collega la rete 3D a React
+lib/rete-neurale.ts       → la rete di neuroni 3D (Three.js): neuroni, sinapsi, impulsi, bagliore
+lib/chat.ts               → manda la conversazione al server e riceve la risposta in streaming
 lib/voce.ts               → riconoscimento e sintesi vocale del browser
 ```
 
-> Nota: è un progetto personale per divertimento, non affiliato a Marvel. La grafica è originale,
-> ispirata allo stile degli HUD dei film.
+> Nota: è un progetto personale per divertimento, non affiliato a Marvel.

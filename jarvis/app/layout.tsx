@@ -1,18 +1,19 @@
 import type { Metadata, Viewport } from 'next'
-import { Orbitron, Rajdhani } from 'next/font/google'
+import { IBM_Plex_Mono, Sora } from 'next/font/google'
 import './globals.css'
 
-// Orbitron: lettere geometriche "da HUD" per titoli e numeri
-const display = Orbitron({
-  variable: '--font-orbitron',
+// Sora: geometrico e pulito, per testi e titoli
+const testo = Sora({
+  variable: '--font-sora',
   subsets: ['latin'],
-  weight: ['500', '700', '900'],
+  weight: ['300', '400', '600', '700'],
 })
 
-const testo = Rajdhani({
-  variable: '--font-rajdhani',
+// Plex Mono: etichette tecniche piccole
+const mono = IBM_Plex_Mono({
+  variable: '--font-plex-mono',
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500'],
 })
 
 export const metadata: Metadata = {
@@ -21,12 +22,12 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#02070d',
+  themeColor: '#02040b',
 }
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="it" className={`${display.variable} ${testo.variable}`}>
+    <html lang="it" className={`${testo.variable} ${mono.variable}`}>
       <body>{children}</body>
     </html>
   )
