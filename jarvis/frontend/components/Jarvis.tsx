@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
-import { chiediAlServer, type Chiedi } from '@/lib/chat'
+import { chiediAlServer, leggiStatoBackend, nuovaConversazione, type Chiedi } from '@/lib/chat'
 import { disegnaHud } from '@/lib/hud'
 import { NucleoNeurale, PALETTES, type Modo } from '@/lib/nucleo-neurale'
 import type { Stato, Voce } from '@/lib/stato'
@@ -26,13 +26,35 @@ const MESSAGGI_ERRORE_MIC: Record<string, string> = {
   'non-supportato': 'Questo browser non riconosce la voce: usa Google Chrome o Microsoft Edge, oppure scrivi.',
 }
 
-const MODO: Record<Stato, Modo> = { pronto: 'idle', ascolto: 'listening', elaborazione: 'thinking', risposta: 'speaking' }
+const MODO: Record<Stato, Modo> = {
+  pronto: 'idle',
+  ascolto: 'listening',
+  elaborazione: 'thinking',
+  lavoro: 'working',
+  conferma: 'waiting',
+  successo: 'success',
+  risposta: 'speaking',
+}
+
+// Quale indicatore in basso si accende per ogni stato
+const INDICATORE: Record<Stato, Stato> = {
+  pronto: 'pronto',
+  ascolto: 'ascolto',
+  elaborazione: 'elaborazione',
+  lavoro: 'elaborazione',
+  conferma: 'elaborazione',
+  successo: 'pronto',
+  risposta: 'risposta',
+}
 
 const ETICHETTE: Record<Modo, string> = {
   idle: 'IN ATTESA',
   listening: 'IN ASCOLTO',
   thinking: 'ELABORAZIONE',
   speaking: 'STA PARLANDO',
+  working: 'STRUMENTO IN USO',
+  waiting: 'ATTENDE CONFERMA',
+  success: 'COMPLETATO',
   error: 'ATTENZIONE',
 }
 
@@ -40,6 +62,9 @@ const EVENTI: Record<Stato, [string, string]> = {
   pronto: ['Nucleo pronto', 'In attesa del tuo prossimo comando.'],
   ascolto: ['Microfono attivo', 'Riconoscimento vocale in corso, nessuna registrazione.'],
   elaborazione: ['Elaborazione', 'Claude sta collegando linguaggio, contesto e memoria.'],
+  lavoro: ['Strumento in uso', 'Jarvis sta usando uno strumento.'],
+  conferma: ['Serve una conferma', 'Jarvis aspetta la tua autorizzazione.'],
+  successo: ['Completato', 'Operazione conclusa.'],
   risposta: ['Risposta', 'Jarvis sta rispondendo.'],
 }
 
@@ -61,6 +86,7 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
   const [pausa, setPausa] = useState(false)
   const [conteggi, setConteggi] = useState<{ nodi: number; connessioni: number } | null>(null)
   const [senzaWebgl, setSenzaWebgl] = useState(false)
+  const [strumento, setStrumento] = useState<string | null>(null)
 
   // Valori letti dentro callback asincrone: tenuti in ref per non leggere versioni vecchie
   const livello = useRef(0)
@@ -83,6 +109,8 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
   const righeCronologia = useRef<HTMLDivElement>(null)
   const campo = useRef<HTMLInputElement>(null)
   const timerErrore = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const strumentiUsati = useRef(false)
+  const usaBackend = chiedi === chiediAlServer
 
   useEffect(() => {
     statoRef.current = stato
@@ -104,6 +132,23 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
     }, 0)
     return () => clearTimeout(id)
   }, [])
+
+  // All'avvio controlla che backend e Claude Code siano pronti, e spiega cosa manca
+  useEffect(() => {
+    if (!usaBackend) return
+    let annullato = false
+    leggiStatoBackend().then((s) => {
+      if (annullato) return
+      if (!s) mostraErrore('Il backend di Jarvis non risponde. Avvia Jarvis con: npm start')
+      else if (!s.ok) {
+        const c = s.controlli.find((x) => !x.ok)
+        if (c) mostraErrore(`${c.nome}: ${c.dettaglio}.${c.aiuto ? ' ' + c.aiuto : ''}`)
+      }
+    })
+    return () => {
+      annullato = true
+    }
+  }, [usaBackend, mostraErrore])
 
   // ───────── La rete neurale 3D e l'HUD ─────────
 
@@ -228,7 +273,14 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
   const concludi = useCallback((t: number) => {
     if (t !== turno.current) return
     livello.current = 0
-    setStato('pronto')
+    if (strumentiUsati.current) {
+      // se ha usato strumenti, un attimo di "completato" prima di tornare in attesa
+      strumentiUsati.current = false
+      setStato('successo')
+      setTimeout(() => t === turno.current && setStato((s) => (s === 'successo' ? 'pronto' : s)), 1600)
+    } else {
+      setStato('pronto')
+    }
     if (attivazioneRef.current) setTimeout(() => ascoltoContinuoRef.current(), 250)
   }, [])
 
@@ -262,11 +314,9 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
       setErrore(null)
       setParziale('')
       setStato('elaborazione')
+      setStrumento(null)
+      strumentiUsati.current = false
 
-      const storia = vociRef.current
-        .filter((v) => !v.errore && v.testo.trim())
-        .map((v) => ({ role: v.ruolo, content: v.testo }))
-        .slice(-30)
       const idRisposta = prossimoId++
       setVoci((vs) => [...vs, { id: prossimoId++, ruolo: 'user', testo: pulita }, { id: idRisposta, ruolo: 'assistant', testo: '' }])
 
@@ -276,14 +326,24 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
       let primo = true
 
       try {
-        await chiedi([...storia, { role: 'user', content: pulita }], {
+        await chiedi(pulita, {
           signal: controller.signal,
+          onStato: (e) => {
+            if (t !== turno.current) return
+            if (e.stato === 'WORKING') {
+              strumentiUsati.current = true
+              setStrumento(e.descrizione ?? e.strumento ?? null)
+              setStato('lavoro')
+            } else if (e.stato === 'WAITING_FOR_CONFIRMATION') setStato('conferma')
+            else if (e.stato === 'THINKING') setStato((s) => (s === 'risposta' ? s : 'elaborazione'))
+          },
           onTesto: (pezzo) => {
             if (t !== turno.current) return
             if (primo) {
               primo = false
               if (!vocaleRef.current) setStato('risposta')
             }
+            setStato((s) => (s === 'lavoro' ? 'elaborazione' : s))
             setVoci((vs) => vs.map((v) => (v.id === idRisposta ? { ...v, testo: v.testo + pezzo } : v)))
             if (vocaleRef.current) {
               buffer += pezzo
@@ -322,7 +382,9 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
 
   const interrompi = useCallback(() => {
     turno.current++
+    if (richiesta.current && usaBackend) fetch('/api/chat/interrompi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {})
     richiesta.current?.abort()
+    richiesta.current = null
     fermaAscolto.current()
     fermaAscolto.current = () => {}
     zittisci()
@@ -330,10 +392,10 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
     setParziale('')
     setStato('pronto')
     if (attivazioneRef.current) setTimeout(() => ascoltoContinuoRef.current(), 250)
-  }, [])
+  }, [usaBackend])
 
   const parlaOInterrompi = useCallback(() => {
-    if (statoRef.current === 'pronto') avviaAscolto(false)
+    if (statoRef.current === 'pronto' || statoRef.current === 'successo') avviaAscolto(false)
     else interrompi()
   }, [avviaAscolto, interrompi])
 
@@ -425,20 +487,28 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
   const ultimaDomanda = [...voci].reverse().find((v) => v.ruolo === 'user')
   let parlato = ultima?.testo || SALUTO
   if (stato === 'ascolto') parlato = parziale ? `«${parziale}»` : parolaAttivazione ? 'Ti ascolto. Di’ «Jarvis» e poi il comando.' : 'Ti ascolto.'
+  else if (stato === 'lavoro') parlato = `${strumento ?? 'Uso uno strumento'}…`
   else if (stato === 'elaborazione') parlato = ultimaDomanda ? `«${ultimaDomanda.testo}»` : 'Sto collegando le informazioni.'
   else if (stato === 'pronto' && parolaAttivazione && !ultima) parlato = 'Sono in ascolto. Di’ «Jarvis» e poi il comando.'
 
-  const [titoloEvento, dettaglioEvento] = errore ? ['Attenzione', errore] : EVENTI[stato]
+  const [titoloEvento, dettaglioEvento] = errore
+    ? ['Attenzione', errore]
+    : stato === 'lavoro' && strumento
+      ? ['Strumento in uso', `${strumento}.`]
+      : EVENTI[stato]
   const fonte =
     stato === 'ascolto'
       ? 'MICROFONO / TEMPO REALE'
       : stato === 'elaborazione'
-        ? 'CLAUDE / ELABORAZIONE'
+        ? 'CLAUDE CODE / ELABORAZIONE'
+        : stato === 'lavoro'
+          ? `STRUMENTO / ${(strumento ?? '').toUpperCase()}`
         : stato === 'risposta'
           ? vocale
             ? 'VOCE DI SISTEMA / RISPOSTA'
             : 'TESTO / RISPOSTA'
           : 'ANIMAZIONE PROCEDURALE'
+  const inAttesa = stato === 'pronto' || stato === 'successo'
   const scambi = voci.filter((v) => v.ruolo === 'user').length
 
   return (
@@ -597,17 +667,17 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
         </aside>
 
         <section className="j-dialogue" aria-live="polite">
-          <span className="j-overline">J.A.R.V.I.S. / {stato === 'pronto' && !errore ? 'STANDBY' : ETICHETTE[modo]}</span>
+          <span className="j-overline">J.A.R.V.I.S. / {inAttesa && !errore ? 'STANDBY' : ETICHETTE[modo]}</span>
           <p ref={trascrizione} className={ultima?.errore && stato === 'pronto' ? 'j-errore' : undefined}>
-            {parlato}
+            {parlato.replace(/\s*\n+\s*/g, ' ')}
           </p>
         </section>
       </main>
 
       <footer className="j-controls">
         <div className="j-state-selector" aria-label="Stato dell’assistente">
-          {(['pronto', 'ascolto', 'elaborazione', 'risposta'] as Stato[]).map((s) => (
-            <span key={s} aria-current={stato === s ? 'true' : undefined} data-attivo={stato === s || undefined}>
+          {(['pronto', 'ascolto', 'elaborazione', 'risposta'] as const).map((s) => (
+            <span key={s} aria-current={INDICATORE[stato] === s ? 'true' : undefined} data-attivo={INDICATORE[stato] === s || undefined}>
               <i />
               {s === 'pronto' ? 'Attesa' : s === 'ascolto' ? 'Ascolto' : s === 'elaborazione' ? 'Elaborazione' : 'Voce'}
             </span>
@@ -627,9 +697,9 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
           </button>
           <button type="button" className="j-voice" onClick={parlaOInterrompi} title="Barra spaziatrice">
             <span className="j-play" aria-hidden="true">
-              {stato === 'pronto' ? '▶' : '■'}
+              {inAttesa ? '▶' : '■'}
             </span>
-            <span>{stato === 'pronto' ? 'Parla con Jarvis' : 'Interrompi'}</span>
+            <span>{inAttesa ? 'Parla con Jarvis' : 'Interrompi'}</span>
           </button>
           <button type="button" className="j-audio-button" aria-pressed={vocale} onClick={cambiaVocale}>
             {vocale ? 'Voce attiva' : 'Voce disattivata'}
@@ -684,6 +754,17 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
       <aside className="j-history" data-aperta={cronologia || undefined} aria-label="Cronologia" aria-hidden={!cronologia}>
         <header>
           <span className="j-overline">CRONOLOGIA</span>
+          <button
+            type="button"
+            tabIndex={cronologia ? 0 : -1}
+            onClick={() => {
+              interrompi()
+              if (usaBackend) nuovaConversazione()
+              setVoci([])
+            }}
+          >
+            Nuova conversazione
+          </button>
           <button type="button" onClick={() => setCronologia(false)} tabIndex={cronologia ? 0 : -1}>
             Chiudi ✕
           </button>

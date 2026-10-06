@@ -1,72 +1,78 @@
 # J.A.R.V.I.S.
 
-Assistente personale vocale ispirato a quello di Iron Man, con il "cervello" di **Claude** (Anthropic).
-Gli parli al microfono (o scrivi) e lui ti risponde a voce, in italiano. L'interfaccia è la "Neural Interface":
-al centro una rete di neuroni 3D in WebGL, con neuroni che si muovono, impulsi lungo le connessioni e colori
-che cambiano quando Jarvis ascolta, pensa e parla.
+Assistente personale che funziona sul tuo PC Windows. Il "cervello" è **Claude Code**, collegato al tuo
+abbonamento Claude: **nessuna API a consumo**. L'interfaccia è la "Neural Interface", con la rete neurale 3D
+che reagisce a quello che Jarvis sta facendo.
 
-- **Voce → testo**: riconoscimento vocale del browser (Chrome / Edge)
-- **Cervello**: Claude Opus 5.5 tramite l'API di Anthropic, con ricerca web per meteo, notizie e cose recenti
-- **Testo → voce**: sintesi vocale del sistema operativo (parla mentre la risposta sta ancora arrivando)
+Stato attuale (fase 1 di 17): chat reale con Claude (scritta o a voce), ricerca web, conversazione ricordata
+anche dopo il riavvio. Email, calendario, memoria, strumenti e permessi arrivano nelle prossime fasi
+(vedi [docs/ARCHITETTURA.md](docs/ARCHITETTURA.md)).
 
-## Cosa ti serve
+## Cosa serve sul PC
 
-1. [Node.js](https://nodejs.org) 20.9 o successivo
-2. Una **chiave API di Anthropic**: vai su [console.anthropic.com](https://console.anthropic.com),
-   aggiungi un po' di credito (*Billing*) e crea una chiave in *API Keys*.
-   L'API si paga a consumo ed è separata dall'abbonamento a claude.ai.
-3. **Google Chrome** o **Microsoft Edge** per parlare a voce (Firefox e Safari permettono solo di scrivere)
+| Programma | Perché | Come installarlo (PowerShell) |
+| --- | --- | --- |
+| **Node.js 24 LTS** (minimo 22.18) | fa funzionare backend e interfaccia | `winget install OpenJS.NodeJS.LTS` |
+| **Git** | per scaricare e aggiornare il progetto | `winget install Git.Git` |
+| **Claude Code** | il cervello di Jarvis, con il tuo login | già installato |
+| Chrome o Edge | per l'interfaccia e il microfono | già presente |
 
-## Avviarlo sul tuo PC
+Python **non serve** in questa fase. VS Code è facoltativo.
 
-```bash
+Per controllare cosa hai già, nella cartella `jarvis` apri PowerShell e scrivi:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\controlla-ambiente.ps1
+```
+
+## Installazione (una volta sola)
+
+In **PowerShell**:
+
+```powershell
+cd $HOME\Documents
+git clone https://github.com/pietrocozza/repository-test.git jarvis-progetto
+cd jarvis-progetto
+git checkout claude/vibrant-newton-5ifs9d
 cd jarvis
-npm install                 # una volta sola
-cp .env.example .env.local  # su Windows: copy .env.example .env.local
+npm install
+npm run controlla
 ```
 
-Apri `.env.local` e incolla la tua chiave al posto di `sk-ant-...`. Poi:
+`npm run controlla` deve mostrare tre **OK** (Node.js, Claude Code, Account Claude).
+Se l'account non è collegato: scrivi `claude`, premi Invio, poi `/login` e scegli il tuo account Claude.
 
-```bash
-npm run dev
+## Avvio (ogni volta)
+
+In **PowerShell**, dentro la cartella `jarvis`:
+
+```powershell
+npm start
 ```
 
-e apri **http://localhost:3000** in Chrome o Edge. Premi **Parla con Jarvis** e consenti l'uso del microfono.
+Si apre il browser su http://127.0.0.1:3000. Per spegnere Jarvis premi **Ctrl+C** nella finestra di PowerShell.
 
 ## Come si usa
 
 | Azione | Come |
 | --- | --- |
-| Parlare | **Parla con Jarvis** (o il modulo Conversazione), oppure **barra spaziatrice** |
-| Interrompere | **Interrompi**, oppure **Esc** |
-| Ruotare la rete | Trascina con il mouse; rotella per avvicinarti |
-| Scrivere | Casella in basso, poi Invio |
-| Ascolto continuo | Resta in ascolto e risponde quando dici *"Jarvis, …"* |
-| Silenziare la voce | **Voce attiva / disattivata** |
-| Rileggere la conversazione | **Cronologia** |
-| Nascondere i pannelli | **VISTA** in alto a destra |
+| Scrivere | casella in basso, poi Invio |
+| Parlare | **Parla con Jarvis** oppure **barra spaziatrice** (consenti il microfono la prima volta) |
+| Interrompere | **Interrompi** oppure **Esc** |
+| Ascolto continuo | risponde quando dici *"Jarvis, …"* |
+| Voce on/off | **Voce attiva / disattivata** |
+| Cronologia e nuova conversazione | **Cronologia** (in basso o nei moduli) |
 
-## Personalizzarlo
+## Impostazioni
 
-- **Come ti chiama**: in `.env.local` metti `JARVIS_APPELLATIVO=capo` (o il tuo nome)
-- **Carattere e regole**: la funzione `istruzioni()` in `app/api/chat/route.ts`
-- **Modello**: costante `MODELLO` nello stesso file (es. `claude-sonnet-5-5` costa meno)
-- **Voce**: `lib/voce.ts` sceglie la migliore voce italiana installata; su Windows puoi aggiungerne
-  altre da *Impostazioni → Ora e lingua → Voce*. In Edge le voci "Online (Natural)" sono le più realistiche.
-- **Il tuo nome** nel pannello Sessione: `NOME_UTENTE` in `components/Jarvis.tsx`
-- **Colori e grafica**: `PALETTES` (un colore per stato) e la forma della rete in `lib/nucleo-neurale.ts`;
-  stile dell'interfaccia in `app/globals.css`
+Copia `.env.example` in `.env` e modifica lì (il nome con cui ti chiama, il modello, il percorso di Claude Code).
+Il file `.env` e la cartella `data/` restano sul tuo PC e non vanno mai su GitHub.
 
-## Come è fatto
+## Comandi utili
 
-```
-app/page.tsx              → mostra l'interfaccia
-app/api/chat/route.ts     → parla con Claude (la chiave API resta qui, sul server)
-components/Jarvis.tsx     → l'interfaccia: stati, microfono, voce, comandi, cronologia
-lib/nucleo-neurale.ts     → la rete neurale in WebGL: neuroni in movimento, connessioni, dendriti, impulsi
-lib/hud.ts                → anelli dell'HUD e onda del canale vocale
-lib/chat.ts               → manda la conversazione al server e riceve la risposta in streaming
-lib/voce.ts               → riconoscimento e sintesi vocale del browser
-```
-
-> Nota: è un progetto personale per divertimento, non affiliato a Marvel.
+| Comando | A cosa serve |
+| --- | --- |
+| `npm start` | avvia Jarvis |
+| `npm run controlla` | controlla Node.js, Claude Code e login |
+| `npm test` | test automatici del backend (non consumano nulla) |
+| `npm run verifica` | controllo completo del codice |

@@ -8,7 +8,7 @@
  *  - corpi dei neuroni con un nucleo netto e meno alone sfocato: immagine più definita
  */
 
-export type Modo = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error'
+export type Modo = 'idle' | 'listening' | 'thinking' | 'speaking' | 'working' | 'waiting' | 'success' | 'error'
 
 type Palette = { a: [number, number, number]; b: [number, number, number]; css: string; speed: number }
 
@@ -17,6 +17,12 @@ export const PALETTES: Record<Modo, Palette> = {
   listening: { a: [0.08, 0.84, 0.57], b: [0.4, 1.0, 0.89], css: '#77f1cc', speed: 0.29 },
   thinking: { a: [0.88, 0.38, 0.09], b: [1.0, 0.83, 0.4], css: '#efbf76', speed: 0.52 },
   speaking: { a: [0.33, 0.26, 0.93], b: [0.51, 0.84, 1.0], css: '#b5b4ff', speed: 0.38 },
+  // Claude sta usando uno strumento (ricerca, email, file…)
+  working: { a: [0.12, 0.45, 0.95], b: [0.45, 0.85, 1.0], css: '#7cc4ff', speed: 0.62 },
+  // in attesa di una tua conferma
+  waiting: { a: [0.85, 0.62, 0.1], b: [1.0, 0.9, 0.55], css: '#ffd27a', speed: 0.12 },
+  // azione completata
+  success: { a: [0.1, 0.75, 0.38], b: [0.55, 1.0, 0.7], css: '#86f0a8', speed: 0.25 },
   error: { a: [0.89, 0.16, 0.18], b: [1.0, 0.56, 0.37], css: '#ff947f', speed: 0.1 },
 }
 
@@ -650,6 +656,9 @@ export class NucleoNeurale {
       target = (Math.pow(Math.abs(Math.sin(t * 7.8) * Math.cos(t * 3.7)), 0.65) * 0.76 + 0.1) * (0.45 + 0.55 * Math.pow(Math.sin(t * 1.3), 2))
     else if (this.mode === 'listening') target = 0.06 + 0.08 * Math.pow(Math.sin(t * 3.4), 2)
     else if (this.mode === 'thinking') target = 0.2 + 0.15 * Math.sin(t * 3.1) ** 2
+    else if (this.mode === 'working') target = 0.3 + 0.2 * Math.sin(t * 5.2) ** 2
+    else if (this.mode === 'waiting') target = 0.05 + 0.12 * Math.sin(t * 1.6) ** 2
+    else if (this.mode === 'success') target = 0.12
     else target = 0.025
     if (this.paused || this.reduced) target = 0
 
@@ -681,7 +690,7 @@ export class NucleoNeurale {
     const values: Record<string, number> = {
       uTime: this.time,
       uEnergy: this.energy,
-      uActivity: this.mode === 'thinking' ? 1 : 0,
+      uActivity: this.mode === 'thinking' || this.mode === 'working' ? 1 : 0,
       uAspect: this.width / this.height,
       uPixelRatio: this.dpr,
       uFit: this.fit,

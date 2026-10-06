@@ -1,25 +1,23 @@
 {
   "name": "jarvis",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+  "description": "J.A.R.V.I.S. – assistente personale locale con Claude Code",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "engines": {
+    "node": ">=22.18"
   },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.131.0",
-    "next": "16.3.8",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
+  "scripts": {
+    "start": "node scripts/avvia.mjs",
+    "controlla": "node backend/src/diagnostica.ts",
+    "test": "node --test \"backend/test/*.test.ts\"",
+    "verifica": "tsc -p backend/tsconfig.json && npm run lint -w frontend && npm test"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.8",
+    "@types/node": "^22",
     "typescript": "^5"
   }
 }
