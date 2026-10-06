@@ -1,8 +1,9 @@
 # J.A.R.V.I.S.
 
 Assistente personale vocale ispirato a quello di Iron Man, con il "cervello" di **Claude** (Anthropic).
-Gli parli al microfono (o scrivi) e lui ti risponde a voce, in italiano. Al centro dello schermo c'è una
-rete di neuroni in 3D: gli impulsi corrono lungo le sinapsi e la rete si accende quando ascolta, pensa e parla.
+Gli parli al microfono (o scrivi) e lui ti risponde a voce, in italiano. L'interfaccia è la "Neural Interface":
+al centro una rete di neuroni 3D in WebGL, con neuroni che si muovono, impulsi lungo le connessioni e colori
+che cambiano quando Jarvis ascolta, pensa e parla.
 
 - **Voce → testo**: riconoscimento vocale del browser (Chrome / Edge)
 - **Cervello**: Claude Opus 5.5 tramite l'API di Anthropic, con ricerca web per meteo, notizie e cose recenti
@@ -30,19 +31,20 @@ Apri `.env.local` e incolla la tua chiave al posto di `sk-ant-...`. Poi:
 npm run dev
 ```
 
-e apri **http://localhost:3000** in Chrome o Edge. Premi **Attiva** e consenti l'uso del microfono.
+e apri **http://localhost:3000** in Chrome o Edge. Premi **Parla con Jarvis** e consenti l'uso del microfono.
 
 ## Come si usa
 
 | Azione | Come |
 | --- | --- |
-| Parlare | Pulsante del microfono, oppure **barra spaziatrice** |
-| Interrompere | Di nuovo il pulsante, oppure **Esc** |
+| Parlare | **Parla con Jarvis** (o il modulo Conversazione), oppure **barra spaziatrice** |
+| Interrompere | **Interrompi**, oppure **Esc** |
 | Ruotare la rete | Trascina con il mouse; rotella per avvicinarti |
 | Scrivere | Casella in basso, poi Invio |
-| Parola d'attivazione | Pulsante **"Jarvis"**: resta in ascolto e risponde quando dici *"Jarvis, …"* |
-| Silenziare la voce | Pulsante **Voce** |
-| Rileggere la conversazione | Pulsante **Conversazione** |
+| Ascolto continuo | Resta in ascolto e risponde quando dici *"Jarvis, …"* |
+| Silenziare la voce | **Voce attiva / disattivata** |
+| Rileggere la conversazione | **Cronologia** |
+| Nascondere i pannelli | **VISTA** in alto a destra |
 
 ## Personalizzarlo
 
@@ -51,17 +53,18 @@ e apri **http://localhost:3000** in Chrome o Edge. Premi **Attiva** e consenti l
 - **Modello**: costante `MODELLO` nello stesso file (es. `claude-sonnet-5-5` costa meno)
 - **Voce**: `lib/voce.ts` sceglie la migliore voce italiana installata; su Windows puoi aggiungerne
   altre da *Impostazioni → Ora e lingua → Voce*. In Edge le voci "Online (Natural)" sono le più realistiche.
-- **Colori e grafica**: variabili in cima ad `app/globals.css`; la rete 3D (numero di neuroni, colori,
-  comportamento in ogni stato) in cima a `lib/rete-neurale.ts`
+- **Il tuo nome** nel pannello Sessione: `NOME_UTENTE` in `components/Jarvis.tsx`
+- **Colori e grafica**: `PALETTES` (un colore per stato) e la forma della rete in `lib/nucleo-neurale.ts`;
+  stile dell'interfaccia in `app/globals.css`
 
 ## Come è fatto
 
 ```
 app/page.tsx              → mostra l'interfaccia
 app/api/chat/route.ts     → parla con Claude (la chiave API resta qui, sul server)
-components/Jarvis.tsx     → interfaccia, stati, microfono, voce e invio delle domande
-components/ReteNeurale.tsx →  collega la rete 3D a React
-lib/rete-neurale.ts       → la rete di neuroni 3D (Three.js): neuroni, sinapsi, impulsi, bagliore
+components/Jarvis.tsx     → l'interfaccia: stati, microfono, voce, comandi, cronologia
+lib/nucleo-neurale.ts     → la rete neurale in WebGL: neuroni in movimento, connessioni, dendriti, impulsi
+lib/hud.ts                → anelli dell'HUD e onda del canale vocale
 lib/chat.ts               → manda la conversazione al server e riceve la risposta in streaming
 lib/voce.ts               → riconoscimento e sintesi vocale del browser
 ```
