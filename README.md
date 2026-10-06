@@ -67,3 +67,8 @@ mettilo in `public/audio/tema.mp3`.
 
 Con "Riduci movimento" attivo: niente smooth scroll, parallax o inclinazioni, e il panino è mostrato già aperto e fermo.
 Navigazione da tastiera con focus visibile, errori del modulo letti dagli screen reader, cursore personalizzato disattivato sui dispositivi touch.
+
+## J.A.R.V.I.S.
+
+Nella cartella [`jarvis/`](jarvis/) c'è un'app separata: un assistente vocale in stile Iron Man che usa Claude.
+Ha le sue dipendenze e le sue istruzioni: vedi [`jarvis/README.md`](jarvis/README.md).

@@ -12,8 +12,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Jarvis è un'app separata, con le sue dipendenze e la sua configurazione
-    "jarvis/**",
   ]),
 ]);
 
