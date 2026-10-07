@@ -9,13 +9,15 @@ export const STILE_VOCE_PREDEFINITO = `Sei Ambrogio, un maggiordomo milanese sui
 Parla in italiano con un accento milanese marcato e costante dalla prima all'ultima parola: vocali chiuse (la "e" e la "o" chiuse alla milanese), cadenza meneghina, tono sorridente.
 Ritmo vivace ma chiaro. Le parole in dialetto milanese pronunciale da milanese doc.`
 
-/** Il "cervello": rapido (Claude Haiku, risponde molto prima) o bilanciato (il modello predefinito dell'abbonamento) */
-export type Cervello = 'rapido' | 'bilanciato'
-export const cervelloValido = (c: unknown): c is Cervello => c === 'rapido' || c === 'bilanciato'
+/** Il "cervello": rapido (Claude Haiku, il più svelto), sonnet (Claude Sonnet: veloce e più sveglio, di serie)
+ *  o bilanciato (il modello predefinito dell'abbonamento, il più lento) */
+export type Cervello = 'rapido' | 'sonnet' | 'bilanciato'
+export const MODELLI_CERVELLO: Record<Cervello, string | undefined> = { rapido: 'haiku', sonnet: 'sonnet', bilanciato: undefined }
+export const cervelloValido = (c: unknown): c is Cervello => typeof c === 'string' && Object.hasOwn(MODELLI_CERVELLO, c)
 
 export type ImpostazioniAgente = { personalita: IdPersonalita; stileVoce: string; cervello: Cervello }
 
-const PREDEFINITE: ImpostazioniAgente = { personalita: 'maggiordomo', stileVoce: STILE_VOCE_PREDEFINITO, cervello: 'rapido' }
+const PREDEFINITE: ImpostazioniAgente = { personalita: 'maggiordomo', stileVoce: STILE_VOCE_PREDEFINITO, cervello: 'sonnet' }
 
 export class ArchivioImpostazioni {
   private file: string

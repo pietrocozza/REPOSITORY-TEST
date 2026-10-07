@@ -1330,12 +1330,12 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
                 <div className="j-riga j-riga-colonna">
                   <span>
                     Cervello
-                    <small>Rapido risponde prima; Bilanciato ragiona di più ma è più lento</small>
+                    <small>Sonnet è veloce e capisce bene (consigliato); Haiku è il più svelto ma meno sveglio; Completo ragiona di più ma è lento</small>
                   </span>
                   <div className="j-segmenti" role="group" aria-label="Cervello">
-                    {(['rapido', 'bilanciato'] as Cervello[]).map((c) => (
+                    {(['sonnet', 'rapido', 'bilanciato'] as Cervello[]).map((c) => (
                       <button key={c} type="button" aria-pressed={cervello === c} onClick={() => scegliCervello(c)}>
-                        {c === 'rapido' ? 'Rapido' : 'Bilanciato'}
+                        {c === 'sonnet' ? 'Sonnet' : c === 'rapido' ? 'Haiku' : 'Completo'}
                       </button>
                     ))}
                   </div>

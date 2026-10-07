@@ -3,7 +3,7 @@ import { eseguiTurno, ProcessoClaude, type Avvio, type EsitoTurno } from './clau
 import type { Eseguibile } from './eseguibile.ts'
 import type { EventoAgente } from './eventi.ts'
 import { istruzioni, PERSONALITA, type IdPersonalita } from './istruzioni.ts'
-import { ArchivioImpostazioni, type Cervello } from '../impostazioni.ts'
+import { ArchivioImpostazioni, MODELLI_CERVELLO, type Cervello } from '../impostazioni.ts'
 import { ArchivioSessione } from './sessione.ts'
 import path from 'node:path'
 import { Database } from '../database/db.ts'
@@ -75,7 +75,7 @@ export class Agente {
       istruzioni: istruzioni(this.config.appellativo, this.impostazioni.attuali.personalita, this.sintesiMemoria()),
       strumenti: STRUMENTI_INTEGRATI,
       // il modello scritto nel file .env vince; altrimenti decide l'impostazione «cervello»
-      modello: this.config.claude.modello || (this.impostazioni.attuali.cervello === 'rapido' ? 'haiku' : undefined),
+      modello: this.config.claude.modello || MODELLI_CERVELLO[this.impostazioni.attuali.cervello],
       effort: this.config.claude.effort || undefined,
       consentiApiAConsumo: this.config.claude.consentiApiAConsumo,
       onSessioneAperta: () => this.sessioni.segnaAvviata(),
@@ -101,7 +101,7 @@ export class Agente {
     return this.impostazioni.attuali.cervello
   }
 
-  /** Rapido o bilanciato: Claude Code riparte con l'altro modello appena è libero (la conversazione continua) */
+  /** Haiku, Sonnet o completo: Claude Code riparte con l'altro modello appena è libero (la conversazione continua) */
   impostaCervello(c: Cervello) {
     if (c === this.cervello) return
     this.impostazioni.aggiorna({ cervello: c })
