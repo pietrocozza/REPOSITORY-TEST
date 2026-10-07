@@ -40,6 +40,30 @@ uv pip install --python "$AMBIENTE/bin/python" "$URL"
 
 echo
 echo "== 4/4  Prova"
+# Linphone vuole la libreria condivisa di Python (libpython3.X.so): si cerca dove sta
+LIBPY="libpython${VERSIONE_PY}.so.1.0"
+LIBDIR="$("$AMBIENTE/bin/python" -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR") or "")')"
+if [ ! -e "$LIBDIR/$LIBPY" ]; then
+  LIBDIR="$(dirname "$(find "$HOME/.local/share/uv" /usr/lib /usr/local/lib -name "$LIBPY" 2>/dev/null | head -n 1)" 2>/dev/null || true)"
+fi
+if [ -z "$LIBDIR" ] || [ ! -e "$LIBDIR/$LIBPY" ]; then
+  echo "Il Python scaricato non ha $LIBPY: prendo Python $VERSIONE_PY completo da conda-forge (circa 50 MB)"
+  if ! command -v micromamba >/dev/null 2>&1; then
+    mkdir -p "$HOME/.local/bin"
+    curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xj -C "$HOME/.local" bin/micromamba
+  fi
+  PYCOMPLETO="$HOME/.ambrogio-python"
+  rm -rf "$PYCOMPLETO"
+  MAMBA_ROOT_PREFIX="$HOME/.micromamba" micromamba create -y -q -p "$PYCOMPLETO" -c conda-forge "python=$VERSIONE_PY"
+  rm -rf "$AMBIENTE"
+  uv venv --python "$PYCOMPLETO/bin/python" "$AMBIENTE"
+  uv pip install --python "$AMBIENTE/bin/python" "$URL"
+  LIBDIR="$PYCOMPLETO/lib"
+fi
+# prova.sh e Ambrogio la ritrovano qui
+echo "$LIBDIR" > "$AMBIENTE/cartella-libpython"
+export LD_LIBRARY_PATH="$LIBDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
 if "$AMBIENTE/bin/python" -c "import linphone; print('Linphone pronto, versione', linphone.Core.get_version())"; then
   echo
   echo "TUTTO OK. Adesso puoi fare la chiamata di prova:  bash telefono/prova.sh"
