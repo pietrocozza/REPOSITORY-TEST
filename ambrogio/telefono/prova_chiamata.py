@@ -76,6 +76,41 @@ def volume(percorso):
     return int(math.sqrt(sum(c * c for c in dati) / len(dati)))
 
 
+def firma(funzione):
+    """come va chiamata una funzione di Linphone (per capire gli errori)"""
+    doc = (getattr(funzione, "__doc__", None) or "").strip().splitlines()
+    return doc[0] if doc else repr(funzione)
+
+
+def crea_credenziali(fabbrica, utente, password):
+    """nome utente e password dell'account di Ambrogio, nei modi in cui le varie versioni di Linphone li accettano"""
+    tentativi = [
+        lambda: fabbrica.create_auth_info(utente, None, password, None, None, DOMINIO),
+        # con tre soli dati: qualunque sia l'ordine, sotto si rimette ogni campo al suo posto
+        lambda: fabbrica.create_auth_info(utente, None, password),
+        lambda: fabbrica.create_auth_info(utente, password, DOMINIO),
+        lambda: fabbrica.create_auth_info(username=utente, userid=None, passwd=password, ha1=None, realm=None, domain=DOMINIO),
+    ]
+    errori = []
+    for prova in tentativi:
+        try:
+            credenziali = prova()
+            break
+        except TypeError as e:
+            errori.append(str(e))
+    else:
+        esci("Non riesco a passare a Linphone nome e password.\n"
+             f"Linphone dice: {firma(fabbrica.create_auth_info)}\n" + "\n".join(errori))
+    # si completa in ogni caso quello che serve
+    for campo, valore in (("username", utente), ("userid", utente), ("password", password), ("domain", DOMINIO)):
+        try:
+            if getattr(credenziali, campo, None) != valore:
+                setattr(credenziali, campo, valore)
+        except Exception:
+            pass
+    return credenziali
+
+
 def esci(messaggio):
     print("\n" + messaggio)
     sys.exit(1)
@@ -126,7 +161,7 @@ def main():
     parametri.register_enabled = True
     parametri.nat_policy = nat
     account = core.create_account(parametri)
-    core.add_auth_info(fabbrica.create_auth_info(utente, None, password, None, None, DOMINIO))
+    core.add_auth_info(crea_credenziali(fabbrica, utente, password))
     core.add_account(account)
     core.default_account = account
 
@@ -196,4 +231,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (TypeError, AttributeError) as e:
+        import traceback
+        traceback.print_exc()
+        print("\nCopia tutte queste righe e mandale a Claude.")
