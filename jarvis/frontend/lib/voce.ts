@@ -77,10 +77,46 @@ export function ascolta(continuo: boolean, cb: Ascolto) {
   }
 }
 
-/** Con la parola d'attivazione: "Jarvis, che ore sono?" → "che ore sono?" */
+// Come il riconoscimento vocale italiano scrive di solito "Jarvis"
+const PAROLA_ATTIVAZIONE = /\b(?:jarvis|giarvis|giàrvis|jervis|gervis|jarvi|giarvi|jarbis|garvis|charvis|jarviss)\b[\s,.:!?]*(.*)$/i
+
+/** Con la parola d'attivazione: "Jarvis, che ore sono?" → "che ore sono?" ("" se ha detto solo "Jarvis") */
 export function dopoParolaAttivazione(frase: string): string | null {
-  const m = frase.match(/\b(?:jarvis|giarvis|jervis|gervis|jarvi)\b[\s,.:!?]*(.*)$/i)
+  const m = frase.match(PAROLA_ATTIVAZIONE)
   return m ? m[1].trim() : null
+}
+
+/** "Jarvis, basta" / "Jarvis, stop": fermarsi senza fare altro */
+export const eStop = (comando: string) =>
+  /^(?:stop|basta|zitt[oa]|ferm[ao]|fermati|silenzio|annulla|lascia (?:stare|perdere)|niente|nulla)\b[\s.!]*$/i.test(comando)
+
+// ───────── Suono di attivazione (come gli assistenti vocali di casa) ─────────
+
+let audio: AudioContext | null = null
+
+/** Due note brevi e morbide: "ti ho sentito". Se il browser blocca l'audio non succede nulla. */
+export function suonoAttivazione(chiusura = false) {
+  try {
+    audio ??= new AudioContext()
+    if (audio.state === 'suspended') audio.resume().catch(() => {})
+    const t = audio.currentTime + 0.02
+    const note = chiusura ? [784, 523] : [659, 988]
+    note.forEach((f, i) => {
+      const osc = audio!.createOscillator()
+      const vol = audio!.createGain()
+      osc.type = 'sine'
+      osc.frequency.value = f
+      const inizio = t + i * 0.11
+      vol.gain.setValueAtTime(0, inizio)
+      vol.gain.linearRampToValueAtTime(0.12, inizio + 0.015)
+      vol.gain.exponentialRampToValueAtTime(0.0001, inizio + 0.32)
+      osc.connect(vol).connect(audio!.destination)
+      osc.start(inizio)
+      osc.stop(inizio + 0.34)
+    })
+  } catch {
+    // niente audio: resta il segnale visivo della rete
+  }
 }
 
 // ───────── Sintesi vocale ─────────

@@ -23,12 +23,14 @@ import type { Stato, Voce } from '@/lib/stato'
 import {
   ascolta,
   dopoParolaAttivazione,
+  eStop,
   estraiFrasi,
   impostaVoce,
   nomeVoce,
   preparaVoce,
   pronuncia,
   riconoscimentoDisponibile,
+  suonoAttivazione,
   vociItaliane,
   zittisci,
   type InfoVoce,
@@ -56,8 +58,9 @@ const MENU: { id: Sezione; nome: string; icona: NomeIcona; descrizione: string; 
 
 // Impostazioni ricordate dal browser
 const CHIAVE_IMPOSTAZIONI = 'jarvis-impostazioni'
-type Impostazioni = { tema: Tema; voce: string | null; velocita: number; vocale: boolean }
-const IMPOSTAZIONI_INIZIALI: Impostazioni = { tema: 'chiaro', voce: null, velocita: 1.02, vocale: true }
+// attivazione = ascolto continuo con «Jarvis» (come gli assistenti vocali di casa)
+type Impostazioni = { tema: Tema; voce: string | null; velocita: number; vocale: boolean; attivazione: boolean }
+const IMPOSTAZIONI_INIZIALI: Impostazioni = { tema: 'scuro', voce: null, velocita: 1.02, vocale: true, attivazione: true }
 
 const MESSAGGI_ERRORE_MIC: Record<string, string> = {
   'not-allowed': 'Accesso al microfono non consentito. Abilitalo dall’icona a sinistra dell’indirizzo, oppure scrivi.',
@@ -123,6 +126,7 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
   const [conferme, setConferme] = useState<Autorizzazione[]>([])
   const [codiceAperto, setCodiceAperto] = useState(false)
   const [codiceNuovo, setCodiceNuovo] = useState(false)
+  const [menuAperto, setMenuAperto] = useState(false)
   const [elencoPersonalita, setElencoPersonalita] = useState<Personalita[]>([])
   // statistiche della sessione, per i numeri a sinistra
   const [inizioTurno, setInizioTurno] = useState<number | null>(null)
@@ -156,6 +160,13 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
   const inizioRef = useRef<number | null>(null)
   const impostazioniCaricate = useRef(false)
   const usaBackend = chiedi === chiediAlServer
+  // ascolto (vedi sotto, «Ascolto»)
+  const inviaRef = useRef<(t: string) => void>(() => {})
+  const interrompiRef = useRef<() => void>(() => {})
+  const sentinellaRef = useRef<() => void>(() => {})
+  const fermaSentinella = useRef<(() => void) | null>(null)
+  const comandoInCorso = useRef(false)
+  const riavvii = useRef(0)
 
   useEffect(() => {
     statoRef.current = stato
@@ -188,6 +199,11 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
       setVoceScelta(salvate.voce)
       setVelocita(salvate.velocita)
       setVocale(salvate.vocale)
+      // ascolto continuo: riparte da solo a ogni apertura (il microfono va consentito una volta)
+      const conAttivazione = salvate.attivazione && riconoscimentoDisponibile()
+      setParolaAttivazione(conAttivazione)
+      attivazioneRef.current = conAttivazione
+      if (conAttivazione) setTimeout(() => sentinellaRef.current(), 800)
       impostaVoce(salvate.voce, salvate.velocita)
       preparaVoce(aggiornaVoci)
       aggiornaVoci()
@@ -208,11 +224,11 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
   useEffect(() => {
     if (!impostazioniCaricate.current) return
     try {
-      localStorage.setItem(CHIAVE_IMPOSTAZIONI, JSON.stringify({ tema, voce: voceScelta, velocita, vocale }))
+      localStorage.setItem(CHIAVE_IMPOSTAZIONI, JSON.stringify({ tema, voce: voceScelta, velocita, vocale, attivazione: parolaAttivazione }))
     } catch {
       // archivio del browser non disponibile: le impostazioni valgono solo per questa volta
     }
-  }, [tema, voceScelta, velocita, vocale])
+  }, [tema, voceScelta, velocita, vocale, parolaAttivazione])
 
   // Mentre Jarvis lavora, il cronometro a sinistra avanza
   useEffect(() => {
@@ -331,77 +347,131 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
   }, [pausa])
 
   // ───────── Ascolto ─────────
+  // Due "orecchie":
+  //  - la sentinella: con l'ascolto continuo acceso è sempre in ascolto e reagisce solo a «Jarvis…»,
+  //    anche mentre Jarvis parla o lavora (così «Jarvis, basta» lo ferma), come gli assistenti vocali di casa;
+  //  - l'ascolto di un comando: dopo il pulsante del microfono o dopo un «Jarvis» detto da solo.
+  // Il browser permette un solo ascolto alla volta: mentre si ascolta un comando la sentinella si ferma, poi riparte.
 
-  const inviaRef = useRef<(t: string) => void>(() => {})
-  const ascoltoContinuoRef = useRef<() => void>(() => {})
-  const avviaAscoltoRef = useRef<(continuo: boolean) => void>(() => {})
 
-  const avviaAscolto = useCallback(
-    (continuo: boolean) => {
-      fermaAscolto.current()
-      setParziale('')
-      let sentito = false
-      if (!continuo) {
-        zittisci()
-        setStato('ascolto')
+  const spegniSentinella = useCallback(() => {
+    fermaSentinella.current?.()
+    fermaSentinella.current = null
+  }, [])
+
+  /** chiude l'ascolto di un comando e lascia ripartire la sentinella */
+  const fermaComando = useCallback(() => {
+    fermaAscolto.current()
+    fermaAscolto.current = () => {}
+    comandoInCorso.current = false
+    setTimeout(() => sentinellaRef.current(), 300)
+  }, [])
+
+  const erroreMicrofono = useCallback(
+    (codice: string) => {
+      if (codice === 'no-speech' || codice === 'aborted') return
+      if (codice === 'not-allowed' || codice === 'service-not-allowed') {
+        attivazioneRef.current = false
+        setParolaAttivazione(false)
       }
-      fermaAscolto.current = ascolta(continuo, {
-        onParziale: (p) => {
-          if (!continuo) setParziale(p)
-          else if (dopoParolaAttivazione(p) !== null) {
-            setStato('ascolto')
-            setParziale(p)
-          }
-        },
-        onFrase: (frase) => {
-          if (!frase) return
-          if (!continuo) {
-            sentito = true
-            setParziale('')
-            inviaRef.current(frase)
-            return
-          }
-          const comando = dopoParolaAttivazione(frase)
-          if (comando === null) return
-          sentito = true
-          setParziale('')
-          fermaAscolto.current()
-          if (comando) {
-            inviaRef.current(comando)
-          } else {
-            // Solo "Jarvis": risponde e ascolta la domanda
-            setStato('risposta')
-            pronuncia('Sì?', { onFine: () => avviaAscoltoRef.current(false) })
-          }
-        },
-        onErrore: (codice) => {
-          if (codice === 'no-speech' || codice === 'aborted') return
-          if (codice === 'not-allowed' || codice === 'service-not-allowed') setParolaAttivazione(false)
-          mostraErrore(MESSAGGI_ERRORE_MIC[codice] ?? `Errore del riconoscimento vocale (${codice}).`)
-        },
-        onFine: () => {
-          setParziale('')
-          if (sentito) return
-          if (statoRef.current === 'ascolto') setStato('pronto')
-          // Chrome chiude l'ascolto continuo dopo un po' di silenzio: si riparte
-          if (continuo && attivazioneRef.current && statoRef.current !== 'elaborazione' && statoRef.current !== 'risposta') {
-            setTimeout(() => ascoltoContinuoRef.current(), 300)
-          }
-        },
-      })
+      mostraErrore(MESSAGGI_ERRORE_MIC[codice] ?? `Errore del riconoscimento vocale (${codice}).`)
     },
     [mostraErrore],
   )
 
-  const ascoltoContinuo = useCallback(() => {
-    if (!attivazioneRef.current) return
-    avviaAscolto(true)
-  }, [avviaAscolto])
+  const ascoltaComando = useCallback(
+    (conSuono: boolean) => {
+      spegniSentinella()
+      fermaAscolto.current()
+      comandoInCorso.current = true
+      setParziale('')
+      zittisci()
+      setStato('ascolto')
+      if (conSuono) suonoAttivazione()
+      let sentito = false
+      fermaAscolto.current = ascolta(false, {
+        onParziale: setParziale,
+        onFrase: (frase) => {
+          if (!frase) return
+          sentito = true
+          setParziale('')
+          // se ripete «Jarvis» all'inizio, lo si toglie
+          const comando = dopoParolaAttivazione(frase) ?? frase
+          fermaComando()
+          if (!comando || eStop(comando)) interrompiRef.current()
+          else inviaRef.current(comando)
+        },
+        onErrore: erroreMicrofono,
+        onFine: () => {
+          setParziale('')
+          if (!sentito && statoRef.current === 'ascolto') setStato('pronto')
+          fermaAscolto.current = () => {}
+          comandoInCorso.current = false
+          setTimeout(() => sentinellaRef.current(), 300)
+        },
+      })
+    },
+    [spegniSentinella, fermaComando, erroreMicrofono],
+  )
+
+  const avviaSentinella = useCallback(() => {
+    if (!attivazioneRef.current || comandoInCorso.current || fermaSentinella.current) return
+    const partenza = Date.now()
+    let sveglio = false
+    // se Jarvis pronuncia il proprio nome non deve "svegliarsi" da solo
+    const sentitoDaSe = () =>
+      statoRef.current === 'risposta' && /jarvis/i.test([...vociRef.current].reverse().find((v) => v.ruolo === 'assistant')?.testo ?? '')
+    const svegliati = () => {
+      sveglio = true
+      suonoAttivazione()
+      // se stava parlando o lavorando si ferma, come quando si chiama un assistente vocale
+      if (!['pronto', 'successo', 'ascolto'].includes(statoRef.current)) interrompiRef.current()
+      setStato('ascolto')
+    }
+    const torna = () => {
+      if (sveglio && statoRef.current === 'ascolto' && !comandoInCorso.current) {
+        setStato('pronto')
+        setParziale('')
+      }
+      sveglio = false
+    }
+    fermaSentinella.current = ascolta(true, {
+      onParziale: (p) => {
+        if (dopoParolaAttivazione(p) === null || sentitoDaSe()) return
+        if (!sveglio) svegliati()
+        setParziale(p)
+      },
+      onFrase: (frase) => {
+        const comando = dopoParolaAttivazione(frase)
+        if (comando === null || sentitoDaSe()) return torna()
+        if (!sveglio) svegliati()
+        sveglio = false
+        setParziale('')
+        if (!comando) ascoltaComando(false) // solo «Jarvis»: aspetta la domanda
+        else if (eStop(comando)) {
+          interrompiRef.current()
+          suonoAttivazione(true)
+        } else inviaRef.current(comando)
+      },
+      onErrore: (codice) => {
+        // problemi di rete o silenzio: la sentinella riprova da sola senza disturbare
+        if (codice === 'not-allowed' || codice === 'service-not-allowed' || codice === 'audio-capture') erroreMicrofono(codice)
+      },
+      onFine: () => {
+        fermaSentinella.current = null
+        torna()
+        if (!attivazioneRef.current || comandoInCorso.current) return
+        // il browser chiude l'ascolto dopo un po': riparte subito; se si chiude di continuo, aspetta di più
+        riavvii.current = Date.now() - partenza < 3000 ? riavvii.current + 1 : 0
+        setTimeout(() => sentinellaRef.current(), Math.min(15000, 300 * 2 ** riavvii.current))
+      },
+    })
+  }, [ascoltaComando, erroreMicrofono])
 
   useEffect(() => {
-    ascoltoContinuoRef.current = ascoltoContinuo
-    avviaAscoltoRef.current = avviaAscolto
-  }, [ascoltoContinuo, avviaAscolto])
+    sentinellaRef.current = avviaSentinella
+  }, [avviaSentinella])
+  useEffect(() => spegniSentinella, [spegniSentinella])
 
   // ───────── Risposta ─────────
 
@@ -422,7 +492,7 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
     } else {
       setStato('pronto')
     }
-    if (attivazioneRef.current) setTimeout(() => ascoltoContinuoRef.current(), 250)
+    setTimeout(() => sentinellaRef.current(), 250)
   }, [])
 
   const parla = useCallback(
@@ -444,8 +514,7 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
     async (domanda: string) => {
       const pulita = domanda.trim()
       if (!pulita) return
-      fermaAscolto.current()
-      fermaAscolto.current = () => {}
+      if (comandoInCorso.current) fermaComando()
       richiesta.current?.abort()
       zittisci()
 
@@ -525,7 +594,7 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
         concludi(t)
       }
     },
-    [chiedi, concludi, parla, mostraErrore],
+    [chiedi, concludi, parla, mostraErrore, fermaComando],
   )
 
   useEffect(() => {
@@ -539,21 +608,23 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
     if (richiesta.current && usaBackend) fetch('/api/chat/interrompi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {})
     richiesta.current?.abort()
     richiesta.current = null
-    fermaAscolto.current()
-    fermaAscolto.current = () => {}
+    fermaComando()
     zittisci()
     livello.current = 0
     inizioRef.current = null
     setInizioTurno(null)
     setParziale('')
     setStato('pronto')
-    if (attivazioneRef.current) setTimeout(() => ascoltoContinuoRef.current(), 250)
-  }, [usaBackend])
+  }, [usaBackend, fermaComando])
+
+  useEffect(() => {
+    interrompiRef.current = interrompi
+  }, [interrompi])
 
   const parlaOInterrompi = useCallback(() => {
-    if (statoRef.current === 'pronto' || statoRef.current === 'successo') avviaAscolto(false)
+    if (statoRef.current === 'pronto' || statoRef.current === 'successo') ascoltaComando(true)
     else interrompi()
-  }, [avviaAscolto, interrompi])
+  }, [ascoltaComando, interrompi])
 
   // C'è un aggiornamento del codice che Pietro non ha ancora guardato? (controllo ogni 10 minuti)
   useEffect(() => {
@@ -571,15 +642,31 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
     return () => clearInterval(t)
   }, [usaBackend])
 
-  // Barra spaziatrice = parla / interrompi; Esc = interrompi
+  // Barra spaziatrice = parla / interrompi; Esc = chiude il menu oppure interrompe;
+  // basta iniziare a scrivere per aprire la chat
+  const menuApertoRef = useRef(menuAperto)
+  useEffect(() => {
+    menuApertoRef.current = menuAperto
+  }, [menuAperto])
   useEffect(() => {
     const tasto = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') return interrompi()
+      if (e.key === 'Escape') {
+        if (menuApertoRef.current) return setMenuAperto(false)
+        return interrompi()
+      }
       const el = e.target as HTMLElement
-      if (el.closest('input, textarea, button, [contenteditable]')) return
+      if (el.closest('input, textarea, select, [contenteditable], .j-codice')) return
+      // sui pulsanti la barra spaziatrice li preme: lì non attiva il microfono
+      if (e.code === 'Space' && el.closest('button')) return
       if (e.code === 'Space') {
         e.preventDefault()
         parlaOInterrompi()
+      } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault()
+        setMenuAperto(true)
+        setSezione('conversazione')
+        setTesto((t) => t + e.key)
+        setTimeout(() => campo.current?.focus(), 0)
       }
     }
     window.addEventListener('keydown', tasto)
@@ -637,11 +724,11 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
     const nuovo = !parolaAttivazione
     setParolaAttivazione(nuovo)
     attivazioneRef.current = nuovo
-    if (nuovo && statoRef.current === 'pronto') avviaAscolto(true)
-    if (!nuovo && statoRef.current !== 'elaborazione' && statoRef.current !== 'risposta') {
-      fermaAscolto.current()
-      fermaAscolto.current = () => {}
-      setStato((s) => (s === 'ascolto' ? 'pronto' : s))
+    riavvii.current = 0
+    if (nuovo) avviaSentinella()
+    else {
+      spegniSentinella()
+      if (!comandoInCorso.current) setStato((s) => (s === 'ascolto' ? 'pronto' : s))
     }
   }
 
@@ -672,11 +759,11 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
   const ultima = [...voci].reverse().find((v) => v.ruolo === 'assistant')
   const ultimaDomanda = [...voci].reverse().find((v) => v.ruolo === 'user')
   let parlato = ultima?.testo || SALUTO
-  if (stato === 'ascolto') parlato = parziale ? `«${parziale}»` : parolaAttivazione ? 'Ti ascolto. Di’ «Jarvis» e poi il comando.' : 'Ti ascolto.'
+  if (stato === 'ascolto') parlato = parziale ? `«${parziale}»` : 'Ti ascolto.'
   else if (conferme.length) parlato = `Mi serve il tuo permesso: ${conferme[0].descrizione}.`
   else if (stato === 'lavoro') parlato = `${strumento ?? 'Uso uno strumento'}…`
   else if (stato === 'elaborazione') parlato = ultimaDomanda ? `«${ultimaDomanda.testo}»` : 'Sto collegando le informazioni.'
-  else if (stato === 'pronto' && parolaAttivazione && !ultima) parlato = 'Sono in ascolto. Di’ «Jarvis» e poi il comando.'
+  else if (stato === 'pronto' && parolaAttivazione && !ultima) parlato = 'Quando ti serve, chiamami: «Jarvis…»'
 
   const [titoloEvento] = errore ? ['Attenzione'] : stato === 'lavoro' && strumento ? [strumento] : EVENTI[stato]
   const inAttesa = stato === 'pronto' || stato === 'successo'
@@ -687,38 +774,16 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
   const voceDaEdge = elencoVoci.some((v) => /natural|online/i.test(v.nome))
   const voceMenu = MENU.find((m) => m.id === sezione)!
 
+  const tendina = menuAperto || conferme.length > 0
+
   return (
     <div
       id="jarvis-interface"
       data-state={modo}
       data-tema={temaAttivo}
+      data-menu={tendina ? 'aperto' : undefined}
       style={{ '--j-accent': PALETTES[modo].css } as CSSProperties}
     >
-      {/* ───────── Sinistra: solo numeri ───────── */}
-      <aside className="j-numeri" aria-label="Statistiche">
-        <div className="j-numero j-numero-grande">
-          <span>In corso</span>
-          <b>{inizioTurno !== null ? `${secondi(Math.max(0, ora - inizioTurno))} s` : '—'}</b>
-          <small>{inizioTurno !== null ? titoloEvento : 'Nessuna attività'}</small>
-        </div>
-        <div className="j-numero">
-          <span>Attività neurale</span>
-          <b ref={livelloTesto}>—</b>
-        </div>
-        <div className="j-numero">
-          <span>Messaggi</span>
-          <b>{scambi}</b>
-        </div>
-        <div className="j-numero">
-          <span>Strumenti usati</span>
-          <b>{nStrumenti}</b>
-        </div>
-        <div className="j-numero">
-          <span>Tempo medio di risposta</span>
-          <b>{medio !== null ? `${secondi(medio)} s` : '—'}</b>
-        </div>
-      </aside>
-
       {/* ───────── Centro: la rete neurale (invariata) ───────── */}
       <main className="j-centro">
         <div className="j-stage" aria-label="Rete neurale tridimensionale animata. Trascina per ruotare, usa la rotella per avvicinarti.">
@@ -756,8 +821,37 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
         </div>
       </main>
 
-      {/* ───────── Destra: menu, contenuto e barra per scrivere ───────── */}
-      <aside className="j-pannello" aria-label="Comandi">
+      {/* ───────── Sotto la rete: solo il microfono e, se attivo, il promemoria «Jarvis» ───────── */}
+      <div className="j-sotto">
+        <button
+          type="button"
+          className="j-mic-centrale"
+          data-attivo={!inAttesa || undefined}
+          onClick={parlaOInterrompi}
+          aria-label={inAttesa ? 'Parla con Jarvis' : 'Interrompi'}
+          title={inAttesa ? 'Parla (barra spaziatrice)' : 'Interrompi (Esc)'}
+        >
+          <Icona nome={inAttesa ? 'microfono' : 'stop'} />
+        </button>
+        {parolaAttivazione && <span className="j-sentinella">di’ «Jarvis»</span>}
+      </div>
+
+      {/* ───────── Menu a tendina ───────── */}
+      <button
+        type="button"
+        className="j-tasto-menu"
+        aria-expanded={tendina}
+        aria-controls="j-tendina"
+        data-nuovo={(codiceNuovo && !tendina) || undefined}
+        onClick={() => setMenuAperto(!tendina)}
+        disabled={conferme.length > 0}
+        title={tendina ? 'Chiudi il menu (Esc)' : 'Apri il menu'}
+      >
+        <Icona nome={tendina ? 'chiudi' : 'menu'} />
+        <span>{tendina ? 'Chiudi' : 'Menu'}</span>
+      </button>
+
+      <aside id="j-tendina" className="j-pannello" aria-label="Menu di Jarvis" inert={!tendina}>
         <header className="j-pannello-testa">
           <div className="j-marchio">
             <span className="j-emblem" aria-hidden="true">
@@ -780,6 +874,7 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
               onClick={() => {
                 setCodiceAperto(true)
                 setCodiceNuovo(false)
+                setMenuAperto(false)
               }}
               title={codiceNuovo ? 'Codice: c’è un aggiornamento nuovo da guardare' : 'Codice: guarda come cambia Jarvis'}
               aria-label="Codice"
@@ -797,6 +892,30 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
             <Icona nome={vocale ? 'altoparlante' : 'muto'} />
           </button>
         </header>
+
+        <div className="j-numeri" aria-label="Statistiche">
+          <div className="j-numero j-numero-grande">
+            <span>In corso</span>
+            <b>{inizioTurno !== null ? `${secondi(Math.max(0, ora - inizioTurno))} s` : '—'}</b>
+            <small>{inizioTurno !== null ? titoloEvento : 'Nessuna attività'}</small>
+        </div>
+          <div className="j-numero">
+            <span>Attività neurale</span>
+            <b ref={livelloTesto}>—</b>
+        </div>
+          <div className="j-numero">
+            <span>Messaggi</span>
+            <b>{scambi}</b>
+        </div>
+          <div className="j-numero">
+            <span>Strumenti usati</span>
+            <b>{nStrumenti}</b>
+        </div>
+          <div className="j-numero">
+            <span>Tempo medio</span>
+            <b>{medio !== null ? `${secondi(medio)} s` : '—'}</b>
+        </div>
+        </div>
 
         <nav className="j-menu" aria-label="Menu">
           {MENU.map((m) => (
@@ -912,8 +1031,8 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
 
               <label className="j-riga" htmlFor="ascolto-continuo">
                 <span>
-                  Ascolto continuo
-                  <small>Risponde quando dici «Jarvis, …»</small>
+                  Attivazione con la voce
+                  <small>Come Alexa: di’ «Jarvis, …» quando ti serve, anche mentre parla. «Jarvis, basta» lo ferma.</small>
                 </span>
                 <input
                   id="ascolto-continuo"

@@ -9,7 +9,7 @@ body {
   height: 100%;
 }
 body {
-  background: #edf1f4;
+  background: #03090f;
 }
 button,
 input,
@@ -33,14 +33,12 @@ select {
   --errore: #c2412d;
   --raggio: 22px;
 
+  /* a schermo intero: solo la rete al centro su fondo scuro; il resto si apre a tendina */
+  position: relative;
   height: 100dvh;
-  display: grid;
-  grid-template-columns: minmax(170px, 210px) minmax(0, 1fr) minmax(340px, 400px);
-  gap: 18px;
-  padding: 18px;
   box-sizing: border-box;
   overflow: hidden;
-  background: var(--sfondo);
+  background: #03090f;
   color: var(--inchiostro);
   font-family: 'Aptos', 'Segoe UI', system-ui, Arial, sans-serif;
   font-size: 14px;
@@ -88,50 +86,52 @@ select {
   flex: none;
 }
 
-/* ───────── Sinistra: numeri ───────── */
+/* ───────── Numeri (nella tendina, in una riga) ───────── */
 
 .j-numeri {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-  padding: 26px 6px 0 8px;
-  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px 8px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--carta-2);
 }
 .j-numero {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  min-width: 0;
 }
 .j-numero span {
-  font-size: 11px;
+  font-size: 9.5px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--tenue);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .j-numero b {
-  font-size: 28px;
-  font-weight: 300;
-  letter-spacing: -0.02em;
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
-.j-numero-grande b {
-  font-size: 40px;
-}
 .j-numero small {
-  font-size: 12px;
+  font-size: 10.5px;
   color: var(--tenue);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ───────── Centro: la rete neurale (come l'originale) ───────── */
 
 .j-centro {
-  min-width: 0;
-  min-height: 0;
-  border-radius: 28px;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  background: radial-gradient(ellipse at 50% 40%, #0a2535, #03090f 65%);
-  box-shadow: var(--ombra);
-  position: relative;
+  background: radial-gradient(ellipse at 50% 42%, #0a2535, #03090f 62%);
   color-scheme: dark;
   color: #e2f4f8;
   --j-ink: #e2f4f8;
@@ -174,7 +174,7 @@ select {
 }
 .j-stage-caption {
   position: absolute;
-  bottom: 122px;
+  bottom: 190px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -230,7 +230,7 @@ select {
 .j-dialogue {
   position: absolute;
   z-index: 5;
-  bottom: 24px;
+  bottom: 104px;
   left: 12%;
   width: 76%;
   text-align: center;
@@ -276,15 +276,108 @@ select {
 /* ───────── Destra: pannello ───────── */
 
 .j-pannello {
-  min-width: 0;
-  min-height: 0;
+  /* il menu a tendina: scende dal pulsante in alto a destra */
+  position: absolute;
+  z-index: 20;
+  top: 74px;
+  right: 18px;
+  width: min(420px, calc(100% - 36px));
+  height: calc(100% - 92px);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   padding: 16px;
   border-radius: var(--raggio);
-  background: var(--carta);
-  box-shadow: var(--ombra);
+  background: color-mix(in srgb, var(--carta) 94%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 60px rgb(0 0 0 / 0.45);
+  border: 1px solid var(--linea);
+  transform-origin: top right;
+  transition: opacity 0.22s ease, transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 0.26s;
+}
+#jarvis-interface:not([data-menu]) .j-pannello {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px) scale(0.97);
+}
+#jarvis-interface[data-menu] .j-pannello {
+  transition-delay: 0s;
+}
+
+/* pulsante del menu e microfono sotto la rete: discreti, sul fondo scuro */
+.j-tasto-menu {
+  position: absolute;
+  z-index: 21;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 16px 0 13px;
+  border-radius: 999px;
+  color: #d3e8ef;
+  background: rgb(10 30 42 / 0.6) !important;
+  border: 1px solid rgb(119 230 237 / 0.18) !important;
+  backdrop-filter: blur(8px);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  transition: background 0.2s, border-color 0.2s;
+}
+.j-tasto-menu:hover {
+  border-color: rgb(119 230 237 / 0.45) !important;
+}
+#jarvis-interface .j-tasto-menu:disabled {
+  opacity: 0.5;
+}
+.j-tasto-menu[data-nuovo]::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #77e6ed;
+  box-shadow: 0 0 10px #77e6ed;
+  animation: j-batte 1.8s ease-in-out infinite;
+}
+.j-sotto {
+  position: absolute;
+  z-index: 6;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.j-mic-centrale {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--j-accent);
+  background: rgb(10 30 42 / 0.55) !important;
+  border: 1px solid color-mix(in srgb, var(--j-accent) 45%, transparent) !important;
+  box-shadow: 0 0 22px color-mix(in srgb, var(--j-accent) 18%, transparent);
+  transition: transform 0.15s, box-shadow 0.25s, color 0.25s;
+}
+.j-mic-centrale:hover {
+  transform: scale(1.05);
+}
+.j-mic-centrale[data-attivo] {
+  color: #03090f;
+  background: var(--j-accent) !important;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--j-accent) 22%, transparent), 0 0 30px var(--j-accent);
+}
+.j-sentinella {
+  font: 9px monospace;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #5d8d99;
 }
 
 .j-pannello-testa {
@@ -899,8 +992,8 @@ select {
 /* avvisi */
 .j-toast {
   position: fixed;
-  z-index: 10;
-  bottom: 24px;
+  z-index: 30;
+  top: 74px;
   left: 50%;
   transform: translateX(-50%);
   width: min(460px, calc(100% - 32px));
@@ -1369,37 +1462,23 @@ select {
   white-space: nowrap;
 }
 
-@media (max-width: 1000px) {
-  #jarvis-interface {
-    height: auto;
-    min-height: 100dvh;
-    overflow: visible;
-    grid-template-columns: 1fr;
-    padding: 12px;
-    gap: 12px;
-  }
-  .j-centro {
-    order: 1;
-    height: 62vh;
-    min-height: 380px;
-  }
+@media (max-width: 760px) {
   .j-pannello {
-    order: 2;
-    min-height: 70vh;
+    top: 72px;
+    right: 12px;
+    width: calc(100% - 24px);
+    height: calc(100% - 84px);
   }
-  .j-numeri {
-    order: 3;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 16px 24px;
-    padding: 8px 6px 20px;
-  }
-  .j-numero b,
-  .j-numero-grande b {
-    font-size: 24px;
+  .j-tasto-menu {
+    top: max(14px, env(safe-area-inset-top, 0px));
+    right: 12px;
   }
   .j-callout {
     display: none;
+  }
+  .j-dialogue {
+    left: 6%;
+    width: 88%;
   }
   .j-dialogue p {
     font-size: 16px;

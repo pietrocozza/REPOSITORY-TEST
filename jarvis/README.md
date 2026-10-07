@@ -50,8 +50,9 @@ In **PowerShell**, dentro la cartella `jarvis`:
 npm start
 ```
 
-Jarvis si apre in una finestra tutta sua (Microsoft Edge in modalità app). Per spegnerlo premi **Ctrl+C**
-nella finestra di PowerShell, oppure chiudi quella finestra.
+Jarvis si apre in una finestra tutta sua (Microsoft Edge in modalità app, con un profilo separato:
+microfono e impostazioni valgono solo per Jarvis). Per spegnerlo premi **Ctrl+C** nella finestra di PowerShell,
+oppure chiudi quella finestra.
 
 ### Icona sul desktop (consigliato)
 
@@ -67,20 +68,28 @@ Se Jarvis è già acceso, il doppio clic riapre solo la finestra.
 
 ## Come si usa
 
-- **Al centro** la rete neurale: cambia colore e ritmo a seconda di quello che fa Jarvis. Trascinala per ruotarla.
-- **A destra** tutto il resto: il menu, la conversazione e, in fondo, la barra per scrivere (sempre visibile).
-- **A sinistra** i numeri: attività in corso, messaggi, strumenti usati, tempo medio di risposta.
+Normalmente vedi solo Jarvis: la rete neurale al centro, su fondo scuro, con sotto quello che dice e il microfono.
+Tutto il resto sta nel **Menu** in alto a destra, che scende a tendina solo quando ti serve.
+
+**Come Alexa.** Di' **«Jarvis, …»** e la domanda, per esempio «Jarvis, che tempo fa domani a Roma?».
+Quando ti sente fa un piccolo suono e la rete diventa verde. Puoi anche dire solo «Jarvis», aspettare il suono
+e poi parlare. Funziona anche mentre sta parlando: «Jarvis, basta» lo ferma.
+La prima volta la finestra di Jarvis chiede il permesso per il microfono: rispondi **Consenti**.
 
 | Azione | Come |
 | --- | --- |
-| Scrivere | barra in basso a destra, poi Invio |
-| Parlare | pulsante del microfono oppure **barra spaziatrice** (consenti il microfono la prima volta) |
-| Interrompere | lo stesso pulsante (diventa un quadrato) oppure **Esc** |
-| Voce on/off | icona dell'altoparlante in alto a destra |
-| Personalità (Maggiordomo inglese, Imprenditore brillante, Milanese doc, Essenziale) | **Impostazioni** nel menu |
-| Tema chiaro/scuro, scelta della voce, velocità, ascolto continuo | **Impostazioni** nel menu |
+| Parlare | «Jarvis, …», oppure il microfono sotto la rete, oppure la **barra spaziatrice** |
+| Scrivere | inizia a scrivere con la tastiera: si apre la chat; poi Invio |
+| Interrompere | «Jarvis, basta», il pulsante sotto la rete (diventa un quadrato) oppure **Esc** |
+| Aprire/chiudere il menu | **Menu** in alto a destra; **Esc** lo chiude |
+| Voce on/off | icona dell'altoparlante nel menu |
+| Attivazione con la voce on/off, personalità, tema, voce, velocità | **Impostazioni** nel menu |
 | Nuova conversazione | **Nuova**, sopra la chat |
-| Guardare come cambia Jarvis (il codice di ogni aggiornamento che si scrive da solo) | icona **</>** in alto a destra; il pallino azzurro indica un aggiornamento nuovo. **Esc** per chiudere |
+| Guardare come cambia Jarvis (il codice di ogni aggiornamento che si scrive da solo) | icona **</>** nel menu; il pallino azzurro indica un aggiornamento nuovo. **Esc** per chiudere |
+
+Il riconoscimento della voce lo fa il browser: in Edge passa dai server Microsoft (in Chrome da quelli Google),
+mentre l'attivazione è accesa. Se preferisci, si spegne in **Impostazioni → Attivazione con la voce**.
+In una fase successiva si potrà fare tutto sul PC, senza Internet.
 
 Le voci più naturali (gratuite) sono quelle "Natural" di **Microsoft Edge**: apri Jarvis con Edge e scegli la voce
 in Impostazioni (quelle con la ★).

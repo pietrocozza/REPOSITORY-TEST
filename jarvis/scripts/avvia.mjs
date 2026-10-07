@@ -56,12 +56,26 @@ process.on('SIGTERM', () => spegni(0))
 
 // Apre Jarvis: su Windows in una finestra tutta sua (Microsoft Edge in modalità app, senza barra degli indirizzi,
 // con le voci "Natural"); altrove nel browser predefinito. JARVIS_FINESTRA_APP=0 per usare il browser normale.
+// La finestra di Jarvis è un Edge separato (profilo suo, in data/finestra-edge), così:
+//  - può parlare e fare il suono di attivazione appena sente «Jarvis», senza aspettare un clic
+//    (un Edge normale blocca l'audio delle pagine finché non le tocchi);
+//  - il permesso del microfono e le impostazioni restano solo per Jarvis.
+function opzioniFinestra() {
+  return [
+    `--app=${INDIRIZZO}`,
+    `--user-data-dir=${path.join(radice, 'data', 'finestra-edge')}`,
+    '--autoplay-policy=no-user-gesture-required',
+    '--no-first-run',
+    '--no-default-browser-check',
+  ]
+}
+
 function apriFinestra() {
   if (process.env.JARVIS_NON_APRIRE_BROWSER) return
   const app = process.platform === 'win32' && process.env.JARVIS_FINESTRA_APP !== '0'
   const comando =
     process.platform === 'win32'
-      ? ['cmd', app ? ['/c', 'start', '', 'msedge', `--app=${INDIRIZZO}`] : ['/c', 'start', '', INDIRIZZO]]
+      ? ['cmd', app ? ['/c', 'start', '', 'msedge', ...opzioniFinestra()] : ['/c', 'start', '', INDIRIZZO]]
       : process.platform === 'darwin'
         ? ['open', [INDIRIZZO]]
         : ['xdg-open', [INDIRIZZO]]
