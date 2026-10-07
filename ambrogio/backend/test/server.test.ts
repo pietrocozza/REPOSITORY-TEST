@@ -69,7 +69,7 @@ test('se la modalità veloce non funziona, Ambrogio risponde lo stesso con quell
   const a = new Agente({ ...cfg, cartellaDati: dati, cartellaLavoro: path.join(dati, 'agente') }, { comando: process.execPath, prefisso: [FINTO], shell: false, descrizione: 'finto' })
   process.env.FINTO_SCENARIO = 'rotto'
   const eventi: { tipo: string }[] = []
-  assert.equal(await a.chat('ciao', (e) => eventi.push(e)), 'ok')
+  assert.equal(await a.chat('raccontami una cosa', (e) => eventi.push(e)), 'ok')
   assert.equal(a.modalita, 'un avvio per messaggio')
   assert.ok(!eventi.some((e) => e.tipo === 'errore'), "l'errore della modalità veloce non deve arrivare all'interfaccia")
   assert.equal(eventi.at(-1)?.tipo, 'fine')
@@ -93,7 +93,7 @@ test('personalità: elenco, cambio, salvataggio e nuove istruzioni a Claude Code
   assert.equal(JSON.parse(fs.readFileSync(path.join(tmp, 'impostazioni.json'), 'utf8')).personalita, 'imprenditore')
 
   process.env.FINTO_SCENARIO = 'ok'
-  await (await chat('ciao')).text()
+  await (await chat('raccontami una barzelletta')).text()
   const istruzioni = fs.readFileSync(path.join(tmp, 'agente', 'istruzioni-ambrogio.txt'), 'utf8')
   assert.ok(istruzioni.includes('mi consenta'), 'Claude Code deve ripartire con la nuova personalità')
 })
@@ -108,4 +108,12 @@ test('codice: elenco degli aggiornamenti e protezione degli indirizzi', async ()
   assert.ok(Array.isArray(((await d.json()) as { file: unknown }).file))
   assert.equal((await fetch(`${base}/api/codice/abc`, { headers: h })).status, 400)
   assert.equal((await fetch(`${base}/api/codice`, { headers: { Origin: 'https://sito-malevolo.example' } })).status, 403)
+})
+
+test('domanda elementare: risposta immediata senza Claude', async () => {
+  const inizio = Date.now()
+  const eventi = (await (await chat('Ambrogio, che ore sono?')).text()).trim().split('\n').map((r) => JSON.parse(r))
+  assert.deepEqual(eventi.map((e) => e.tipo), ['testo', 'fine'])
+  assert.match(eventi[0].testo, /^(Sono le|È )/)
+  assert.ok(Date.now() - inizio < 1000)
 })

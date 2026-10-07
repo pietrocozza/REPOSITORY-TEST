@@ -9,6 +9,7 @@ import path from 'node:path'
 import { Database } from '../database/db.ts'
 import { GestorePermessi } from '../permessi/gestore.ts'
 import { STRUMENTI } from '../strumenti/catalogo.ts'
+import { rispostaPronta } from './risposte-pronte.ts'
 
 export type Servizi = { db?: Database; gestore?: GestorePermessi; mcp?: { url: string; chiave: string } }
 
@@ -166,6 +167,17 @@ export class Agente {
     const sessioneTurno = this.sessioni.attuale.id
     this.db.salvaMessaggio(sessioneTurno, 'user', messaggio)
     this.db.registra('messaggio', `Richiesta: ${messaggio.length > 90 ? messaggio.slice(0, 90) + '…' : messaggio}`)
+
+    // domande elementari (ora, data, saluti…): risposta immediata, senza Claude
+    const pronta = rispostaPronta(messaggio, { appellativo: this.config.appellativo })
+    if (pronta) {
+      if (this.inCorso === controller) this.inCorso = null
+      this.db.salvaMessaggio(sessioneTurno, 'assistant', pronta)
+      this.db.registra('messaggio', 'Risposta pronta (senza Claude)')
+      onEvento({ tipo: 'testo', testo: pronta })
+      onEvento({ tipo: 'fine', sessione: sessioneTurno, durataMs: Date.now() - inizio, strumentiUsati: [] })
+      return 'ok' as const
+    }
     const inoltra = (e: EventoAgente) => {
       if (e.tipo === 'stato' && e.stato === 'WORKING' && e.strumento) {
         if (!strumentiUsati.includes(e.strumento)) strumentiUsati.push(e.strumento)

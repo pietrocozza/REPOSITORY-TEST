@@ -1,0 +1,110 @@
+// Risposte pronte: le domande elementari (ora, data, saluti, «come ti chiami», piccoli calcoli)
+// hanno una risposta immediata calcolata qui, senza disturbare Claude. Tutto il resto va a Claude.
+// Si riconoscono solo frasi brevi e precise: nel dubbio la domanda passa a Claude.
+
+type Contesto = { appellativo: string; adesso?: Date; caso?: () => number }
+
+const FUSO = 'Europe/Rome'
+
+const scegli = (frasi: string[], caso: () => number) => frasi[Math.floor(caso() * frasi.length) % frasi.length]
+
+/** minuscole, senza punteggiatura, senza il nome «Ambrogio» e senza le formule di cortesia */
+export function normalizza(frase: string) {
+  let t = frase
+    .toLowerCase()
+    .replace(/[’`]/g, "'")
+    .replace(/[^\p{L}\p{N}'+\-*/×÷,.\s]/gu, ' ')
+    .replace(/(?<!\d)[.,](?!\d)/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const cortesie = /^(?:ambrogio|ehi ambrogio|ok ambrogio|scusa|scusami|per favore|per piacere|senti|dimmi|mi dici|mi sai dire|sai dirmi|puoi dirmi|ma)\s+/
+  for (let i = 0; i < 4 && cortesie.test(t); i++) t = t.replace(cortesie, '')
+  return t.replace(/\s+(?:ambrogio|per favore|per piacere|grazie)$/, '').trim()
+}
+
+function oraParlata(adesso: Date) {
+  const [h, m] = new Intl.DateTimeFormat('it-IT', { hour: 'numeric', minute: 'numeric', hourCycle: 'h23', timeZone: FUSO })
+    .format(adesso)
+    .split(':')
+    .map(Number)
+  const minuti = m === 0 ? ' in punto' : ` e ${m}`
+  if (h === 0) return `È mezzanotte${minuti}`
+  if (h === 12) return `È mezzogiorno${minuti}`
+  if (h === 1 || h === 13) return `È l'una${minuti}`
+  return `Sono le ${h}${minuti}`
+}
+
+const dataParlata = (adesso: Date) =>
+  new Intl.DateTimeFormat('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: FUSO }).format(adesso)
+
+const momento = (adesso: Date) => {
+  const h = Number(new Intl.DateTimeFormat('it-IT', { hour: 'numeric', hourCycle: 'h23', timeZone: FUSO }).format(adesso))
+  return h < 5 ? 'notte' : h < 13 ? 'mattina' : h < 18 ? 'pomeriggio' : 'sera'
+}
+
+const numero = (n: number) => (Number.isInteger(n) ? n : Math.round(n * 1000) / 1000).toLocaleString('it-IT', { maximumFractionDigits: 3 })
+
+function calcolo(t: string): string | null {
+  const m = t.match(/^(?:quanto fa|quanto è|quanto e|calcola|fa)?\s*(-?\d+(?:[.,]\d+)?)\s*(\+|più|piu|-|meno|x|×|\*|per|\/|÷|diviso(?: per)?)\s*(-?\d+(?:[.,]\d+)?)$/)
+  if (!m) return null
+  const a = Number(m[1].replace(',', '.'))
+  const b = Number(m[3].replace(',', '.'))
+  const op = m[2]
+  let r: number
+  let parola: string
+  if (['+', 'più', 'piu'].includes(op)) [r, parola] = [a + b, 'più']
+  else if (['-', 'meno'].includes(op)) [r, parola] = [a - b, 'meno']
+  else if (['x', '×', '*', 'per'].includes(op)) [r, parola] = [a * b, 'per']
+  else {
+    if (b === 0) return 'Diviso zero non si può, nemmeno per un maggiordomo.'
+    ;[r, parola] = [a / b, 'diviso']
+  }
+  return `${numero(a)} ${parola} ${numero(b)} fa ${numero(r)}.`
+}
+
+type Regola = { frasi: RegExp; risposta: (c: Required<Contesto>) => string }
+
+const REGOLE: Regola[] = [
+  {
+    frasi: /^(?:che ore sono|che ora è|che ora e|che ore son|l'ora|ora|sai che ore sono|che ore sono adesso|che ore sono ora)$/,
+    risposta: (c) => `${oraParlata(c.adesso)}.`,
+  },
+  {
+    frasi: /^(?:(?:oggi )?che giorno è(?: oggi)?|(?:oggi )?che giorno e(?: oggi)?|che data è(?: oggi)?|che data e(?: oggi)?|quanti ne abbiamo(?: oggi)?|che giorno della settimana è(?: oggi)?)$/,
+    risposta: (c) => `Oggi è ${dataParlata(c.adesso)}.`,
+  },
+  {
+    frasi: /^(?:ciao|salve|ehi|ehilà|eccomi|buongiorno|buon giorno|buon pomeriggio|buonasera|buona sera|ci sei|sei lì|sei li|sei sveglio|mi senti)$/,
+    risposta: (c) => {
+      const m = momento(c.adesso)
+      const saluto = m === 'mattina' ? 'Buongiorno' : m === 'pomeriggio' ? 'Buon pomeriggio' : m === 'sera' ? 'Buonasera' : 'Buonanotte'
+      return scegli([`${saluto}, ${c.appellativo}. Sono qui, cosa posso fare per te?`, `${saluto}, ${c.appellativo}. Ai tuoi ordini.`, `Eccomi, ${c.appellativo}. Dimmi pure.`], c.caso)
+    },
+  },
+  {
+    frasi: /^(?:grazie|grazie mille|grazie tante|ti ringrazio|perfetto grazie|ok grazie|va bene grazie|ottimo grazie|grazie ambrogio)$/,
+    risposta: (c) => scegli([`Dovere, ${c.appellativo}.`, 'È un piacere.', 'Sempre a disposizione.', 'Figurati, è il mio mestiere.'], c.caso),
+  },
+  {
+    frasi: /^(?:chi sei|chi sei tu|come ti chiami|qual è il tuo nome|presentati|tu chi sei)$/,
+    risposta: (c) => `Sono Ambrogio, il tuo maggiordomo personale. Tengo a mente le tue cose, cerco quello che ti serve e sbrigo le faccende, ${c.appellativo}.`,
+  },
+  {
+    frasi: /^(?:come stai|come va|tutto bene|come ti senti|come butta)$/,
+    risposta: (c) => scegli(['Benissimo, grazie. Pronto a servirti.', 'In gran forma, come sempre. E tu?', 'Tutto in ordine, grazie. Cosa posso fare per te?'], c.caso),
+  },
+  {
+    frasi: /^(?:buonanotte|buona notte|notte|vado a dormire)$/,
+    risposta: (c) => scegli([`Buonanotte, ${c.appellativo}. Riposa bene.`, `Buonanotte, ${c.appellativo}. Qui ci penso io.`], c.caso),
+  },
+]
+
+/** La risposta immediata, oppure null se la domanda va a Claude. */
+export function rispostaPronta(frase: string, contesto: Contesto): string | null {
+  const t = normalizza(frase)
+  if (!t || t.length > 60) return null
+  const c = { adesso: new Date(), caso: Math.random, ...contesto }
+  const conto = calcolo(t)
+  if (conto) return conto
+  return REGOLE.find((r) => r.frasi.test(t))?.risposta(c) ?? null
+}

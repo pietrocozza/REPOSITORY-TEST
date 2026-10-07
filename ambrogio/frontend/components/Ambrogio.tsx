@@ -103,6 +103,18 @@ const EVENTI: Record<Stato, [string, string]> = {
 
 const SALUTO = 'Ambrogio, al tuo servizio. Da dove cominciamo?'
 
+// Detta subito quando serve cercare online, così l'attesa non è un silenzio
+const FRASI_RICERCA = [
+  'Certo, signore. Cerco subito.',
+  'Subito, signore: do un’occhiata in rete.',
+  'Un istante, signore, sto cercando.',
+  'Lo verifico subito, signore.',
+  'Ci penso io, signore. Un attimo che controllo.',
+]
+// Domande che quasi certamente richiedono una ricerca: la frase parte prima ancora che Claude risponda
+const SERVE_RICERCA =
+  /\b(meteo|che tempo fa|pioverà|piove|notizi|news|prezz|quanto costa|risultat|partit|classifica|borsa|cambio|orari|apert[oa]|chiuso|cerca|cercami|trova|trovami|ultim[ei] |oggi in tv|chi ha vinto)/i
+
 let prossimoId = 1
 
 export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi }) {
@@ -135,6 +147,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   const [ora, setOra] = useState(0)
   const [senzaWebgl, setSenzaWebgl] = useState(false)
   const [strumento, setStrumento] = useState<string | null>(null)
+  const [fraseAttesa, setFraseAttesa] = useState<string | null>(null)
 
   // Valori letti dentro callback asincrone: tenuti in ref per non leggere versioni vecchie
   const livello = useRef(0)
@@ -529,6 +542,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       setParziale('')
       setStato('elaborazione')
       setStrumento(null)
+      setFraseAttesa(null)
       const adesso = Date.now()
       inizioRef.current = adesso
       setInizioTurno(adesso)
@@ -542,6 +556,16 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       richiesta.current = controller
       let buffer = ''
       let primo = true
+      // frase di cortesia per le ricerche (una sola per domanda)
+      let cortesiaDetta = false
+      const cortesia = () => {
+        if (cortesiaDetta || !primo) return
+        cortesiaDetta = true
+        const frase = FRASI_RICERCA[Math.floor(Math.random() * FRASI_RICERCA.length)]
+        setFraseAttesa(frase)
+        if (vocaleRef.current) parla(frase, t)
+      }
+      if (SERVE_RICERCA.test(pulita)) setTimeout(() => t === turno.current && primo && cortesia(), 350)
 
       try {
         await chiedi(pulita, {
@@ -549,6 +573,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
           onStato: (e) => {
             if (t !== turno.current) return
             if (e.stato === 'WORKING') {
+              if (e.strumento === 'WebSearch' || e.strumento === 'WebFetch') cortesia()
               strumentiUsati.current = true
               setNStrumenti((n) => n + 1)
               setStrumento(e.descrizione ?? e.strumento ?? null)
@@ -649,8 +674,14 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   // Barra spaziatrice = parla / interrompi; Esc = chiude il menu oppure interrompe;
   // basta iniziare a scrivere per aprire la chat
   const menuApertoRef = useRef(menuAperto)
+  // si sta aprendo la chat perché hai iniziato a scrivere: i tasti vanno nella casella, spazio compreso
+  const scritturaInArrivo = useRef(false)
   useEffect(() => {
     menuApertoRef.current = menuAperto
+    if (menuAperto && scritturaInArrivo.current) {
+      scritturaInArrivo.current = false
+      campo.current?.focus()
+    }
   }, [menuAperto])
   useEffect(() => {
     const tasto = (e: KeyboardEvent) => {
@@ -661,16 +692,22 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       const el = e.target as HTMLElement
       if (el.closest('input, textarea, select, [contenteditable], .j-codice')) return
       // sui pulsanti la barra spaziatrice li preme: lì non attiva il microfono
-      if (e.code === 'Space' && el.closest('button')) return
-      if (e.code === 'Space') {
+      if (e.code === 'Space' && el.closest('button') && !scritturaInArrivo.current) return
+      if (e.code === 'Space' && !scritturaInArrivo.current) {
         e.preventDefault()
         parlaOInterrompi()
+      } else if (e.key === 'Enter' && scritturaInArrivo.current) {
+        e.preventDefault()
+        scritturaInArrivo.current = false
+        inviaRef.current(campo.current?.value ?? '')
+        setTesto('')
       } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault()
+        if (!menuApertoRef.current || document.activeElement !== campo.current) scritturaInArrivo.current = true
         setMenuAperto(true)
         setSezione('conversazione')
         setTesto((t) => t + e.key)
-        setTimeout(() => campo.current?.focus(), 0)
+        if (menuApertoRef.current) campo.current?.focus()
       }
     }
     window.addEventListener('keydown', tasto)
@@ -762,10 +799,11 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
 
   const ultima = [...voci].reverse().find((v) => v.ruolo === 'assistant')
   const ultimaDomanda = [...voci].reverse().find((v) => v.ruolo === 'user')
-  let parlato = ultima?.testo || SALUTO
+  let parlato = ultima?.testo || fraseAttesa || SALUTO
   if (stato === 'ascolto') parlato = parziale ? `«${parziale}»` : 'Ti ascolto.'
   else if (conferme.length) parlato = `Mi serve il tuo permesso: ${conferme[0].descrizione}.`
   else if (stato === 'lavoro') parlato = `${strumento ?? 'Uso uno strumento'}…`
+  else if (stato === 'elaborazione' && !ultima?.testo && fraseAttesa) parlato = fraseAttesa
   else if (stato === 'elaborazione') parlato = ultimaDomanda ? `«${ultimaDomanda.testo}»` : 'Sto collegando le informazioni.'
   else if (stato === 'pronto' && parolaAttivazione && !ultima) parlato = 'Quando ti serve, chiamami: «Ambrogio…»'
 
