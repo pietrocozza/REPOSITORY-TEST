@@ -1,0 +1,11 @@
+{
+  "name": "ambrogio-backend",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Backend locale di Ambrogio: agente (Claude Code), strumenti, permessi, memoria, automazioni",
+  "scripts": {
+    "start": "node src/index.ts",
+    "test": "node --test \"test/*.test.ts\""
+  }
+}
