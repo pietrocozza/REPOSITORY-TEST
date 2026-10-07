@@ -27,8 +27,8 @@ const VELOCITA = [
   { nome: '10×', cps: 700 },
 ]
 // "costo" in caratteri di ogni elemento: le righe aggiunte si scrivono lettera per lettera, il resto compare
-const COSTO_FILE = 45
-const costoRiga = (r: RigaCodice) => (r.tipo === 'aggiunta' ? r.testo.length + 2 : r.tipo === 'tolta' ? 6 : 1)
+export const COSTO_FILE = 45
+export const costoRiga = (r: RigaCodice) => (r.tipo === 'aggiunta' ? r.testo.length + 2 : r.tipo === 'tolta' ? 6 : 1)
 
 // Cosa contiene ogni parte del progetto, detto semplice
 const ZONE: [RegExp, string][] = [
@@ -63,7 +63,7 @@ const quando = (data: string) =>
   new Date(data).toLocaleString('it-IT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
 
 /** Una riga del codice: si ridisegna solo quando cambiano i caratteri visibili */
-const Riga = memo(function Riga({ riga, percorso, mostrati, cursore }: { riga: RigaCodice; percorso: string; mostrati: number; cursore: boolean }) {
+export const Riga = memo(function Riga({ riga, percorso, mostrati, cursore }: { riga: RigaCodice; percorso: string; mostrati: number; cursore: boolean }) {
   const pezzi = useMemo(() => (riga.tipo === 'salto' ? [] : evidenzia(riga.testo, percorso)), [riga, percorso])
   if (riga.tipo === 'salto') {
     return (

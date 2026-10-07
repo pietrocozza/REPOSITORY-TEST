@@ -3,7 +3,7 @@ import { eseguiTurno, ProcessoClaude, type Avvio, type EsitoTurno } from './clau
 import type { Eseguibile } from './eseguibile.ts'
 import type { EventoAgente } from './eventi.ts'
 import { istruzioni, PERSONALITA, type IdPersonalita } from './istruzioni.ts'
-import { ArchivioImpostazioni } from '../impostazioni.ts'
+import { ArchivioImpostazioni, type Cervello } from '../impostazioni.ts'
 import { ArchivioSessione } from './sessione.ts'
 import path from 'node:path'
 import { Database } from '../database/db.ts'
@@ -74,7 +74,8 @@ export class Agente {
       cartellaLavoro: this.config.cartellaLavoro,
       istruzioni: istruzioni(this.config.appellativo, this.impostazioni.attuali.personalita, this.sintesiMemoria()),
       strumenti: STRUMENTI_INTEGRATI,
-      modello: this.config.claude.modello || undefined,
+      // il modello scritto nel file .env vince; altrimenti decide l'impostazione «cervello»
+      modello: this.config.claude.modello || (this.impostazioni.attuali.cervello === 'rapido' ? 'haiku' : undefined),
       effort: this.config.claude.effort || undefined,
       consentiApiAConsumo: this.config.claude.consentiApiAConsumo,
       onSessioneAperta: () => this.sessioni.segnaAvviata(),
@@ -94,6 +95,18 @@ export class Agente {
   /** come deve parlare la voce di Ambrogio (accento e tono, a parole) */
   get stileVoce() {
     return this.impostazioni.attuali.stileVoce
+  }
+
+  get cervello() {
+    return this.impostazioni.attuali.cervello
+  }
+
+  /** Rapido o bilanciato: Claude Code riparte con l'altro modello appena è libero (la conversazione continua) */
+  impostaCervello(c: Cervello) {
+    if (c === this.cervello) return
+    this.impostazioni.aggiorna({ cervello: c })
+    if (this.inCorso) this.daRiavviare = true
+    else this.riavvia()
   }
 
   impostaStileVoce(stile: string) {

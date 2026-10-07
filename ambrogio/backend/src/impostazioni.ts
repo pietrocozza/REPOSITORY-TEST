@@ -9,9 +9,13 @@ export const STILE_VOCE_PREDEFINITO = `Sei Ambrogio, un maggiordomo milanese sui
 Parla in italiano con un accento milanese marcato e costante dalla prima all'ultima parola: vocali chiuse (la "e" e la "o" chiuse alla milanese), cadenza meneghina, tono sorridente.
 Ritmo vivace ma chiaro. Le parole in dialetto milanese pronunciale da milanese doc.`
 
-export type ImpostazioniAgente = { personalita: IdPersonalita; stileVoce: string }
+/** Il "cervello": rapido (Claude Haiku, risponde molto prima) o bilanciato (il modello predefinito dell'abbonamento) */
+export type Cervello = 'rapido' | 'bilanciato'
+export const cervelloValido = (c: unknown): c is Cervello => c === 'rapido' || c === 'bilanciato'
 
-const PREDEFINITE: ImpostazioniAgente = { personalita: 'maggiordomo', stileVoce: STILE_VOCE_PREDEFINITO }
+export type ImpostazioniAgente = { personalita: IdPersonalita; stileVoce: string; cervello: Cervello }
+
+const PREDEFINITE: ImpostazioniAgente = { personalita: 'maggiordomo', stileVoce: STILE_VOCE_PREDEFINITO, cervello: 'rapido' }
 
 export class ArchivioImpostazioni {
   private file: string
@@ -24,6 +28,7 @@ export class ArchivioImpostazioni {
       const dati = JSON.parse(fs.readFileSync(this.file, 'utf8'))
       if (personalitaValida(dati.personalita)) this.valori.personalita = dati.personalita
       if (typeof dati.stileVoce === 'string' && dati.stileVoce.trim()) this.valori.stileVoce = dati.stileVoce.slice(0, 1500)
+      if (cervelloValido(dati.cervello)) this.valori.cervello = dati.cervello
     } catch {
       // nessuna impostazione salvata: valori predefiniti
     }
@@ -35,6 +40,7 @@ export class ArchivioImpostazioni {
 
   aggiorna(nuove: Partial<ImpostazioniAgente>) {
     if (nuove.personalita && personalitaValida(nuove.personalita)) this.valori.personalita = nuove.personalita
+    if (cervelloValido(nuove.cervello)) this.valori.cervello = nuove.cervello
     // stile vuoto = si torna a quello predefinito
     if (typeof nuove.stileVoce === 'string') this.valori.stileVoce = nuove.stileVoce.trim().slice(0, 1500) || STILE_VOCE_PREDEFINITO
     fs.mkdirSync(path.dirname(this.file), { recursive: true })

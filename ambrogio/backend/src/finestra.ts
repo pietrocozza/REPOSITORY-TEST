@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -32,4 +33,26 @@ export function consentiMicrofono(cartellaProfilo: string, indirizzi: string[]) 
   fs.mkdirSync(path.dirname(file), { recursive: true })
   fs.writeFileSync(file, JSON.stringify(preferenze))
   return true
+}
+
+// Se Ambrogio è stato installato come app nel suo Edge (bottone «Metti l'icona di Ambrogio nella barra»),
+// si apre come quell'app: così nella barra delle applicazioni ha la sua icona e non quella di Edge.
+// Il codice dell'app lo calcola Chromium dall'indirizzo: sha256, primi 16 byte, cifre esadecimali 0-f scritte a-p.
+export function codiceApp(indirizzo: string) {
+  const id = new URL('/', indirizzo).href
+  return [...createHash('sha256').update(id).digest('hex').slice(0, 32)].map((c) => String.fromCharCode(97 + parseInt(c, 16))).join('')
+}
+
+export function appInstallata(cartellaProfilo: string, indirizzo: string): string | null {
+  const cartella = path.join(cartellaProfilo, 'Default', 'Web Applications', 'Manifest Resources')
+  let presenti: string[] = []
+  try {
+    presenti = fs.readdirSync(cartella).filter((n) => /^[a-p]{32}$/.test(n))
+  } catch {
+    return null
+  }
+  const atteso = codiceApp(indirizzo)
+  if (presenti.includes(atteso)) return atteso
+  // nel profilo di Ambrogio c'è solo Ambrogio: se il calcolo non torna, va bene l'unica app che c'è
+  return presenti.length === 1 ? presenti[0] : null
 }

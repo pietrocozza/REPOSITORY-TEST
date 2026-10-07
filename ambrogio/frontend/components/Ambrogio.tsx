@@ -14,9 +14,11 @@ import {
   decidiAutorizzazione,
   impostazioniAgente,
   salvaStileVoce,
+  salvaCervello,
   leggiStatoBackend,
   nuovaConversazione,
   type Autorizzazione,
+  type Cervello,
   type Chiedi,
   type Personalita,
   type StatoVoce,
@@ -26,6 +28,8 @@ import ProvaMicrofono from '@/components/ProvaMicrofono'
 import SezioneEmail from '@/components/SezioneEmail'
 import { MESSAGGIO_PERMESSO, registraFrase, spiegaRegistrazione } from '@/lib/registra'
 import Codice, { CHIAVE_VISTO, piuRecente } from '@/components/Codice'
+import PannelloCodice from '@/components/PannelloCodice'
+import InstallaApp from '@/components/InstallaApp'
 import { SezioneMemoria, SezionePratiche, SezioneRegistro } from '@/components/Sezioni'
 import { disegnaEtichette, disegnaHud } from '@/lib/hud'
 import { aggiornaIconaViva } from '@/lib/icona-viva'
@@ -74,6 +78,7 @@ const MENU: { id: Sezione; nome: string; icona: NomeIcona; descrizione: string; 
 
 // Impostazioni ricordate dal browser
 const CHIAVE_IMPOSTAZIONI = 'ambrogio-impostazioni'
+const CHIAVE_PANNELLO_CODICE = 'ambrogio-pannello-codice'
 // attivazione = ascolto continuo con «Uè Ambrogio» (come gli assistenti vocali di casa)
 // motore = chi parla: 'gemini' (Ambrogio con accento milanese, se c'è la chiave) oppure 'edge'
 type Impostazioni = {
@@ -197,9 +202,12 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   const [qualitaVoce, setQualitaVoce] = useState<'veloce' | 'massima'>(IMPOSTAZIONI_INIZIALI.qualitaVoce)
   const [pausa, setPausa] = useState(false)
   const [personalita, setPersonalita] = useState<string | null>(null)
+  const [cervello, setCervello] = useState<Cervello | null>(null)
   const [conferme, setConferme] = useState<Autorizzazione[]>([])
   const [codiceAperto, setCodiceAperto] = useState(false)
   const [codiceNuovo, setCodiceNuovo] = useState(false)
+  // la finestra del codice a sinistra: aperta di serie, si chiude con la X (e la scelta si ricorda)
+  const [pannelloCodice, setPannelloCodice] = useState(false)
   const [menuAperto, setMenuAperto] = useState(false)
   const [elencoPersonalita, setElencoPersonalita] = useState<Personalita[]>([])
   // come deve parlare la voce di Ambrogio, spiegato a parole a Gemini
@@ -283,6 +291,11 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     }
     const id = setTimeout(() => {
       setMicrofono(riconoscimentoDisponibile())
+      try {
+        setPannelloCodice(localStorage.getItem(CHIAVE_PANNELLO_CODICE) !== 'chiuso')
+      } catch {
+        setPannelloCodice(true)
+      }
       let salvate = IMPOSTAZIONI_INIZIALI
       try {
         // (le impostazioni di quando si chiamava Jarvis valgono ancora)
@@ -470,6 +483,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     impostazioniAgente().then((i) => {
       if (annullato || !i) return
       setPersonalita(i.personalita)
+      setCervello(i.cervello ?? null)
       setElencoPersonalita(i.personalitaDisponibili)
       setStileVoce(i.stileVoce ?? '')
       setBozzaStile(i.stileVoce ?? '')
@@ -489,6 +503,20 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     setVersioneStile((v) => v + 1)
     zittisci()
     pronuncia(FRASE_PROVA)
+  }
+
+  const mostraPannelloCodice = (aperto: boolean) => {
+    setPannelloCodice(aperto)
+    try {
+      localStorage.setItem(CHIAVE_PANNELLO_CODICE, aperto ? 'aperto' : 'chiuso')
+    } catch {}
+  }
+
+  const scegliCervello = async (c: Cervello) => {
+    setCervello(c)
+    const i = await salvaCervello(c)
+    if (i) setCervello(i.cervello ?? c)
+    else mostraErrore('Non riesco a cambiare cervello: il backend non risponde.')
   }
 
   const scegliPersonalita = async (id: string) => {
@@ -1112,6 +1140,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       data-state={modo}
       data-tema={temaAttivo}
       data-menu={tendina ? 'aperto' : undefined}
+      data-codice={pannelloCodice && !codiceAperto ? 'aperto' : undefined}
       style={{ '--j-accent': PALETTES[modo].css } as CSSProperties}
     >
       {/* ───────── Centro: la rete neurale (invariata) ───────── */}
@@ -1296,6 +1325,22 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
           {sezione === 'impostazioni' && (
             <div className="j-impostazioni">
               <h2>Impostazioni</h2>
+
+              {cervello && (
+                <div className="j-riga j-riga-colonna">
+                  <span>
+                    Cervello
+                    <small>Rapido risponde prima; Bilanciato ragiona di più ma è più lento</small>
+                  </span>
+                  <div className="j-segmenti" role="group" aria-label="Cervello">
+                    {(['rapido', 'bilanciato'] as Cervello[]).map((c) => (
+                      <button key={c} type="button" aria-pressed={cervello === c} onClick={() => scegliCervello(c)}>
+                        {c === 'rapido' ? 'Rapido' : 'Bilanciato'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {elencoPersonalita.length > 0 && (
                 <div className="j-riga j-riga-colonna">
@@ -1530,7 +1575,24 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
         </form>
       </aside>
 
+      {pannelloCodice && !codiceAperto ? (
+        <PannelloCodice
+          onChiudi={() => mostraPannelloCodice(false)}
+          onApriTutto={() => {
+            setCodiceAperto(true)
+            setCodiceNuovo(false)
+          }}
+        />
+      ) : (
+        !codiceAperto && (
+          <button type="button" className="j-pc-riapri" onClick={() => mostraPannelloCodice(true)} title="Mostra la finestra del codice" aria-label="Mostra la finestra del codice">
+            {'</>'}
+          </button>
+        )
+      )}
+
       {codiceAperto && <Codice onChiudi={() => setCodiceAperto(false)} />}
+      <InstallaApp />
 
       {errore && (
         <div className="j-toast" role="status" data-fisso={erroreFisso || undefined}>

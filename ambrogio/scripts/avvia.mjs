@@ -8,7 +8,7 @@ import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { consentiMicrofono } from '../backend/src/finestra.ts'
+import { appInstallata, consentiMicrofono } from '../backend/src/finestra.ts'
 
 const radice = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const PORTA_UI = Number(process.env.AMBROGIO_PORTA_UI ?? 3000)
@@ -68,9 +68,12 @@ function opzioniFinestra() {
   } catch {
     // se non riesce, Edge chiederà il permesso come al solito
   }
+  const profilo = path.join(radice, 'data', 'finestra-edge')
+  // installato come app (bottone nell'interfaccia): si apre come app, con l'icona di Ambrogio nella barra
+  const app = appInstallata(profilo, INDIRIZZO)
   return [
-    `--app=${INDIRIZZO}`,
-    `--user-data-dir=${path.join(radice, 'data', 'finestra-edge')}`,
+    ...(app ? ['--profile-directory=Default', `--app-id=${app}`] : [`--app=${INDIRIZZO}`]),
+    `--user-data-dir=${profilo}`,
     '--autoplay-policy=no-user-gesture-required',
     '--no-first-run',
     '--no-default-browser-check',

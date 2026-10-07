@@ -149,3 +149,15 @@ test('stile della voce: si salva, e vuoto torna quello predefinito', async () =>
   assert.equal(JSON.parse(fs.readFileSync(path.join(tmp, 'impostazioni.json'), 'utf8')).stileVoce, 'Parla come un vecchio sciur milanese.')
   assert.equal((await imposta({ stileVoce: '  ' })).stileVoce, iniziale.stileVocePredefinito)
 })
+
+test('cervello: rapido (Haiku) di serie, si può passare a bilanciato', async () => {
+  const imposta = async (corpo?: object) =>
+    (await (
+      await fetch(`${base}/api/impostazioni`, corpo ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) } : {})
+    ).json()) as { cervello: string }
+  assert.equal((await imposta()).cervello, 'rapido')
+  assert.equal((await imposta({ cervello: 'bilanciato' })).cervello, 'bilanciato')
+  const sbagliato = await fetch(`${base}/api/impostazioni`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"cervello":"geniale"}' })
+  assert.equal(sbagliato.status, 400)
+  await imposta({ cervello: 'rapido' })
+})

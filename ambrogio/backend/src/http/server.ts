@@ -12,7 +12,7 @@ import { Trascrizione } from '../voce/trascrizione.ts'
 import { AccessoGoogle, ErroreGoogle } from '../integrazioni/google.ts'
 import type { Gmail } from '../integrazioni/gmail.ts'
 import { frasiDaPreparare } from '../voce/frasi-pronte.ts'
-import { STILE_VOCE_PREDEFINITO } from '../impostazioni.ts'
+import { STILE_VOCE_PREDEFINITO, cervelloValido } from '../impostazioni.ts'
 import path from 'node:path'
 
 // Server HTTP locale (solo 127.0.0.1). Accetta richieste unicamente dall'interfaccia di Ambrogio:
@@ -294,6 +294,10 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
             if (!personalitaValida(dati.personalita)) return inviaJson(res, 400, { errore: 'Personalità sconosciuta.' })
             agente.impostaPersonalita(dati.personalita)
           }
+          if (dati.cervello !== undefined) {
+            if (!cervelloValido(dati.cervello)) return inviaJson(res, 400, { errore: 'Scelta non valida.' })
+            agente.impostaCervello(dati.cervello)
+          }
           if (dati.stileVoce !== undefined) {
             if (typeof dati.stileVoce !== 'string') return inviaJson(res, 400, { errore: 'Stile non valido.' })
             agente.impostaStileVoce(dati.stileVoce)
@@ -303,6 +307,7 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
           personalita: agente.personalita,
           personalitaDisponibili: agente.elencoPersonalita(),
           stileVoce: agente.stileVoce,
+          cervello: agente.cervello,
           stileVocePredefinito: STILE_VOCE_PREDEFINITO,
         })
       }

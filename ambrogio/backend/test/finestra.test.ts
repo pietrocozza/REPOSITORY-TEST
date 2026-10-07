@@ -30,3 +30,15 @@ test('profilo nuovo: crea le preferenze', () => {
   const p = JSON.parse(fs.readFileSync(path.join(profilo, 'Default', 'Preferences'), 'utf8'))
   assert.deepEqual(Object.keys(p.profile.content_settings.exceptions.media_stream_mic), ['http://127.0.0.1:3000,*', 'http://localhost:3000,*'])
 })
+
+test('app installata: si riconosce dal codice calcolato come fa Chromium', async () => {
+  const { appInstallata, codiceApp } = await import('../src/finestra.ts')
+  const profilo = fs.mkdtempSync(path.join(os.tmpdir(), 'ambrogio-edge-'))
+  assert.equal(appInstallata(profilo, 'http://127.0.0.1:3000'), null, 'nessuna app installata')
+  const id = codiceApp('http://127.0.0.1:3000')
+  assert.match(id, /^[a-p]{32}$/)
+  const risorse = path.join(profilo, 'Default', 'Web Applications', 'Manifest Resources')
+  fs.mkdirSync(path.join(risorse, 'a'.repeat(32)), { recursive: true })
+  fs.mkdirSync(path.join(risorse, id), { recursive: true })
+  assert.equal(appInstallata(profilo, 'http://127.0.0.1:3000'), id)
+})

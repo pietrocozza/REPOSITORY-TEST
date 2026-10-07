@@ -81,6 +81,16 @@ Sul desktop compare l'icona **Ambrogio**: con un doppio clic si accende e si apr
 parte ridotta a icona nella barra in basso: è il "motore" di Ambrogio, chiudendola si spegne.
 Se Ambrogio è già acceso, il doppio clic riapre solo la finestra.
 
+### Icona di Ambrogio nella barra delle applicazioni
+
+All'inizio nella barra in basso si vede l'icona di Edge. Per avere quella di Ambrogio (una volta sola):
+
+1. apri Ambrogio: in alto al centro compare il bottone **Metti l'icona di Ambrogio nella barra**;
+2. cliccalo e poi premi **Installa**;
+3. chiudi Ambrogio (finestra e PowerShell) e riaprilo dall'icona sul desktop.
+
+Da quel momento Ambrogio si apre con la sua icona. Se il bottone non compare, è già installato.
+
 ## Come si usa
 
 Normalmente vedi solo Ambrogio: la rete neurale al centro, su fondo scuro, con sotto quello che dice e il microfono.

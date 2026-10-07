@@ -101,7 +101,18 @@ export async function nuovaConversazione() {
 
 /** Personalità di Ambrogio (decide il modo di parlare; vive nel backend) */
 export type Personalita = { id: string; nome: string; descrizione: string }
-export type ImpostazioniAgente = { personalita: string; personalitaDisponibili: Personalita[]; stileVoce?: string; stileVocePredefinito?: string }
+export type Cervello = 'rapido' | 'bilanciato'
+export type ImpostazioniAgente = { personalita: string; personalitaDisponibili: Personalita[]; stileVoce?: string; stileVocePredefinito?: string; cervello?: Cervello }
+
+/** rapido = risposte veloci (Haiku); bilanciato = più ragionate ma più lente */
+export async function salvaCervello(cervello: Cervello): Promise<ImpostazioniAgente | null> {
+  try {
+    const res = await fetch('/api/impostazioni', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cervello }) })
+    return res.ok ? await res.json() : null
+  } catch {
+    return null
+  }
+}
 
 /** come deve parlare la voce di Ambrogio (accento e tono, a parole); vuoto = stile predefinito */
 export async function salvaStileVoce(stileVoce: string): Promise<ImpostazioniAgente | null> {

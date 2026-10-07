@@ -42,7 +42,7 @@ const motivoErrore = (err: unknown): MotivoRegistrazione => {
   return 'errore'
 }
 
-export function registraFrase({ onLivello, onAperto, onAttesaPermesso, silenzioMs = 1300, attesaMaxMs = 7000, maxMs = 20000 }: Opzioni = {}): Registrazione {
+export function registraFrase({ onLivello, onAperto, onAttesaPermesso, silenzioMs = 1000, attesaMaxMs = 7000, maxMs = 20000 }: Opzioni = {}): Registrazione {
   let fermaOra: (usa: boolean) => void = () => {}
   let annullata = false
 
