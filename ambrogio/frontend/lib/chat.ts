@@ -178,6 +178,8 @@ export type StatoVoce = {
   /** chi presta la voce ad Ambrogio: ElevenLabs, Gemini o nessuno (allora parla Edge) */
   fornitore: 'elevenlabs' | 'gemini' | null
   disponibile: boolean
+  /** Gemini con pagamento a consumo: nessun limite giornaliero */
+  pagamento?: boolean
   problema?: string | null
   voci: { id: string; descrizione: string; clonata?: boolean }[]
   sospesaFinoA: string | null

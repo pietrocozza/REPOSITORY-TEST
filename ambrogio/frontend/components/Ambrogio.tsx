@@ -297,7 +297,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   useEffect(() => {
     impostaMotore(motoreVoce === 'gemini' && statoVoce?.disponibile ? 'gemini' : 'edge', voceAmbrogio, mostraErrore, {
       // Gemini gratuito: una sola richiesta per risposta. ElevenLabs: frase per frase, così parla prima
-      intera: statoVoce?.fornitore === 'gemini',
+      intera: statoVoce?.fornitore === 'gemini' && !statoVoce.pagamento,
       qualita: qualitaVoce,
     })
   }, [motoreVoce, statoVoce, voceAmbrogio, qualitaVoce, mostraErrore])
@@ -1111,7 +1111,9 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
                           ? 'La voce di Ambrogio è in pausa (crediti o richieste finiti): per ora parla Edge, poi si riprova da solo.'
                           : statoVoce.fornitore === 'elevenlabs'
                             ? 'Ambrogio con la sua voce milanese (ElevenLabs).'
-                            : 'Ambrogio con accento milanese (Gemini, gratis con un limite di richieste al giorno).'}
+                            : statoVoce.pagamento
+                              ? 'Ambrogio con accento milanese (Gemini, a consumo: pochi centesimi al giorno).'
+                              : 'Ambrogio con accento milanese (Gemini, gratis con un limite di richieste al giorno).'}
                   </small>
                 </span>
                 <div className="j-segmenti" role="group" aria-label="Chi parla">

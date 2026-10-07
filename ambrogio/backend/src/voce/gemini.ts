@@ -34,7 +34,7 @@ export class ErroreVoce extends Error {
   }
 }
 
-type Opzioni = { chiave: string; modello?: string; cartellaCache: string; url?: string }
+type Opzioni = { chiave: string; modello?: string; cartellaCache: string; url?: string; pagamento?: boolean }
 
 export class VoceGemini {
   private opz: Opzioni
@@ -54,6 +54,7 @@ export class VoceGemini {
   stato() {
     return {
       disponibile: this.disponibile,
+      pagamento: Boolean(this.opz.pagamento),
       voci: VOCI_GEMINI,
       sospesaFinoA: this.sospesaFinoA > Date.now() ? new Date(this.sospesaFinoA).toISOString() : null,
       richiesteOggi: this.richiesteOggi,

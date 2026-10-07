@@ -142,6 +142,11 @@ La versione gratuita ha poche richieste al giorno. Ambrogio le risparmia: dice o
 richiesta e le frasi già dette (saluti, «Cerco subito»…) le riusa. Quando finiscono, parla con la voce di Edge
 e riprova da solo più tardi. Nella versione gratuita Google può usare i testi inviati per migliorare i suoi servizi.
 
+**Senza limiti (a consumo, pochi centesimi al giorno):** su https://aistudio.google.com, nella pagina delle chiavi API,
+premi **Set up billing** (o **Imposta fatturazione**) accanto al progetto della chiave e aggiungi una carta.
+Poi nel file `.env` aggiungi la riga `AMBROGIO_GEMINI_A_PAGAMENTO=1` e riavvia Ambrogio: parlerà frase per frase, senza limite giornaliero.
+Consiglio: su Google Cloud imposta un **avviso di budget** (Fatturazione → Budget e avvisi), per esempio 5 €.
+
 ## Impostazioni
 
 Copia `.env.example` in `.env` e modifica lì (il nome con cui ti chiama, il modello, il percorso di Claude Code).

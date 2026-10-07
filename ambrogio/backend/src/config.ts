@@ -59,6 +59,8 @@ export const config = {
     chiave: env('AMBROGIO_GEMINI_CHIAVE'),
     /** vuoto = sceglie Ambrogio il modello vocale disponibile */
     modello: env('AMBROGIO_GEMINI_MODELLO'),
+    /** pagamento a consumo attivato su Google: niente limite giornaliero, si parla frase per frase */
+    pagamento: vero('AMBROGIO_GEMINI_A_PAGAMENTO'),
     /** solo per i test (un finto Gemini) */
     url: env('AMBROGIO_GEMINI_URL') || undefined,
   },
