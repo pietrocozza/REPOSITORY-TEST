@@ -97,3 +97,15 @@ test('personalità: elenco, cambio, salvataggio e nuove istruzioni a Claude Code
   const istruzioni = fs.readFileSync(path.join(tmp, 'agente', 'istruzioni-jarvis.txt'), 'utf8')
   assert.ok(istruzioni.includes('mi consenta'), 'Claude Code deve ripartire con la nuova personalità')
 })
+
+test('codice: elenco degli aggiornamenti e protezione degli indirizzi', async () => {
+  const h = { Origin: 'http://localhost:3000' }
+  const elenco = (await (await fetch(`${base}/api/codice`, { headers: h })).json()) as { disponibile: boolean; installati: { sha: string }[] }
+  assert.equal(elenco.disponibile, true)
+  assert.ok(elenco.installati.length > 0)
+  const d = await fetch(`${base}/api/codice/${elenco.installati[0].sha}`, { headers: h })
+  assert.equal(d.status, 200)
+  assert.ok(Array.isArray(((await d.json()) as { file: unknown }).file))
+  assert.equal((await fetch(`${base}/api/codice/abc`, { headers: h })).status, 400)
+  assert.equal((await fetch(`${base}/api/codice`, { headers: { Origin: 'https://sito-malevolo.example' } })).status, 403)
+})

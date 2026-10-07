@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import {
+  caricaAggiornamenti,
   caricaAutorizzazioni,
   caricaConversazione,
   chiediAlServer,
@@ -14,6 +15,7 @@ import {
   type Personalita,
 } from '@/lib/chat'
 import Conferma from '@/components/Conferma'
+import Codice, { CHIAVE_VISTO, piuRecente } from '@/components/Codice'
 import { SezioneMemoria, SezionePratiche, SezioneRegistro } from '@/components/Sezioni'
 import { disegnaHud } from '@/lib/hud'
 import { NucleoNeurale, PALETTES, type Modo } from '@/lib/nucleo-neurale'
@@ -119,6 +121,8 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
   const [pausa, setPausa] = useState(false)
   const [personalita, setPersonalita] = useState<string | null>(null)
   const [conferme, setConferme] = useState<Autorizzazione[]>([])
+  const [codiceAperto, setCodiceAperto] = useState(false)
+  const [codiceNuovo, setCodiceNuovo] = useState(false)
   const [elencoPersonalita, setElencoPersonalita] = useState<Personalita[]>([])
   // statistiche della sessione, per i numeri a sinistra
   const [inizioTurno, setInizioTurno] = useState<number | null>(null)
@@ -551,6 +555,22 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
     else interrompi()
   }, [avviaAscolto, interrompi])
 
+  // C'è un aggiornamento del codice che Pietro non ha ancora guardato? (controllo ogni 10 minuti)
+  useEffect(() => {
+    if (!usaBackend) return
+    const controlla = async () => {
+      const recente = piuRecente(await caricaAggiornamenti(true))
+      let visto: string | null = null
+      try {
+        visto = localStorage.getItem(CHIAVE_VISTO)
+      } catch {}
+      setCodiceNuovo(!!recente && recente.sha !== visto)
+    }
+    controlla()
+    const t = setInterval(controlla, 10 * 60_000)
+    return () => clearInterval(t)
+  }, [usaBackend])
+
   // Barra spaziatrice = parla / interrompi; Esc = interrompi
   useEffect(() => {
     const tasto = (e: KeyboardEvent) => {
@@ -752,6 +772,21 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
             <i />
             {ETICHETTE[modo].toLowerCase()}
           </span>
+          {usaBackend && (
+            <button
+              type="button"
+              className="j-tasto-icona"
+              data-nuovo={codiceNuovo || undefined}
+              onClick={() => {
+                setCodiceAperto(true)
+                setCodiceNuovo(false)
+              }}
+              title={codiceNuovo ? 'Codice: c’è un aggiornamento nuovo da guardare' : 'Codice: guarda come cambia Jarvis'}
+              aria-label="Codice"
+            >
+              <Icona nome="codice" />
+            </button>
+          )}
           <button
             type="button"
             className="j-tasto-icona"
@@ -946,6 +981,8 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
           </button>
         </form>
       </aside>
+
+      {codiceAperto && <Codice onChiudi={() => setCodiceAperto(false)} />}
 
       {errore && (
         <div className="j-toast" role="status">

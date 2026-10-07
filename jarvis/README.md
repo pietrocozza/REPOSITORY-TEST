@@ -80,6 +80,7 @@ Se Jarvis è già acceso, il doppio clic riapre solo la finestra.
 | Personalità (Maggiordomo inglese, Imprenditore brillante, Milanese doc, Essenziale) | **Impostazioni** nel menu |
 | Tema chiaro/scuro, scelta della voce, velocità, ascolto continuo | **Impostazioni** nel menu |
 | Nuova conversazione | **Nuova**, sopra la chat |
+| Guardare come cambia Jarvis (il codice di ogni aggiornamento che si scrive da solo) | icona **</>** in alto a destra; il pallino azzurro indica un aggiornamento nuovo. **Esc** per chiudere |
 
 Le voci più naturali (gratuite) sono quelle "Natural" di **Microsoft Edge**: apri Jarvis con Edge e scegli la voce
 in Impostazioni (quelle con la ★).

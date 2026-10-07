@@ -151,3 +151,23 @@ export const caricaAutorizzazioni = () =>
 export const decidiAutorizzazione = (id: number, concedi: boolean, sempre = false) =>
   invia(`/api/autorizzazioni/${id}`, 'POST', { decisione: concedi ? 'concedi' : 'nega', sempre })
 export const revocaPermesso = (strumento: string) => invia(`/api/permessi/${strumento}`, 'DELETE')
+
+// ───────── Codice: gli aggiornamenti di Jarvis ─────────
+
+export type Aggiornamento = { sha: string; breve: string; data: string; titolo: string; spiegazione: string; inArrivo: boolean }
+export type RigaCodice = { tipo: 'aggiunta' | 'tolta' | 'uguale' | 'salto'; testo: string; numero?: number }
+export type FileCambiato = {
+  percorso: string
+  stato: 'nuovo' | 'modificato' | 'eliminato' | 'rinominato'
+  aggiunte: number
+  tolte: number
+  righe: RigaCodice[]
+  nota?: string
+}
+export type ElencoAggiornamenti =
+  | { disponibile: false; motivo: string }
+  | { disponibile: true; ramo: string; github: boolean | null; inArrivo: Aggiornamento[]; installati: Aggiornamento[] }
+
+/** controlla = chiedi anche a GitHub se ci sono aggiornamenti nuovi */
+export const caricaAggiornamenti = (controlla = false) => leggi<ElencoAggiornamenti>(`/api/codice${controlla ? '?controlla=1' : ''}`)
+export const caricaModifiche = (sha: string) => leggi<{ sha: string; file: FileCambiato[] }>(`/api/codice/${sha}`)

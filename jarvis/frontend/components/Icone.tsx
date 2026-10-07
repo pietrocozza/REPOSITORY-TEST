@@ -15,6 +15,7 @@ const TRACCE = {
   invia: 'M5 12h13M13 6l6 6-6 6',
   altoparlante: 'M4 9h3l5-4v14l-5-4H4zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11',
   muto: 'M4 9h3l5-4v14l-5-4H4zM16 9.5l5 5M21 9.5l-5 5',
+  codice: 'M8.5 7 3.5 12l5 5M15.5 7l5 5-5 5M13.5 4.5l-3 15',
 } as const
 
 export type NomeIcona = keyof typeof TRACCE

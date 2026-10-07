@@ -916,6 +916,454 @@ select {
 
 /* ───────── Schermi stretti: una colonna sola, la pagina scorre ───────── */
 
+/* pallino sull'icona del codice: c'è un aggiornamento nuovo */
+.j-tasto-icona[data-nuovo] {
+  position: relative;
+  color: var(--primario);
+}
+.j-tasto-icona[data-nuovo]::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #77e6ed;
+  box-shadow: 0 0 0 2px var(--carta), 0 0 10px #77e6ed;
+  animation: j-batte 1.8s ease-in-out infinite;
+}
+@keyframes j-batte {
+  50% {
+    transform: scale(0.6);
+    opacity: 0.6;
+  }
+}
+
+/* ───────── Codice: gli aggiornamenti che "si scrivono" ─────────
+   Sempre scuro, come il nucleo: stessi azzurri, stesso vetro, caratteri che scendono sul fondo. */
+
+.j-codice {
+  --c-testo: #d3e8ef;
+  --c-tenue: #7f9ba6;
+  --c-linea: rgb(119 230 237 / 0.14);
+  --c-vetro: rgb(5 15 22 / 0.5);
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: radial-gradient(ellipse at 50% 30%, #0a2535, #03090f 70%);
+  color: var(--c-testo);
+  color-scheme: dark;
+  animation: j-compare 0.35s ease-out;
+}
+@keyframes j-compare {
+  from {
+    opacity: 0;
+    transform: scale(1.015);
+  }
+}
+.j-codice-pioggia {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.j-codice::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(transparent 49.5%, #5ad3e506 50%, transparent 50.5%);
+  background-size: 100% 5px;
+}
+.j-codice > :not(canvas) {
+  position: relative;
+  z-index: 1;
+}
+.j-codice-testa {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 6px;
+}
+.j-codice-testa strong {
+  display: block;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin-top: 3px;
+}
+.j-codice .j-overline {
+  color: #77e6ed;
+}
+.j-codice-avviso {
+  font-size: 12px;
+  color: #efbf76;
+}
+.j-codice-chiudi {
+  margin-left: auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  font-size: 16px;
+  color: var(--c-tenue);
+  background: var(--c-vetro) !important;
+  border: 1px solid var(--c-linea) !important;
+  backdrop-filter: blur(8px);
+}
+.j-codice-chiudi:hover {
+  color: #fff;
+}
+.j-codice-corpo {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 14px;
+}
+.j-codice-elenco,
+.j-codice-schermo {
+  min-height: 0;
+  border-radius: var(--raggio);
+  background: var(--c-vetro);
+  border: 1px solid var(--c-linea);
+  backdrop-filter: blur(1.5px);
+  box-shadow: 0 10px 40px rgb(0 0 0 / 0.35);
+}
+.j-codice-elenco {
+  overflow-y: auto;
+  padding: 10px;
+  scrollbar-width: thin;
+}
+.j-codice-elenco h3 {
+  margin: 8px 8px 6px;
+  font: 9px monospace;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--c-tenue);
+}
+.j-codice-elenco button {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid transparent !important;
+  transition: background 0.2s;
+}
+.j-codice-elenco button:hover {
+  background: rgb(119 230 237 / 0.06);
+}
+.j-codice-elenco button[aria-current] {
+  background: rgb(119 230 237 / 0.1);
+  border-color: rgb(119 230 237 / 0.3) !important;
+}
+.j-codice-elenco button b {
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.j-codice-elenco button small {
+  font-size: 11px;
+  color: var(--c-tenue);
+}
+.j-codice-elenco button[data-arrivo] b::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 7px;
+  vertical-align: 2px;
+  border-radius: 50%;
+  background: #77e6ed;
+  box-shadow: 0 0 8px #77e6ed;
+}
+.j-codice-vuoto {
+  margin: 16px;
+  color: var(--c-tenue);
+  font-size: 13px;
+}
+.j-codice-schermo {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.j-codice-spiega {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--c-linea);
+  max-height: 30%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.j-codice-spiega h2 {
+  margin: 6px 0 6px;
+  font-size: 18px;
+  font-weight: 500;
+}
+.j-codice-spiega p {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #a9c4ce;
+  white-space: pre-line;
+}
+.j-codice-installa {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgb(119 230 237 / 0.08);
+  color: var(--c-testo) !important;
+}
+.j-codice-installa code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 0.35);
+  color: #77e6ed;
+}
+.j-codice-schede {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--c-linea);
+  flex: none;
+}
+.j-codice-schede button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 11px;
+  border-radius: 10px;
+  white-space: nowrap;
+  font: 12px ui-monospace, Consolas, monospace;
+  color: var(--c-tenue);
+  border: 1px solid transparent !important;
+}
+.j-codice-schede button[data-fatto] {
+  color: #a9c4ce;
+}
+.j-codice-schede button[aria-selected='true'] {
+  color: #e2f4f8;
+  background: rgb(119 230 237 / 0.1);
+  border-color: rgb(119 230 237 / 0.3) !important;
+}
+.j-codice-schede em {
+  display: flex;
+  gap: 5px;
+  font-style: normal;
+}
+.j-codice-schede .piu,
+.j-cod-riga.aggiunta .j-cod-num {
+  color: #77e6ed;
+}
+.j-codice-schede .meno {
+  color: #ff947f;
+}
+.j-codice-schede i {
+  font-style: normal;
+}
+
+.j-codice-editor {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 6px 0 40vh;
+  font: 13px/1.6 ui-monospace, 'Cascadia Code', Consolas, monospace;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(119 230 237 / 0.25) transparent;
+}
+.j-cod-file {
+  position: sticky;
+  top: -6px;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 20px;
+  margin-bottom: 4px;
+  background: rgb(6 18 26 / 0.92);
+  border-bottom: 1px solid var(--c-linea);
+  font-family: 'Aptos', 'Segoe UI', system-ui, sans-serif;
+}
+.j-cod-file b {
+  font: 500 13px ui-monospace, Consolas, monospace;
+  color: #e2f4f8;
+}
+.j-cod-file span {
+  font-size: 12px;
+  color: var(--c-tenue);
+}
+.j-cod-riga {
+  display: flex;
+  min-width: max-content;
+  padding-right: 20px;
+}
+.j-cod-num {
+  flex: none;
+  width: 54px;
+  padding-right: 14px;
+  text-align: right;
+  color: #3f5f6b;
+  user-select: none;
+}
+.j-cod-riga code {
+  font: inherit;
+  white-space: pre;
+  color: #b9d3dc;
+}
+.j-cod-riga.uguale code {
+  opacity: 0.55;
+}
+.j-cod-riga.aggiunta {
+  background: linear-gradient(90deg, rgb(119 230 237 / 0.1), rgb(119 230 237 / 0.02) 60%, transparent);
+  box-shadow: inset 2px 0 0 rgb(119 230 237 / 0.7);
+  animation: j-riga-nuova 1.4s ease-out;
+}
+@keyframes j-riga-nuova {
+  from {
+    background-color: rgb(119 230 237 / 0.16);
+  }
+}
+.j-cod-riga.attiva {
+  background: rgb(119 230 237 / 0.16);
+}
+.j-cod-riga.tolta {
+  background: rgb(255 148 127 / 0.06);
+  box-shadow: inset 2px 0 0 rgb(255 148 127 / 0.6);
+}
+.j-cod-riga.tolta .j-cod-num {
+  color: #ff947f;
+}
+.j-cod-riga.tolta code {
+  color: #ff947f;
+  opacity: 0.55;
+  text-decoration: line-through;
+  text-decoration-color: rgb(255 148 127 / 0.5);
+}
+.j-cod-riga.tolta code span {
+  color: inherit;
+}
+.j-cod-riga.salto {
+  color: #4f7380;
+  margin: 6px 0;
+}
+.j-cod-riga.salto code {
+  color: #4f7380;
+  font-style: italic;
+}
+.j-cod-cursore {
+  display: inline-block;
+  width: 8px;
+  height: 1.15em;
+  margin-left: 1px;
+  vertical-align: -0.2em;
+  background: #77e6ed;
+  box-shadow: 0 0 10px #77e6ed;
+  animation: j-cursore 0.9s steps(2) infinite;
+}
+@keyframes j-cursore {
+  50% {
+    opacity: 0.15;
+  }
+}
+.j-cod-nota {
+  margin: 12px 20px;
+  font: italic 12px 'Aptos', 'Segoe UI', sans-serif;
+  color: var(--c-tenue);
+}
+/* colori del codice, presi dalla tavolozza del nucleo */
+.t-chiave {
+  color: #b5b4ff;
+}
+.t-testo {
+  color: #efbf76;
+}
+.t-commento {
+  color: #5f8a96;
+  font-style: italic;
+}
+.t-numero {
+  color: #ff9fb8;
+}
+.t-funzione {
+  color: #77e6ed;
+}
+.t-tipo {
+  color: #7cc4ff;
+}
+.t-tag {
+  color: #77f1cc;
+}
+.t-proprieta {
+  color: #7cc4ff;
+}
+.t-parentesi {
+  color: #8fb6c2;
+}
+.t-segno {
+  color: #6f98a5;
+}
+.t-nome,
+.t-semplice {
+  color: #d3e8ef;
+}
+
+.j-codice-comandi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--c-linea);
+  flex: none;
+  font-size: 13px;
+}
+.j-codice-comandi > button {
+  padding: 7px 14px;
+  border-radius: 11px;
+  background: rgb(119 230 237 / 0.1) !important;
+  color: #e2f4f8;
+}
+.j-codice-comandi > button:hover:not(:disabled) {
+  background: rgb(119 230 237 / 0.18) !important;
+}
+.j-codice .j-segmenti {
+  background: rgb(0 0 0 / 0.3);
+}
+.j-codice .j-segmenti button {
+  color: var(--c-tenue);
+}
+.j-codice .j-segmenti button[aria-pressed='true'] {
+  background: rgb(119 230 237 / 0.16);
+  color: #e2f4f8;
+  box-shadow: none;
+}
+.j-codice-barra {
+  flex: 1;
+  height: 3px;
+  min-width: 40px;
+  border-radius: 3px;
+  background: rgb(119 230 237 / 0.12);
+  overflow: hidden;
+}
+.j-codice-barra i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #3fb3c6, #77e6ed);
+  box-shadow: 0 0 10px #77e6ed;
+}
+.j-codice-conta {
+  font: 11px monospace;
+  color: var(--c-tenue);
+  white-space: nowrap;
+}
+
 @media (max-width: 1000px) {
   #jarvis-interface {
     height: auto;
@@ -956,5 +1404,21 @@ select {
 @media (prefers-reduced-motion: reduce) {
   #jarvis-interface * {
     transition: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .j-codice {
+    padding: 10px;
+  }
+  .j-codice-corpo {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .j-codice-elenco {
+    max-height: 120px;
+  }
+  .j-codice-comandi {
+    flex-wrap: wrap;
   }
 }

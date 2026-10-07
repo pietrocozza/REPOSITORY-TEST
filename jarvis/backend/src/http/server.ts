@@ -4,6 +4,8 @@ import type { Agente } from '../agent/agente.ts'
 import type { EventoAgente } from '../agent/eventi.ts'
 import { diagnostica } from '../diagnostica.ts'
 import { personalitaValida } from '../agent/istruzioni.ts'
+import { CARTELLA_JARVIS } from '../config.ts'
+import { Aggiornamenti, shaValido } from '../codice/aggiornamenti.ts'
 
 // Server HTTP locale (solo 127.0.0.1). Accetta richieste unicamente dall'interfaccia di Jarvis:
 // un sito web qualsiasi aperto nel browser non può comandare l'agente.
@@ -33,7 +35,8 @@ async function leggiJson(req: http.IncomingMessage): Promise<Record<string, unkn
 
 type GestoreMcp = (req: http.IncomingMessage, res: http.ServerResponse, corpo: string) => Promise<unknown>
 
-export function creaServer(config: Config, agente: Agente, opzioni: { mcp?: GestoreMcp } = {}) {
+export function creaServer(config: Config, agente: Agente, opzioni: { mcp?: GestoreMcp; codice?: Aggiornamenti } = {}) {
+  const codice = opzioni.codice ?? new Aggiornamenti(CARTELLA_JARVIS)
   return http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://locale')
 
@@ -88,6 +91,20 @@ export function creaServer(config: Config, agente: Agente, opzioni: { mcp?: Gest
         agente.db.revocaPermanente(permesso[1])
         agente.db.registra('autorizzazione', `Permesso permanente revocato per: ${permesso[1]}`)
         return inviaJson(res, 200, { ok: true })
+      }
+
+      // aggiornamenti del codice di Jarvis (sezione "Codice"): solo lettura
+      if (req.method === 'GET' && url.pathname === '/api/codice') {
+        return inviaJson(res, 200, await codice.elenco(url.searchParams.get('controlla') === '1'))
+      }
+      const aggiornamento = url.pathname.match(/^\/api\/codice\/([0-9a-f]+)$/)
+      if (req.method === 'GET' && aggiornamento) {
+        if (!shaValido(aggiornamento[1])) return inviaJson(res, 400, { errore: 'Aggiornamento non valido.' })
+        try {
+          return inviaJson(res, 200, await codice.dettaglio(aggiornamento[1]))
+        } catch {
+          return inviaJson(res, 404, { errore: 'Aggiornamento non trovato.' })
+        }
       }
 
       if (req.method === 'GET' && url.pathname === '/api/stato') {
