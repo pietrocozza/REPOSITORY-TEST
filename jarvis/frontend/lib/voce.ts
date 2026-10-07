@@ -86,29 +86,58 @@ export function dopoParolaAttivazione(frase: string): string | null {
 // ───────── Sintesi vocale ─────────
 
 let vocePreferita: SpeechSynthesisVoice | null = null
+let voceScelta: string | null = null // nome scelto nelle impostazioni (null = automatica)
+let velocita = 1.02
+
+const punteggio = (v: SpeechSynthesisVoice) => {
+  const n = v.name.toLowerCase()
+  let p = 0
+  if (/natural|neural|online/.test(n)) p += 5
+  if (/isabella|elsa|alice|federica|paola|carla|calimero|female|donna/.test(n)) p += 2
+  if (/google/.test(n)) p += 1.5
+  if (/luca|diego|cosimo|giorgio|roberto|paolo|benigno|rinaldi|male/.test(n)) p -= 2
+  return p
+}
+
+const vociItalianeDisponibili = () =>
+  typeof window === 'undefined' || !('speechSynthesis' in window)
+    ? []
+    : window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith('it'))
 
 // Preferisce una voce italiana femminile e naturale. Le migliori gratuite sono quelle "Natural" di Microsoft Edge
 // (es. "Microsoft Isabella Online (Natural)"); in Chrome c'è "Google italiano". Le voci di Windows classiche sono più robotiche.
 function scegliVoce() {
-  const voci = window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith('it'))
+  const voci = vociItalianeDisponibili()
   if (!voci.length) return null
-  const punteggio = (v: SpeechSynthesisVoice) => {
-    const n = v.name.toLowerCase()
-    let p = 0
-    if (/natural|neural|online/.test(n)) p += 5
-    if (/isabella|elsa|alice|federica|paola|carla|calimero|female|donna/.test(n)) p += 2
-    if (/google/.test(n)) p += 1.5
-    if (/luca|diego|cosimo|giorgio|roberto|paolo|benigno|rinaldi|male/.test(n)) p -= 2
-    return p
+  if (voceScelta) {
+    const scelta = voci.find((v) => v.name === voceScelta)
+    if (scelta) return scelta
   }
   return [...voci].sort((a, b) => punteggio(b) - punteggio(a))[0]
 }
 
-export function preparaVoce() {
+export type InfoVoce = { nome: string; naturale: boolean }
+
+/** Voci italiane installate, le più naturali per prime. */
+export function vociItaliane(): InfoVoce[] {
+  return [...vociItalianeDisponibili()]
+    .sort((a, b) => punteggio(b) - punteggio(a))
+    .map((v) => ({ nome: v.name, naturale: /natural|neural|online|google/i.test(v.name) }))
+}
+
+/** Sceglie la voce per nome (null = scelta automatica) e la velocità di lettura. */
+export function impostaVoce(nome: string | null, nuovaVelocita?: number) {
+  voceScelta = nome
+  if (nuovaVelocita) velocita = Math.min(1.5, Math.max(0.7, nuovaVelocita))
+  vocePreferita = scegliVoce()
+}
+
+export function preparaVoce(onCambio?: () => void) {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
   vocePreferita = scegliVoce()
   window.speechSynthesis.onvoiceschanged = () => {
     vocePreferita = scegliVoce()
+    onCambio?.()
   }
 }
 
@@ -129,7 +158,7 @@ export function pronuncia(testo: string, eventi: { onInizio?: () => void; onParo
   const u = new SpeechSynthesisUtterance(pulito)
   u.lang = 'it-IT'
   if (vocePreferita) u.voice = vocePreferita
-  u.rate = 1.02
+  u.rate = velocita
   u.pitch = 1
   u.onstart = () => eventi.onInizio?.()
   u.onboundary = () => eventi.onParola?.()

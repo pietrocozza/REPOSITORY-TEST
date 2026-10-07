@@ -563,7 +563,8 @@ export class NucleoNeurale {
       this.gl.deleteFramebuffer(t.framebuffer)
     }
     this.targets = [this.createTarget(w, h), this.createTarget(Math.ceil(w / 2), Math.ceil(h / 2)), this.createTarget(Math.ceil(w / 2), Math.ceil(h / 2))]
-    this.fit = this.width < 760 ? Math.min(0.87, (this.width / this.height) * 0.86) : Math.min(1, (this.width - 280) / this.height)
+    // la rete occupa il riquadro centrale: si adatta alle sue proporzioni
+    this.fit = Math.max(0.4, Math.min(1, (this.width / this.height) * 0.86))
     this.dirty = true
   }
 
@@ -630,7 +631,8 @@ export class NucleoNeurale {
   private frame(now: number) {
     if (this.destroyed) return
     this.raf = requestAnimationFrame(this.frame)
-    const dt = Math.min((now - this.last) / 1000, 0.05)
+    // mai negativo: il primo fotogramma (o una pagina aperta in secondo piano) può avere un orario precedente
+    const dt = Math.max(0, Math.min((now - this.last) / 1000, 0.05))
     this.last = now
 
     if (document.hidden || !this.inView || this.contextLost) return
@@ -663,6 +665,7 @@ export class NucleoNeurale {
     if (this.paused || this.reduced) target = 0
 
     this.energy += (target - this.energy) * (1 - Math.exp(-dt * (target > this.energy ? 14 : 5)))
+    this.energy = Number.isFinite(this.energy) ? Math.min(1.5, Math.max(0, this.energy)) : 0
     this.yaw += (this.time * 0.028 + this.dragYaw + this.pointer[0] * 0.1 - this.yaw) * (1 - Math.exp(-dt * 3))
     this.pitch += (-0.12 + this.dragPitch + this.pointer[1] * 0.1 - this.pitch) * (1 - Math.exp(-dt * 3))
     this.zoom += (this.zoomTarget - this.zoom) * alpha

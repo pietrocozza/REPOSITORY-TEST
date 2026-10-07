@@ -1,227 +1,734 @@
-/* Interfaccia "J.A.R.V.I.S. Neural Interface" (creata da Pietro), collegata a Jarvis.
-   In fondo al file le aggiunte: casella dei comandi, cronologia, testi lunghi. */
+/* J.A.R.V.I.S. — Neural Interface
+   Tre colonne a tutta altezza, senza scorrere la pagina:
+   sinistra = numeri · centro = rete neurale (identica all'originale, su fondo scuro) · destra = menu, contenuto, barra per scrivere.
+   Tema chiaro (predefinito, leggibile di giorno) e tema scuro. */
 
-html,body{margin:0;background:#03090f}
-body{min-height:100vh}
-button,input{font:inherit}
-
-#jarvis-interface{--j-bg:#03090f;--j-ink:#e2f4f8;--j-muted:#77929f;--j-accent:#77e6ed;--j-line:rgba(137,213,231,.15);font-family:"Aptos","Segoe UI",Arial,sans-serif;font-size:14px;line-height:1.4;color:var(--j-ink);background:var(--j-bg);position:relative;isolation:isolate;overflow:hidden;width:100%;min-width:0;text-align:left;color-scheme:dark}
-#jarvis-interface *{box-sizing:border-box}
-#jarvis-interface button{font:inherit;color:inherit;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
-#jarvis-interface button:focus-visible{outline:2px solid var(--j-accent);outline-offset:5px}
-#jarvis-interface button:hover{color:#fff}
-#jarvis-interface button:disabled{opacity:.4;cursor:default}
-#jarvis-interface [hidden]{display:none!important}
-#jarvis-interface .j-header{height:95px;display:flex;align-items:center;justify-content:space-between;margin:0 44px;border-bottom:1px solid var(--j-line);position:relative;z-index:6;gap:20px}
-#jarvis-interface .j-brand{display:flex;align-items:center;gap:14px;font-size:20px;font-weight:500;letter-spacing:5px;white-space:nowrap}
-#jarvis-interface .j-brand small{display:block;font-family:monospace;font-size:9px;letter-spacing:3.1px;color:var(--j-muted);margin-top:7px}
-#jarvis-interface .j-emblem{width:29px;height:34px;display:grid;place-items:center;border:1px solid #478c9c;clip-path:polygon(25% 0,75% 0,100% 20%,100% 80%,75% 100%,25% 100%,0 80%,0 20%);background:linear-gradient(140deg,#20455333,#377a8d11);position:relative}
-#jarvis-interface .j-emblem:before{content:"";width:15px;height:19px;border:1px solid #67cadb;transform:skewY(-20deg)}
-#jarvis-interface .j-emblem b{height:7px;width:3px;background:#b5f6fa;box-shadow:0 0 12px #7ddfea;position:absolute}
-#jarvis-interface .j-topline{display:flex;align-items:center;gap:12px;font:10px monospace;letter-spacing:1.5px;color:var(--j-accent)}
-#jarvis-interface .j-live{width:5px;height:5px;border-radius:50%;background:var(--j-accent);box-shadow:0 0 10px var(--j-accent)}
-#jarvis-interface .j-divider{height:12px;width:1px;background:var(--j-line);margin:0 6px}
-#jarvis-interface .j-demo{color:#7e949e;font-size:9px}
-#jarvis-interface .j-icon-button{width:38px;height:38px;font-size:25px;color:var(--j-muted);line-height:1}
-#jarvis-interface .j-main{position:relative;height:620px;min-height:540px;background:radial-gradient(ellipse at 50% 40%,#0a253536,transparent 65%)}
-#jarvis-interface .j-main:after{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(transparent 49.5%,#5ad3e504 50%,transparent 50.5%);background-size:100% 5px;z-index:4}
-#jarvis-interface .j-heading{position:absolute;left:44px;top:37px;z-index:3;pointer-events:none}
-#jarvis-interface .j-overline{display:block;font:9px monospace;letter-spacing:2px;color:var(--j-accent)}
-#jarvis-interface h1{font-size:28px;line-height:1.25;font-weight:400;letter-spacing:-.7px;margin:16px 0 11px;color:#e5f4f6}
-#jarvis-interface .j-heading p{font-size:12px;color:var(--j-muted);margin:0}
-#jarvis-interface .j-coordinate{position:absolute;right:44px;top:37px;font:9px monospace;letter-spacing:1.5px;color:#718994;z-index:3;text-align:right}
-#jarvis-interface .j-coordinate span{display:block;margin-top:7px;font-size:8px;color:#48606d}
-#jarvis-interface .j-stage{position:absolute;inset:0;overflow:hidden;touch-action:pan-y;cursor:grab}
-#jarvis-interface .j-stage:active{cursor:grabbing}
-#jarvis-interface .j-neural,#jarvis-interface .j-hud{position:absolute;inset:0;width:100%;height:100%;display:block}
-#jarvis-interface .j-hud{pointer-events:none}
-#jarvis-interface .j-stage-caption{position:absolute;bottom:122px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:28px;white-space:nowrap;font:8px monospace;letter-spacing:2px;color:#668893;pointer-events:none}
-#jarvis-interface .j-reticle{font-size:13px;color:#5ba3af}
-#jarvis-interface .j-callout{position:absolute;font:8px monospace;letter-spacing:1.4px;color:#8faeb7;pointer-events:none;display:flex;align-items:center;gap:8px;opacity:.85}
-#jarvis-interface .j-callout span{color:#447682;font-size:8px}
-#jarvis-interface .j-callout b{font-weight:400;font-size:9px}
-#jarvis-interface .j-callout i{height:1px;width:45px;display:block;background:linear-gradient(90deg,#569faf90,transparent)}
-#jarvis-interface .j-callout-a{left:27%;top:25%}
-#jarvis-interface .j-callout-b{left:60%;top:17%}
-#jarvis-interface .j-callout-c{left:63%;top:62%}
-#jarvis-interface .j-left,#jarvis-interface .j-right{position:absolute;z-index:5;top:240px;width:172px}
-#jarvis-interface .j-left{left:44px}
-#jarvis-interface .j-right{right:44px;top:160px;width:175px}
-#jarvis-interface .j-section-label{font:9px monospace;letter-spacing:1.5px;display:flex;align-items:center;justify-content:space-between;color:#91aab6;border-bottom:1px solid var(--j-line);padding-bottom:12px}
-#jarvis-interface .j-section-label span{font-size:8px;color:#4d7988}
-#jarvis-interface .j-wave{display:block;width:100%;height:52px;margin:6px 0}
-#jarvis-interface .j-small-line{font:8px monospace;display:flex;justify-content:space-between;gap:8px;color:#7594a0;letter-spacing:.6px}
-#jarvis-interface .j-readout{display:flex;justify-content:space-between;margin-top:32px;gap:12px}
-#jarvis-interface .j-readout div{display:flex;flex-direction:column;gap:9px}
-#jarvis-interface .j-readout span{font:7px monospace;letter-spacing:1px;color:#7895a2;white-space:nowrap}
-#jarvis-interface .j-readout b{font-size:22px;font-weight:300;letter-spacing:1px;font-variant-numeric:tabular-nums;color:#c2dce5}
-#jarvis-interface .j-event-label{margin-top:29px}
-#jarvis-interface .j-event{display:flex;gap:9px;padding-top:14px;font-size:10px}
-#jarvis-interface .j-event i{background:var(--j-accent);width:3px;flex-shrink:0;height:3px;border-radius:50%;margin-top:5px;box-shadow:0 0 6px var(--j-accent)}
-#jarvis-interface .j-event b{font-weight:400;color:#adcad4;display:block;line-height:1.5}
-#jarvis-interface .j-event span{display:block;color:#77929f;line-height:1.6;margin-top:5px;font-size:10px}
-#jarvis-interface .j-module{display:flex;align-items:center;width:100%;text-align:left;padding:17px 0;gap:11px;border-bottom:1px solid var(--j-line);transition:background .3s}
-#jarvis-interface .j-module:hover{background:#8acada07}
-#jarvis-interface .j-module-symbol{width:20px;color:var(--j-accent);font-size:24px;font-weight:300;line-height:1}
-#jarvis-interface .j-module b{display:block;font-size:11px;font-weight:400;color:#cbdee4;margin-bottom:5px}
-#jarvis-interface .j-module small{font-size:9px;color:#7b96a2;display:block}
-#jarvis-interface .j-arrow{color:#598695;font-size:13px;margin-left:auto}
-#jarvis-interface .j-session{margin-top:40px}
-#jarvis-interface .j-session b{display:block;font-weight:400;font-size:18px;margin-top:12px;letter-spacing:-.2px}
-#jarvis-interface .j-session p{font-size:11px;line-height:1.8;color:#8fa8b3;margin:10px 0 20px;min-height:40px}
-#jarvis-interface .j-session-line{display:block;width:30px;height:1px;background:var(--j-accent);box-shadow:0 0 8px var(--j-accent)}
-#jarvis-interface .j-dialogue{position:absolute;z-index:5;bottom:24px;left:23%;width:54%;text-align:center;pointer-events:none;min-height:69px}
-#jarvis-interface .j-dialogue .j-overline{font-size:8px;letter-spacing:2.6px;color:var(--j-accent)}
-#jarvis-interface .j-dialogue p{font-size:20px;font-weight:300;line-height:1.55;letter-spacing:-.3px;margin:12px auto 0;max-width:590px;color:#d3e8ef}
-#jarvis-interface .j-controls{position:relative;z-index:6;margin:0 44px;border-top:1px solid var(--j-line);padding-top:23px}
-#jarvis-interface .j-state-selector{display:flex;justify-content:center;gap:4px}
-#jarvis-interface .j-state-selector span{display:flex;align-items:center;gap:7px;padding:9px 13px;font-size:10px;color:#7f9eaa;transition:background .3s,color .3s;min-height:34px;border-radius:4px}
-#jarvis-interface .j-state-selector i{width:4px;height:4px;border-radius:50%;background:#35515b}
-#jarvis-interface .j-state-selector span[data-attivo]{background:#83ced310;color:var(--j-accent)}
-#jarvis-interface .j-state-selector span[data-attivo] i{background:var(--j-accent);box-shadow:0 0 8px var(--j-accent)}
-#jarvis-interface .j-main-actions{display:flex;align-items:center;justify-content:center;gap:25px;margin:20px 0 25px}
-#jarvis-interface .j-voice{display:flex;align-items:center;justify-content:center;gap:12px;padding:15px 26px;border:1px solid #66c6d278;border-radius:5px;background:linear-gradient(150deg,#173b4766,#0e263166);color:#d7fbff;font-size:11px;box-shadow:0 0 30px #3ddcff08;min-width:174px;transition:box-shadow .3s,background .3s}
-#jarvis-interface .j-voice:hover{background:#143d4a;box-shadow:0 0 30px #3ddcff16}
-#jarvis-interface .j-play{font-size:10px;color:var(--j-accent)}
-#jarvis-interface .j-mic,#jarvis-interface .j-audio-button{font-size:10px;color:#92b0bd;padding:12px 0;min-width:103px}
-#jarvis-interface .j-mic[aria-pressed="true"]{color:#77f1cc}
-#jarvis-interface .j-bottomline{display:flex;align-items:center;justify-content:space-between;padding:16px 0 20px;border-top:1px solid var(--j-line);gap:15px;font:8px monospace;letter-spacing:1.4px;color:#7897a3}
-#jarvis-interface .j-bottomline b{font-weight:400;color:#a1bac5;margin-left:9px}
-#jarvis-interface .j-bottomline button{font:8px monospace;letter-spacing:.6px;color:#92aeb8;padding:0}
-#jarvis-interface .j-toast{position:absolute;z-index:10;bottom:192px;left:50%;transform:translateX(-50%);width:min(430px,90%);padding:15px 20px;background:#101f2b;border:1px solid #365664;color:#d1e6ed;font-size:12px;line-height:1.6;box-shadow:0 8px 40px #0008}
-#jarvis-interface .j-fallback{position:absolute;left:30%;right:30%;top:35%;color:#b2dbe6;line-height:1.6;font-size:14px;padding:20px;background:#05101c}
-#jarvis-interface.j-immersed .j-heading,#jarvis-interface.j-immersed .j-left,#jarvis-interface.j-immersed .j-right,#jarvis-interface.j-immersed .j-coordinate,#jarvis-interface.j-immersed .j-callout{opacity:0;pointer-events:none}
-#jarvis-interface .j-left,#jarvis-interface .j-right,#jarvis-interface .j-heading,#jarvis-interface .j-coordinate,#jarvis-interface .j-callout{transition:opacity .6s}
-
-@media(min-width:1400px){
-  #jarvis-interface .j-main{height:700px}
-  #jarvis-interface .j-left,#jarvis-interface .j-right{width:205px}
-  #jarvis-interface h1{font-size:34px}
+html,
+body {
+  margin: 0;
+  height: 100%;
 }
-@media(max-width:1000px){
-  #jarvis-interface .j-header{margin:0 28px;height:83px}
-  #jarvis-interface .j-main{height:585px}
-  #jarvis-interface .j-heading{left:28px}
-  #jarvis-interface h1{font-size:24px}
-  #jarvis-interface .j-heading .j-overline{font-size:8px;letter-spacing:1.4px}
-  #jarvis-interface .j-left{left:28px;width:143px;top:237px}
-  #jarvis-interface .j-right{right:28px;width:143px}
-  #jarvis-interface .j-coordinate{right:28px}
-  #jarvis-interface .j-readout span{font-size:6px}
-  #jarvis-interface .j-readout b{font-size:19px}
-  #jarvis-interface .j-controls{margin:0 28px}
-  #jarvis-interface .j-callout-a{left:24%;top:24%}
-  #jarvis-interface .j-callout-c{left:66%}
-  #jarvis-interface .j-dialogue p{font-size:19px}
+body {
+  background: #edf1f4;
 }
-@media(max-width:760px){
-  #jarvis-interface .j-header{margin:0 20px;height:77px;gap:10px}
-  #jarvis-interface .j-brand{font-size:17px;letter-spacing:3px;gap:10px}
-  #jarvis-interface .j-brand small{font-size:7px;letter-spacing:2.5px}
-  #jarvis-interface .j-topline{font-size:8px;letter-spacing:1px;gap:6px}
-  #jarvis-interface .j-demo,#jarvis-interface .j-divider{display:none}
-  #jarvis-interface .j-icon-button{font-size:21px;width:30px}
-  #jarvis-interface .j-main{height:625px}
-  #jarvis-interface .j-heading{top:25px;left:20px}
-  #jarvis-interface h1{font-size:21px;line-height:1.25;margin:10px 0 8px}
-  #jarvis-interface .j-heading p{font-size:10px}
-  #jarvis-interface .j-coordinate{right:20px;top:28px;font-size:7px}
-  #jarvis-interface .j-coordinate span{font-size:6px}
-  #jarvis-interface .j-left{display:none}
-  #jarvis-interface .j-right{left:20px;right:20px;width:auto;top:auto;bottom:4px;display:flex;gap:14px}
-  #jarvis-interface .j-right>.j-section-label,#jarvis-interface .j-session{display:none}
-  #jarvis-interface .j-module{flex:1;min-width:0;gap:7px;padding:13px 0;border-top:1px solid var(--j-line);border-bottom:0}
-  #jarvis-interface .j-module b{font-size:10px}
-  #jarvis-interface .j-module small{font-size:8px}
-  #jarvis-interface .j-module-symbol{font-size:20px;flex-shrink:0;width:16px}
-  #jarvis-interface .j-arrow{display:none}
-  #jarvis-interface .j-callout-a{left:10%;top:32%}
-  #jarvis-interface .j-callout-b{left:65%;top:27%}
-  #jarvis-interface .j-callout-c{left:67%;top:64%}
-  #jarvis-interface .j-callout b{font-size:7px}
-  #jarvis-interface .j-callout i{width:22px}
-  #jarvis-interface .j-stage-caption{bottom:161px;font-size:7px;gap:20px}
-  #jarvis-interface .j-dialogue{left:8%;width:84%;bottom:74px;min-height:60px}
-  #jarvis-interface .j-dialogue p{font-size:18px;margin-top:10px}
-  #jarvis-interface .j-dialogue .j-overline{font-size:7px}
-  #jarvis-interface .j-controls{margin:0 20px;padding-top:16px}
-  #jarvis-interface .j-main-actions{gap:15px;margin:15px 0 20px}
-  #jarvis-interface .j-voice{min-width:150px;padding:14px 20px}
-  #jarvis-interface .j-mic,#jarvis-interface .j-audio-button{min-width:0;font-size:9px}
-  #jarvis-interface .j-bottomline{font-size:7px;letter-spacing:.7px}
-  #jarvis-interface .j-bottomline button{font-size:7px}
-  #jarvis-interface .j-bottomline [data-field="source"]{display:none}
-  #jarvis-interface .j-fallback{left:15%;right:15%}
-}
-@media(max-width:420px){
-  #jarvis-interface .j-header{margin:0 16px}
-  #jarvis-interface .j-brand{font-size:15px}
-  #jarvis-interface .j-emblem{width:24px;height:29px}
-  #jarvis-interface .j-topline{font-size:7px}
-  #jarvis-interface .j-main{height:570px}
-  #jarvis-interface .j-coordinate{display:none}
-  #jarvis-interface .j-state-selector{gap:0}
-  #jarvis-interface .j-state-selector span{padding:10px 8px;font-size:9px;gap:5px}
-  #jarvis-interface .j-controls{margin:0 16px}
-  #jarvis-interface .j-module-symbol{display:none}
-  #jarvis-interface .j-dialogue p{font-size:16px}
-  #jarvis-interface .j-main-actions{flex-wrap:wrap;gap:12px}
-  #jarvis-interface .j-voice{order:-1;width:100%}
-  #jarvis-interface .j-mic,#jarvis-interface .j-audio-button{flex:1;text-align:center;min-height:35px}
-  #jarvis-interface .j-right{gap:11px}
-  #jarvis-interface .j-stage-caption{font-size:6px}
-  #jarvis-interface .j-callout-c{left:69%;top:62%}
-}
-@media(pointer:coarse){
-  #jarvis-interface .j-mic,
-  #jarvis-interface .j-audio-button{min-height:44px}
-  #jarvis-interface .j-icon-button{min-width:44px;min-height:44px}
-}
-@media(prefers-reduced-motion:reduce){
-  #jarvis-interface *{transition:none!important}
-}
-#jarvis-interface .j-immersive{font:9px monospace;letter-spacing:1px;width:auto;min-width:38px}
-@media(max-width:360px){
-  #jarvis-interface .j-topline [data-field="status"]{display:none}
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
 }
 
-/* ───────── Aggiunte per Jarvis ───────── */
+#jarvis-interface {
+  /* tema chiaro */
+  --sfondo: #edf1f4;
+  --carta: #ffffff;
+  --carta-2: #f4f7f9;
+  --inchiostro: #15242e;
+  --tenue: #5a6c78; /* contrasto AA su bianco */
+  --linea: rgb(21 36 46 / 0.08);
+  --ombra: 0 1px 2px rgb(21 36 46 / 0.04), 0 8px 28px rgb(21 36 46 / 0.07);
+  --primario: #0e7f93; /* azzurro petrolio leggibile su chiaro */
+  --primario-tenue: rgb(14 127 147 / 0.1);
+  --utente: #e8f3f5;
+  --errore: #c2412d;
+  --raggio: 22px;
 
-#jarvis-interface{min-height:100vh}
-#jarvis-interface .j-dialogue p{max-height:7.8em;overflow-y:auto;pointer-events:auto;scrollbar-width:none;white-space:pre-wrap}
-#jarvis-interface .j-dialogue p::-webkit-scrollbar{display:none}
-#jarvis-interface .j-dialogue p.j-errore{color:#ff947f}
-#jarvis-interface .j-state-selector span{cursor:default}
-#jarvis-interface .j-audio-button[aria-pressed="false"]{color:#5d7884}
-#jarvis-interface .j-voice{min-width:200px}
-
-#jarvis-interface .j-console{display:flex;align-items:center;gap:10px;width:min(560px,100%);margin:0 auto 22px;padding:4px 4px 4px 14px;border:1px solid var(--j-line);border-radius:5px;background:#07151e99;transition:border-color .3s}
-#jarvis-interface .j-console:focus-within{border-color:color-mix(in srgb,var(--j-accent) 55%,transparent)}
-#jarvis-interface .j-console>span{font:12px monospace;color:var(--j-accent)}
-#jarvis-interface .j-console input{flex:1;min-width:0;padding:10px 0;border:0;background:transparent;color:var(--j-ink);font-size:13px;outline:none}
-#jarvis-interface .j-console input::placeholder{color:#5f7c88}
-#jarvis-interface .j-console button{padding:9px 14px;font:9px monospace;letter-spacing:1.4px;color:var(--j-accent);border-radius:4px}
-#jarvis-interface .j-console button:not(:disabled):hover{background:#83ced310}
-
-#jarvis-interface .j-bottom-actions{display:flex;gap:20px}
-
-#jarvis-interface .j-history{position:fixed;z-index:20;top:0;right:0;bottom:0;width:min(380px,100%);display:flex;flex-direction:column;background:#06111aF2;border-left:1px solid var(--j-line);backdrop-filter:blur(10px);transform:translateX(100%);visibility:hidden;transition:transform .4s,visibility .4s}
-#jarvis-interface .j-history[data-aperta]{transform:none;visibility:visible}
-#jarvis-interface .j-history header{display:flex;align-items:center;justify-content:space-between;padding:30px 28px 16px;border-bottom:1px solid var(--j-line)}
-#jarvis-interface .j-history header{gap:14px}#jarvis-interface .j-history header .j-overline{margin-right:auto}#jarvis-interface .j-history header button{font:9px monospace;letter-spacing:1px;color:#92aeb8}
-#jarvis-interface .j-history-rows{flex:1;overflow-y:auto;padding:12px 28px 30px}
-#jarvis-interface .j-history-empty{color:var(--j-muted);font-size:12px}
-#jarvis-interface .j-history-row{padding:16px 0;border-bottom:1px solid var(--j-line)}
-#jarvis-interface .j-history-row span{font:8px monospace;letter-spacing:2px;color:#7897a3}
-#jarvis-interface .j-history-row.assistant span{color:var(--j-accent)}
-#jarvis-interface .j-history-row.errore span,#jarvis-interface .j-history-row.errore p{color:#ff947f}
-#jarvis-interface .j-history-row p{margin:8px 0 0;font-size:13px;line-height:1.6;color:#cfe3ea;white-space:pre-wrap;overflow-wrap:anywhere}
-
-@media(max-width:760px){
-  #jarvis-interface .j-bottom-actions{gap:12px}
-  #jarvis-interface .j-console{margin-bottom:16px}
-  #jarvis-interface .j-voice{min-width:150px}
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(170px, 210px) minmax(0, 1fr) minmax(340px, 400px);
+  gap: 18px;
+  padding: 18px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--sfondo);
+  color: var(--inchiostro);
+  font-family: 'Aptos', 'Segoe UI', system-ui, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  color-scheme: light;
+  transition: background 0.3s, color 0.3s;
 }
-@media(max-width:420px){
-  #jarvis-interface .j-bottom-actions button:first-child{display:none}
+#jarvis-interface[data-tema='scuro'] {
+  --sfondo: #03090f;
+  --carta: #0a161e;
+  --carta-2: #0f1e28;
+  --inchiostro: #e2f4f8;
+  --tenue: #8aa3ae;
+  --linea: rgb(137 213 231 / 0.12);
+  --ombra: 0 8px 28px rgb(0 0 0 / 0.35);
+  --primario: #77e6ed;
+  --primario-tenue: rgb(119 230 237 / 0.1);
+  --utente: #10303a;
+  --errore: #ff947f;
+  color-scheme: dark;
+}
+#jarvis-interface *,
+#jarvis-interface *::before,
+#jarvis-interface *::after {
+  box-sizing: border-box;
+}
+/* :where() tiene bassa la priorità, così gli stili dei singoli pulsanti vincono */
+:where(#jarvis-interface) button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+#jarvis-interface :where(button:disabled) {
+  opacity: 0.4;
+  cursor: default;
+}
+#jarvis-interface :focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: 3px;
+}
+.j-icona {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+/* ───────── Sinistra: numeri ───────── */
+
+.j-numeri {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 26px 6px 0 8px;
+  min-width: 0;
+}
+.j-numero {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.j-numero span {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tenue);
+}
+.j-numero b {
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.j-numero-grande b {
+  font-size: 40px;
+}
+.j-numero small {
+  font-size: 12px;
+  color: var(--tenue);
+}
+
+/* ───────── Centro: la rete neurale (come l'originale) ───────── */
+
+.j-centro {
+  min-width: 0;
+  min-height: 0;
+  border-radius: 28px;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 40%, #0a2535, #03090f 65%);
+  box-shadow: var(--ombra);
+  position: relative;
+  color-scheme: dark;
+  color: #e2f4f8;
+  --j-ink: #e2f4f8;
+}
+.j-centro::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(transparent 49.5%, #5ad3e504 50%, transparent 50.5%);
+  background-size: 100% 5px;
+  z-index: 4;
+}
+.j-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: pan-y;
+  cursor: grab;
+}
+.j-stage:active {
+  cursor: grabbing;
+}
+.j-neural,
+.j-hud {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.j-hud {
+  pointer-events: none;
+}
+.j-overline {
+  display: block;
+  font: 9px monospace;
+  letter-spacing: 2px;
+  color: var(--j-accent);
+}
+.j-stage-caption {
+  position: absolute;
+  bottom: 122px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  white-space: nowrap;
+  font: 8px monospace;
+  letter-spacing: 2px;
+  color: #668893;
+  pointer-events: none;
+}
+.j-reticle {
+  font-size: 13px;
+  color: #5ba3af;
+}
+.j-callout {
+  position: absolute;
+  font: 8px monospace;
+  letter-spacing: 1.4px;
+  color: #8faeb7;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.85;
+}
+.j-callout span {
+  color: #447682;
+  font-size: 8px;
+}
+.j-callout b {
+  font-weight: 400;
+  font-size: 9px;
+}
+.j-callout i {
+  height: 1px;
+  width: 45px;
+  display: block;
+  background: linear-gradient(90deg, #569faf90, transparent);
+}
+.j-callout-a {
+  left: 18%;
+  top: 22%;
+}
+.j-callout-b {
+  left: 62%;
+  top: 14%;
+}
+.j-callout-c {
+  left: 66%;
+  top: 62%;
+}
+.j-dialogue {
+  position: absolute;
+  z-index: 5;
+  bottom: 24px;
+  left: 12%;
+  width: 76%;
+  text-align: center;
+  pointer-events: none;
+  min-height: 60px;
+}
+.j-dialogue .j-overline {
+  font-size: 8px;
+  letter-spacing: 2.6px;
+}
+.j-dialogue p {
+  font-size: 19px;
+  font-weight: 300;
+  line-height: 1.5;
+  letter-spacing: -0.3px;
+  margin: 10px auto 0;
+  max-width: 590px;
+  color: #d3e8ef;
+  /* al centro solo le ultime righe: il testo completo è nella chat a destra */
+  max-height: 4.6em;
+  overflow-y: auto;
+  scrollbar-width: none;
+  pointer-events: auto;
+}
+.j-dialogue p::-webkit-scrollbar {
+  display: none;
+}
+.j-dialogue p.j-errore {
+  color: #ff947f;
+}
+.j-fallback {
+  position: absolute;
+  left: 15%;
+  right: 15%;
+  top: 35%;
+  color: #b2dbe6;
+  line-height: 1.6;
+  font-size: 14px;
+  padding: 20px;
+  background: #05101c;
+}
+
+/* ───────── Destra: pannello ───────── */
+
+.j-pannello {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--raggio);
+  background: var(--carta);
+  box-shadow: var(--ombra);
+}
+
+.j-pannello-testa {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 2px 0;
+}
+.j-marchio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: auto;
+  min-width: 0;
+}
+.j-marchio strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+}
+.j-marchio small {
+  display: block;
+  font-size: 12px;
+  color: var(--tenue);
+}
+.j-emblem {
+  width: 26px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid #478c9c;
+  clip-path: polygon(25% 0, 75% 0, 100% 20%, 100% 80%, 75% 100%, 25% 100%, 0 80%, 0 20%);
+  background: linear-gradient(140deg, #20455333, #377a8d11);
+  position: relative;
+}
+.j-emblem::before {
+  content: '';
+  width: 13px;
+  height: 17px;
+  border: 1px solid #3fb3c6;
+  transform: skewY(-20deg);
+}
+.j-emblem b {
+  height: 6px;
+  width: 3px;
+  background: #3fc9d8;
+  box-shadow: 0 0 10px #7ddfea;
+  position: absolute;
+}
+.j-pillola {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--carta-2);
+  font-size: 12px;
+  color: var(--tenue);
+  white-space: nowrap;
+}
+.j-pillola i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--j-accent);
+  box-shadow: 0 0 8px var(--j-accent);
+}
+.j-tasto-icona {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--tenue);
+  transition: background 0.2s, color 0.2s;
+}
+.j-tasto-icona:hover {
+  background: var(--carta-2);
+  color: var(--inchiostro);
+}
+
+/* menu: piastrelle morbide */
+.j-menu {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.j-menu button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 11px 4px 9px;
+  border-radius: 16px;
+  background: var(--carta-2);
+  color: var(--tenue);
+  font-size: 12px;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+.j-menu button:hover {
+  color: var(--inchiostro);
+  transform: translateY(-1px);
+}
+.j-menu button[aria-current='page'] {
+  background: var(--primario-tenue);
+  color: var(--primario);
+  font-weight: 600;
+}
+.j-menu em {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.02em;
+  color: var(--tenue);
+  opacity: 0.75;
+}
+
+/* contenuto della sezione */
+.j-sezione {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--linea);
+  padding-top: 12px;
+}
+.j-sezione h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.j-sezione-testa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.j-sezione-testa button {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--primario);
+  background: var(--primario-tenue);
+}
+
+.j-chat {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2px 2px 6px;
+  scrollbar-width: thin;
+}
+.j-vuoto {
+  margin: auto 0;
+  text-align: center;
+  color: var(--tenue);
+}
+.j-msg {
+  margin: 0;
+  max-width: 88%;
+  padding: 9px 13px;
+  border-radius: 16px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.j-msg.assistant {
+  align-self: flex-start;
+  background: var(--carta-2);
+  border-bottom-left-radius: 6px;
+}
+.j-msg.user {
+  align-self: flex-end;
+  background: var(--utente);
+  border-bottom-right-radius: 6px;
+}
+.j-msg.fantasma {
+  opacity: 0.6;
+}
+.j-msg.errore {
+  color: var(--errore);
+}
+
+/* sezioni non ancora pronte */
+.j-presto {
+  margin: auto;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  color: var(--tenue);
+}
+.j-presto .j-icona {
+  width: 30px;
+  height: 30px;
+  color: var(--primario);
+}
+.j-presto h2 {
+  color: var(--inchiostro);
+}
+.j-presto p {
+  margin: 0;
+}
+.j-presto span {
+  margin-top: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--carta-2);
+  font-size: 11px;
+}
+
+/* impostazioni */
+.j-impostazioni {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.j-impostazioni h2 {
+  margin-bottom: 6px;
+}
+.j-riga {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--linea);
+  cursor: default;
+}
+.j-riga small {
+  display: block;
+  font-size: 12px;
+  color: var(--tenue);
+}
+.j-riga-colonna {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.j-segmenti {
+  display: flex;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--carta-2);
+}
+.j-segmenti button {
+  padding: 6px 10px;
+  border-radius: 9px;
+  font-size: 12px;
+  color: var(--tenue);
+}
+.j-segmenti button[aria-pressed='true'] {
+  background: var(--carta);
+  color: var(--inchiostro);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+}
+.j-voce {
+  display: flex;
+  gap: 8px;
+}
+.j-voce select {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--linea);
+  border-radius: 10px;
+  background: var(--carta-2);
+}
+.j-voce button {
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--primario-tenue);
+  color: var(--primario);
+}
+.j-nota {
+  font-size: 12px;
+  color: var(--tenue);
+}
+.j-impostazioni input[type='range'] {
+  accent-color: var(--primario);
+}
+.j-interruttore {
+  appearance: none;
+  flex: none;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--linea);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.j-interruttore::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  transition: transform 0.2s;
+}
+.j-interruttore:checked {
+  background: var(--primario);
+}
+.j-interruttore:checked::after {
+  transform: translateX(18px);
+}
+.j-interruttore:disabled {
+  opacity: 0.4;
+}
+
+/* barra per scrivere: sempre visibile in fondo al pannello */
+.j-console {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 18px;
+  background: var(--carta-2);
+  border: 1px solid var(--linea);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.j-console:focus-within {
+  border-color: var(--primario);
+  box-shadow: 0 0 0 4px var(--primario-tenue);
+}
+.j-console input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 4px;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+  outline: none;
+}
+#jarvis-interface .j-console input:focus-visible {
+  outline: none;
+}
+.j-console input::placeholder {
+  color: var(--tenue);
+}
+.j-mic-tondo {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--primario);
+  color: #fff;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+.j-mic-tondo:hover {
+  transform: scale(1.04);
+}
+.j-mic-tondo[data-attivo] {
+  background: var(--j-accent);
+  color: #03090f;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--j-accent) 25%, transparent);
+}
+.j-invia {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--primario);
+}
+
+/* avvisi */
+.j-toast {
+  position: fixed;
+  z-index: 10;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(460px, calc(100% - 32px));
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--carta);
+  color: var(--inchiostro);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.18);
+  border-left: 4px solid var(--errore);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* ───────── Schermi stretti: una colonna sola, la pagina scorre ───────── */
+
+@media (max-width: 1000px) {
+  #jarvis-interface {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    grid-template-columns: 1fr;
+    padding: 12px;
+    gap: 12px;
+  }
+  .j-centro {
+    order: 1;
+    height: 62vh;
+    min-height: 380px;
+  }
+  .j-pannello {
+    order: 2;
+    min-height: 70vh;
+  }
+  .j-numeri {
+    order: 3;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    padding: 8px 6px 20px;
+  }
+  .j-numero b,
+  .j-numero-grande b {
+    font-size: 24px;
+  }
+  .j-callout {
+    display: none;
+  }
+  .j-dialogue p {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #jarvis-interface * {
+    transition: none !important;
+  }
 }

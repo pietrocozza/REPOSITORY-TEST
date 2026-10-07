@@ -9,14 +9,40 @@ import {
   ascolta,
   dopoParolaAttivazione,
   estraiFrasi,
+  impostaVoce,
+  nomeVoce,
   preparaVoce,
   pronuncia,
   riconoscimentoDisponibile,
+  vociItaliane,
   zittisci,
+  type InfoVoce,
 } from '@/lib/voce'
+import { Icona, type NomeIcona } from '@/components/Icone'
 
-// Il tuo nome, mostrato nel pannello "Sessione"
+// Il tuo nome, mostrato in alto nel pannello di destra
 const NOME_UTENTE = 'Pietro'
+
+type Tema = 'chiaro' | 'scuro' | 'auto'
+type Sezione = 'conversazione' | 'oggi' | 'agenda' | 'email' | 'pratiche' | 'appartamenti' | 'documenti' | 'registro' | 'impostazioni'
+
+// Il menu di destra. Le funzioni non ancora pronte lo dicono chiaramente (arrivano nelle prossime fasi).
+const MENU: { id: Sezione; nome: string; icona: NomeIcona; descrizione: string; pronto: boolean }[] = [
+  { id: 'conversazione', nome: 'Chat', icona: 'chat', descrizione: 'Parla o scrivi a Jarvis', pronto: true },
+  { id: 'oggi', nome: 'Oggi', icona: 'sole', descrizione: 'Il riepilogo della giornata: appuntamenti, promemoria, email importanti e scadenze.', pronto: false },
+  { id: 'agenda', nome: 'Agenda', icona: 'calendario', descrizione: 'Appuntamenti e promemoria da Google Calendar, con avvisi prima degli impegni.', pronto: false },
+  { id: 'email', nome: 'Email', icona: 'posta', descrizione: 'Gmail: riassunti, email importanti, bozze di risposta. L’invio solo con il tuo permesso.', pronto: false },
+  { id: 'pratiche', nome: 'Pratiche', icona: 'cartella', descrizione: 'Le attività lunghe che Jarvis segue nel tempo, per esempio una richiesta di rimborso.', pronto: false },
+  { id: 'appartamenti', nome: 'Affitti', icona: 'casa', descrizione: 'Prenotazioni, occupazione, ricavi, buchi in calendario e prezzi suggeriti.', pronto: false },
+  { id: 'documenti', nome: 'Documenti', icona: 'documento', descrizione: 'Cerca e legge file solo nelle cartelle che autorizzi: PDF, Excel, fatture.', pronto: false },
+  { id: 'registro', nome: 'Registro', icona: 'registro', descrizione: 'Tutto quello che Jarvis fa, minuto per minuto, con le autorizzazioni date.', pronto: false },
+  { id: 'impostazioni', nome: 'Impostazioni', icona: 'ingranaggio', descrizione: 'Voce, tema, microfono', pronto: true },
+]
+
+// Impostazioni ricordate dal browser
+const CHIAVE_IMPOSTAZIONI = 'jarvis-impostazioni'
+type Impostazioni = { tema: Tema; voce: string | null; velocita: number; vocale: boolean }
+const IMPOSTAZIONI_INIZIALI: Impostazioni = { tema: 'chiaro', voce: null, velocita: 1.02, vocale: true }
 
 const MESSAGGI_ERRORE_MIC: Record<string, string> = {
   'not-allowed': 'Accesso al microfono non consentito. Abilitalo dall’icona a sinistra dell’indirizzo, oppure scrivi.',
@@ -34,17 +60,6 @@ const MODO: Record<Stato, Modo> = {
   conferma: 'waiting',
   successo: 'success',
   risposta: 'speaking',
-}
-
-// Quale indicatore in basso si accende per ogni stato
-const INDICATORE: Record<Stato, Stato> = {
-  pronto: 'pronto',
-  ascolto: 'ascolto',
-  elaborazione: 'elaborazione',
-  lavoro: 'elaborazione',
-  conferma: 'elaborazione',
-  successo: 'pronto',
-  risposta: 'risposta',
 }
 
 const ETICHETTE: Record<Modo, string> = {
@@ -72,7 +87,7 @@ const SALUTO = 'Sono qui. Da dove cominciamo?'
 
 let prossimoId = 1
 
-export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE · LIVE' }: { chiedi?: Chiedi; etichetta?: string }) {
+export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi }) {
   const [stato, setStato] = useState<Stato>('pronto')
   const [voci, setVoci] = useState<Voce[]>([])
   const [parziale, setParziale] = useState('')
@@ -81,10 +96,19 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
   const [vocale, setVocale] = useState(true)
   const [parolaAttivazione, setParolaAttivazione] = useState(false)
   const [microfono, setMicrofono] = useState(true)
-  const [cronologia, setCronologia] = useState(false)
-  const [immersivo, setImmersivo] = useState(false)
+  const [sezione, setSezione] = useState<Sezione>('conversazione')
+  const [tema, setTema] = useState<Tema>(IMPOSTAZIONI_INIZIALI.tema)
+  const [temaSistemaScuro, setTemaSistemaScuro] = useState(false)
+  const [voceScelta, setVoceScelta] = useState<string | null>(null)
+  const [velocita, setVelocita] = useState(IMPOSTAZIONI_INIZIALI.velocita)
+  const [elencoVoci, setElencoVoci] = useState<InfoVoce[]>([])
+  const [voceInUso, setVoceInUso] = useState('—')
   const [pausa, setPausa] = useState(false)
-  const [conteggi, setConteggi] = useState<{ nodi: number; connessioni: number } | null>(null)
+  // statistiche della sessione, per i numeri a sinistra
+  const [inizioTurno, setInizioTurno] = useState<number | null>(null)
+  const [tempi, setTempi] = useState<number[]>([])
+  const [nStrumenti, setNStrumenti] = useState(0)
+  const [ora, setOra] = useState(0)
   const [senzaWebgl, setSenzaWebgl] = useState(false)
   const [strumento, setStrumento] = useState<string | null>(null)
 
@@ -103,13 +127,14 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
   const nucleo = useRef<NucleoNeurale | null>(null)
   const tela = useRef<HTMLCanvasElement>(null)
   const telaHud = useRef<HTMLCanvasElement>(null)
-  const telaOnda = useRef<HTMLCanvasElement>(null)
   const livelloTesto = useRef<HTMLSpanElement>(null)
   const trascrizione = useRef<HTMLParagraphElement>(null)
   const righeCronologia = useRef<HTMLDivElement>(null)
   const campo = useRef<HTMLInputElement>(null)
   const timerErrore = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const strumentiUsati = useRef(false)
+  const inizioRef = useRef<number | null>(null)
+  const impostazioniCaricate = useRef(false)
   const usaBackend = chiedi === chiediAlServer
 
   useEffect(() => {
@@ -125,13 +150,56 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
     timerErrore.current = setTimeout(() => setErrore(null), 6000)
   }, [])
 
+  // Avvio: microfono, voci disponibili e impostazioni salvate
   useEffect(() => {
+    const aggiornaVoci = () => {
+      setElencoVoci(vociItaliane())
+      setVoceInUso(nomeVoce())
+    }
     const id = setTimeout(() => {
       setMicrofono(riconoscimentoDisponibile())
-      preparaVoce()
+      let salvate = IMPOSTAZIONI_INIZIALI
+      try {
+        salvate = { ...IMPOSTAZIONI_INIZIALI, ...JSON.parse(localStorage.getItem(CHIAVE_IMPOSTAZIONI) ?? '{}') }
+      } catch {
+        // impostazioni non leggibili: si usano quelle iniziali
+      }
+      setTema(salvate.tema)
+      setVoceScelta(salvate.voce)
+      setVelocita(salvate.velocita)
+      setVocale(salvate.vocale)
+      impostaVoce(salvate.voce, salvate.velocita)
+      preparaVoce(aggiornaVoci)
+      aggiornaVoci()
+      impostazioniCaricate.current = true
     }, 0)
-    return () => clearTimeout(id)
+    const sistema = window.matchMedia('(prefers-color-scheme: dark)')
+    const suTema = () => setTemaSistemaScuro(sistema.matches)
+    sistema.addEventListener('change', suTema)
+    const id2 = setTimeout(suTema, 0)
+    return () => {
+      clearTimeout(id)
+      clearTimeout(id2)
+      sistema.removeEventListener('change', suTema)
+    }
   }, [])
+
+  // Salva le impostazioni quando cambiano
+  useEffect(() => {
+    if (!impostazioniCaricate.current) return
+    try {
+      localStorage.setItem(CHIAVE_IMPOSTAZIONI, JSON.stringify({ tema, voce: voceScelta, velocita, vocale }))
+    } catch {
+      // archivio del browser non disponibile: le impostazioni valgono solo per questa volta
+    }
+  }, [tema, voceScelta, velocita, vocale])
+
+  // Mentre Jarvis lavora, il cronometro a sinistra avanza
+  useEffect(() => {
+    if (inizioTurno === null) return
+    const id = setInterval(() => setOra(Date.now()), 500)
+    return () => clearInterval(id)
+  }, [inizioTurno])
 
   // All'avvio controlla che backend e Claude Code siano pronti, e spiega cosa manca
   useEffect(() => {
@@ -164,7 +232,7 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
           if (statoRef.current === 'ascolto') core.setAudioLevel(livello.current)
           else core.clearAudio()
           if (f.time - ultimoHud > 0.03 || f.paused || ultimoHud < 0) {
-            if (telaHud.current) disegnaHud(telaHud.current, telaOnda.current, f, core.fit, statoRef.current === 'ascolto' ? bande.current : null)
+            if (telaHud.current) disegnaHud(telaHud.current, null, f, core.fit, null)
             ultimoHud = f.time
           }
           if (livelloTesto.current) {
@@ -178,9 +246,7 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
       return () => clearTimeout(id)
     }
     nucleo.current = core
-    const id = setTimeout(() => setConteggi({ nodi: core.network.nodes.length, connessioni: core.network.edges.length }), 0)
     return () => {
-      clearTimeout(id)
       core.destroy()
       nucleo.current = null
     }
@@ -273,6 +339,12 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
   const concludi = useCallback((t: number) => {
     if (t !== turno.current) return
     livello.current = 0
+    if (inizioRef.current !== null) {
+      const durata = Date.now() - inizioRef.current
+      setTempi((ts) => [...ts, durata])
+      inizioRef.current = null
+      setInizioTurno(null)
+    }
     if (strumentiUsati.current) {
       // se ha usato strumenti, un attimo di "completato" prima di tornare in attesa
       strumentiUsati.current = false
@@ -315,6 +387,10 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
       setParziale('')
       setStato('elaborazione')
       setStrumento(null)
+      const adesso = Date.now()
+      inizioRef.current = adesso
+      setInizioTurno(adesso)
+      setOra(adesso)
       strumentiUsati.current = false
 
       const idRisposta = prossimoId++
@@ -332,6 +408,7 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
             if (t !== turno.current) return
             if (e.stato === 'WORKING') {
               strumentiUsati.current = true
+              setNStrumenti((n) => n + 1)
               setStrumento(e.descrizione ?? e.strumento ?? null)
               setStato('lavoro')
             } else if (e.stato === 'WAITING_FOR_CONFIRMATION') setStato('conferma')
@@ -389,6 +466,8 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
     fermaAscolto.current = () => {}
     zittisci()
     livello.current = 0
+    inizioRef.current = null
+    setInizioTurno(null)
     setParziale('')
     setStato('pronto')
     if (attivazioneRef.current) setTimeout(() => ascoltoContinuoRef.current(), 250)
@@ -402,10 +481,7 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
   // Barra spaziatrice = parla / interrompi; Esc = interrompi
   useEffect(() => {
     const tasto = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setCronologia(false)
-        return interrompi()
-      }
+      if (e.key === 'Escape') return interrompi()
       const el = e.target as HTMLElement
       if (el.closest('input, textarea, button, [contenteditable]')) return
       if (e.code === 'Space') {
@@ -461,7 +537,7 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
   // Il testo della risposta e la cronologia scorrono da soli verso l'ultima riga
   useEffect(() => {
     for (const el of [trascrizione.current, righeCronologia.current]) if (el) el.scrollTop = el.scrollHeight
-  }, [voci, parziale, cronologia])
+  }, [voci, parziale, sezione])
 
   // Ascolto continuo: Jarvis risponde quando sente "Jarvis, …"
   const cambiaAttivazione = () => {
@@ -481,7 +557,24 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
     setVocale(!vocale)
   }
 
-  // ───────── Testi mostrati ─────────
+
+  const provaVoce = () => {
+    zittisci()
+    pronuncia(`Ciao ${NOME_UTENTE}, questa è la mia voce.`)
+  }
+
+  const scegliVoce = (nome: string | null) => {
+    setVoceScelta(nome)
+    impostaVoce(nome, velocita)
+    setVoceInUso(nomeVoce())
+  }
+
+  const cambiaVelocita = (v: number) => {
+    setVelocita(v)
+    impostaVoce(voceScelta, v)
+  }
+
+  // ───────── Testi e numeri mostrati ─────────
 
   const ultima = [...voci].reverse().find((v) => v.ruolo === 'assistant')
   const ultimaDomanda = [...voci].reverse().find((v) => v.ruolo === 'user')
@@ -491,74 +584,49 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
   else if (stato === 'elaborazione') parlato = ultimaDomanda ? `«${ultimaDomanda.testo}»` : 'Sto collegando le informazioni.'
   else if (stato === 'pronto' && parolaAttivazione && !ultima) parlato = 'Sono in ascolto. Di’ «Jarvis» e poi il comando.'
 
-  const [titoloEvento, dettaglioEvento] = errore
-    ? ['Attenzione', errore]
-    : stato === 'lavoro' && strumento
-      ? ['Strumento in uso', `${strumento}.`]
-      : EVENTI[stato]
-  const fonte =
-    stato === 'ascolto'
-      ? 'MICROFONO / TEMPO REALE'
-      : stato === 'elaborazione'
-        ? 'CLAUDE CODE / ELABORAZIONE'
-        : stato === 'lavoro'
-          ? `STRUMENTO / ${(strumento ?? '').toUpperCase()}`
-        : stato === 'risposta'
-          ? vocale
-            ? 'VOCE DI SISTEMA / RISPOSTA'
-            : 'TESTO / RISPOSTA'
-          : 'ANIMAZIONE PROCEDURALE'
+  const [titoloEvento] = errore ? ['Attenzione'] : stato === 'lavoro' && strumento ? [strumento] : EVENTI[stato]
   const inAttesa = stato === 'pronto' || stato === 'successo'
   const scambi = voci.filter((v) => v.ruolo === 'user').length
+  const secondi = (ms: number) => (ms < 10000 ? (ms / 1000).toFixed(1) : Math.round(ms / 1000).toString()).replace('.', ',')
+  const medio = tempi.length ? tempi.reduce((a, b) => a + b, 0) / tempi.length : null
+  const temaAttivo = tema === 'auto' ? (temaSistemaScuro ? 'scuro' : 'chiaro') : tema
+  const voceDaEdge = elencoVoci.some((v) => /natural|online/i.test(v.nome))
+  const voceMenu = MENU.find((m) => m.id === sezione)!
 
   return (
     <div
       id="jarvis-interface"
       data-state={modo}
-      className={immersivo ? 'j-immersed' : undefined}
+      data-tema={temaAttivo}
       style={{ '--j-accent': PALETTES[modo].css } as CSSProperties}
     >
-      <header className="j-header">
-        <div className="j-brand">
-          <span className="j-emblem" aria-hidden="true">
-            <b />
-          </span>
-          <div>
-            J.A.R.V.I.S.<small>NEURAL INTERFACE</small>
-          </div>
+      {/* ───────── Sinistra: solo numeri ───────── */}
+      <aside className="j-numeri" aria-label="Statistiche">
+        <div className="j-numero j-numero-grande">
+          <span>In corso</span>
+          <b>{inizioTurno !== null ? `${secondi(Math.max(0, ora - inizioTurno))} s` : '—'}</b>
+          <small>{inizioTurno !== null ? titoloEvento : 'Nessuna attività'}</small>
         </div>
-        <div className="j-topline">
-          <span className="j-live" />
-          <span data-field="status">{ETICHETTE[modo]}</span>
-          <span className="j-divider" />
-          <span className="j-demo">{etichetta}</span>
+        <div className="j-numero">
+          <span>Attività neurale</span>
+          <b ref={livelloTesto}>—</b>
         </div>
-        <button
-          className="j-icon-button j-immersive"
-          type="button"
-          aria-label={immersivo ? 'Esci dalla vista immersiva' : 'Attiva vista immersiva'}
-          aria-pressed={immersivo}
-          onClick={() => setImmersivo(!immersivo)}
-        >
-          VISTA
-        </button>
-      </header>
+        <div className="j-numero">
+          <span>Messaggi</span>
+          <b>{scambi}</b>
+        </div>
+        <div className="j-numero">
+          <span>Strumenti usati</span>
+          <b>{nStrumenti}</b>
+        </div>
+        <div className="j-numero">
+          <span>Tempo medio di risposta</span>
+          <b>{medio !== null ? `${secondi(medio)} s` : '—'}</b>
+        </div>
+      </aside>
 
-      <main className="j-main">
-        <div className="j-heading">
-          <span className="j-overline">INTELLIGENZA IN MOVIMENTO</span>
-          <h1>
-            Ogni connessione,
-            <br />
-            una possibilità.
-          </h1>
-          <p>Voce. Memoria. Azione.</p>
-        </div>
-
-        <div className="j-coordinate">
-          NEURAL ENGINE <span>01 / LIVE RENDER</span>
-        </div>
-
+      {/* ───────── Centro: la rete neurale (invariata) ───────── */}
+      <main className="j-centro">
         <div className="j-stage" aria-label="Rete neurale tridimensionale animata. Trascina per ruotare, usa la rotella per avvicinarti.">
           <canvas ref={tela} className="j-neural" role="img" aria-label="Neuroni luminosi collegati da filamenti, con impulsi in movimento" />
           <canvas ref={telaHud} className="j-hud" aria-hidden="true" />
@@ -585,126 +653,165 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
             <span>TRASCINA PER ESPLORARE</span>
             <span className="j-reticle">+</span>
           </div>
-        </div>
-
-        <aside className="j-left">
-          <div className="j-section-label">
-            CANALE VOCALE <span>01</span>
-          </div>
-          <canvas ref={telaOnda} className="j-wave" aria-label="Livello del segnale audio" />
-          <div className="j-small-line">
-            <span>{stato === 'ascolto' ? 'LIVELLO AUDIO' : 'ATTIVITÀ NEURALE'}</span>
-            <span ref={livelloTesto}>—</span>
-          </div>
-          <div className="j-readout">
-            <div>
-              <span>NEURONI VISUALI</span>
-              <b>{conteggi ? conteggi.nodi.toLocaleString('it-IT') : '—'}</b>
-            </div>
-            <div>
-              <span>CONNESSIONI</span>
-              <b>{conteggi ? conteggi.connessioni.toLocaleString('it-IT') : '—'}</b>
-            </div>
-          </div>
-          <div className="j-section-label j-event-label">ATTIVITÀ</div>
-          <div className="j-event">
-            <i />
-            <div>
-              <b>{titoloEvento}</b>
-              <span>{dettaglioEvento}</span>
-            </div>
-          </div>
-        </aside>
-
-        <aside className="j-right">
-          <div className="j-section-label">
-            MODULI <span>LIVE</span>
-          </div>
-          <button type="button" className="j-module" onClick={parlaOInterrompi}>
-            <span className="j-module-symbol">⌁</span>
-            <span>
-              <b>Conversazione</b>
-              <small>Ascolta e risponde</small>
-            </span>
-            <span className="j-arrow">↗</span>
-          </button>
-          <button type="button" className="j-module" onClick={() => campo.current?.focus()}>
-            <span className="j-module-symbol">▱</span>
-            <span>
-              <b>Messaggio</b>
-              <small>Scrivi un comando</small>
-            </span>
-            <span className="j-arrow">↗</span>
-          </button>
-          <button type="button" className="j-module" onClick={() => setCronologia(true)}>
-            <span className="j-module-symbol">◔</span>
-            <span>
-              <b>Cronologia</b>
-              <small>Rileggi la conversazione</small>
-            </span>
-            <span className="j-arrow">↗</span>
-          </button>
-          <div className="j-session">
-            <span className="j-overline">SESSIONE</span>
-            <b>Pronto, {NOME_UTENTE}.</b>
-            <p>
-              {scambi === 0 ? (
-                <>
-                  Un pensiero.
-                  <br />
-                  Migliaia di connessioni.
-                </>
-              ) : (
-                <>
-                  {scambi} {scambi === 1 ? 'scambio' : 'scambi'} in questa sessione.
-                  <br />
-                  Migliaia di connessioni.
-                </>
-              )}
+          <section className="j-dialogue" aria-live="polite">
+            <span className="j-overline">J.A.R.V.I.S. / {inAttesa && !errore ? 'STANDBY' : ETICHETTE[modo]}</span>
+            <p ref={trascrizione} className={ultima?.errore && stato === 'pronto' ? 'j-errore' : undefined}>
+              {parlato.replace(/\s*\n+\s*/g, ' ')}
             </p>
-            <span className="j-session-line" />
-          </div>
-        </aside>
-
-        <section className="j-dialogue" aria-live="polite">
-          <span className="j-overline">J.A.R.V.I.S. / {inAttesa && !errore ? 'STANDBY' : ETICHETTE[modo]}</span>
-          <p ref={trascrizione} className={ultima?.errore && stato === 'pronto' ? 'j-errore' : undefined}>
-            {parlato.replace(/\s*\n+\s*/g, ' ')}
-          </p>
-        </section>
+          </section>
+        </div>
       </main>
 
-      <footer className="j-controls">
-        <div className="j-state-selector" aria-label="Stato dell’assistente">
-          {(['pronto', 'ascolto', 'elaborazione', 'risposta'] as const).map((s) => (
-            <span key={s} aria-current={INDICATORE[stato] === s ? 'true' : undefined} data-attivo={INDICATORE[stato] === s || undefined}>
-              <i />
-              {s === 'pronto' ? 'Attesa' : s === 'ascolto' ? 'Ascolto' : s === 'elaborazione' ? 'Elaborazione' : 'Voce'}
+      {/* ───────── Destra: menu, contenuto e barra per scrivere ───────── */}
+      <aside className="j-pannello" aria-label="Comandi">
+        <header className="j-pannello-testa">
+          <div className="j-marchio">
+            <span className="j-emblem" aria-hidden="true">
+              <b />
             </span>
-          ))}
-        </div>
-
-        <div className="j-main-actions">
+            <div>
+              <strong>J.A.R.V.I.S.</strong>
+              <small>Ciao, {NOME_UTENTE}</small>
+            </div>
+          </div>
+          <span className="j-pillola">
+            <i />
+            {ETICHETTE[modo].toLowerCase()}
+          </span>
           <button
             type="button"
-            className="j-mic"
-            aria-pressed={parolaAttivazione}
-            onClick={cambiaAttivazione}
-            disabled={!microfono}
-            title="Resta in ascolto e risponde quando dici «Jarvis, …»"
+            className="j-tasto-icona"
+            aria-pressed={vocale}
+            onClick={cambiaVocale}
+            title={vocale ? 'Voce attiva: clic per silenziare' : 'Voce disattivata: clic per attivare'}
           >
-            {parolaAttivazione ? 'Ascolto continuo: ON' : 'Ascolto continuo'}
+            <Icona nome={vocale ? 'altoparlante' : 'muto'} />
           </button>
-          <button type="button" className="j-voice" onClick={parlaOInterrompi} title="Barra spaziatrice">
-            <span className="j-play" aria-hidden="true">
-              {inAttesa ? '▶' : '■'}
-            </span>
-            <span>{inAttesa ? 'Parla con Jarvis' : 'Interrompi'}</span>
-          </button>
-          <button type="button" className="j-audio-button" aria-pressed={vocale} onClick={cambiaVocale}>
-            {vocale ? 'Voce attiva' : 'Voce disattivata'}
-          </button>
-        </div>
+        </header>
+
+        <nav className="j-menu" aria-label="Menu">
+          {MENU.map((m) => (
+            <button key={m.id} type="button" aria-current={sezione === m.id ? 'page' : undefined} onClick={() => setSezione(m.id)}>
+              <Icona nome={m.icona} />
+              <span>{m.nome}</span>
+              {!m.pronto && <em>presto</em>}
+            </button>
+          ))}
+        </nav>
+
+        <section className="j-sezione" aria-label={voceMenu.nome}>
+          {sezione === 'conversazione' && (
+            <>
+              <div className="j-sezione-testa">
+                <h2>Conversazione</h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    interrompi()
+                    if (usaBackend) nuovaConversazione()
+                    setVoci([])
+                  }}
+                >
+                  Nuova
+                </button>
+              </div>
+              <div ref={righeCronologia} className="j-chat">
+                {voci.length === 0 && <p className="j-vuoto">Scrivi qui sotto o premi il microfono per parlare.</p>}
+                {voci.map((v) => (
+                  <p key={v.id} className={`j-msg ${v.ruolo}${v.errore ? ' errore' : ''}`}>
+                    {v.testo || '…'}
+                  </p>
+                ))}
+                {parziale && <p className="j-msg user fantasma">{parziale}</p>}
+              </div>
+            </>
+          )}
+
+          {sezione === 'impostazioni' && (
+            <div className="j-impostazioni">
+              <h2>Impostazioni</h2>
+
+              <div className="j-riga">
+                <span>Tema</span>
+                <div className="j-segmenti" role="group" aria-label="Tema">
+                  {(['chiaro', 'scuro', 'auto'] as Tema[]).map((t) => (
+                    <button key={t} type="button" aria-pressed={tema === t} onClick={() => setTema(t)}>
+                      {t === 'chiaro' ? 'Chiaro' : t === 'scuro' ? 'Scuro' : 'Automatico'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <label className="j-riga" htmlFor="voce-attiva">
+                <span>Leggi le risposte ad alta voce</span>
+                <input id="voce-attiva" type="checkbox" className="j-interruttore" checked={vocale} onChange={cambiaVocale} />
+              </label>
+
+              <div className="j-riga j-riga-colonna">
+                <label htmlFor="scelta-voce">Voce</label>
+                <div className="j-voce">
+                  <select id="scelta-voce" value={voceScelta ?? ''} onChange={(e) => scegliVoce(e.target.value || null)}>
+                    <option value="">Automatica ({voceInUso})</option>
+                    {elencoVoci.map((v) => (
+                      <option key={v.nome} value={v.nome}>
+                        {v.nome}
+                        {v.naturale ? ' ★' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" onClick={provaVoce}>
+                    Prova
+                  </button>
+                </div>
+                {!voceDaEdge && (
+                  <small className="j-nota">Per voci più naturali apri Jarvis con Microsoft Edge: ha le voci italiane “Natural” gratuite (★).</small>
+                )}
+              </div>
+
+              <div className="j-riga j-riga-colonna">
+                <label htmlFor="velocita-voce">Velocità della voce: {velocita.toFixed(2).replace('.', ',')}×</label>
+                <input
+                  id="velocita-voce"
+                  type="range"
+                  min={0.8}
+                  max={1.3}
+                  step={0.02}
+                  value={velocita}
+                  onChange={(e) => cambiaVelocita(Number(e.target.value))}
+                />
+              </div>
+
+              <label className="j-riga" htmlFor="ascolto-continuo">
+                <span>
+                  Ascolto continuo
+                  <small>Risponde quando dici «Jarvis, …»</small>
+                </span>
+                <input
+                  id="ascolto-continuo"
+                  type="checkbox"
+                  className="j-interruttore"
+                  checked={parolaAttivazione}
+                  onChange={cambiaAttivazione}
+                  disabled={!microfono}
+                />
+              </label>
+
+              <label className="j-riga" htmlFor="pausa-animazione">
+                <span>Ferma l’animazione (risparmia batteria)</span>
+                <input id="pausa-animazione" type="checkbox" className="j-interruttore" checked={pausa} onChange={() => setPausa(!pausa)} />
+              </label>
+            </div>
+          )}
+
+          {!voceMenu.pronto && (
+            <div className="j-presto">
+              <Icona nome={voceMenu.icona} />
+              <h2>{voceMenu.nome}</h2>
+              <p>{voceMenu.descrizione}</p>
+              <span>In arrivo nelle prossime fasi</span>
+            </div>
+          )}
+        </section>
 
         <form
           className="j-console"
@@ -712,73 +819,39 @@ export default function Jarvis({ chiedi = chiediAlServer, etichetta = 'CLAUDE ·
             e.preventDefault()
             invia(testo)
             setTesto('')
+            setSezione('conversazione')
           }}
         >
-          <span aria-hidden="true">›</span>
+          <button
+            type="button"
+            className="j-mic-tondo"
+            data-attivo={!inAttesa || undefined}
+            onClick={parlaOInterrompi}
+            aria-label={inAttesa ? 'Parla con Jarvis' : 'Interrompi'}
+            title={inAttesa ? 'Parla (barra spaziatrice)' : 'Interrompi (Esc)'}
+          >
+            <Icona nome={inAttesa ? 'microfono' : 'stop'} />
+          </button>
           <input
             ref={campo}
             id="comando"
             value={testo}
             onChange={(e) => setTesto(e.target.value)}
-            placeholder="Scrivi un comando a Jarvis…"
-            aria-label="Scrivi un comando a Jarvis"
+            placeholder="Scrivi a Jarvis…"
+            aria-label="Scrivi a Jarvis"
             autoComplete="off"
           />
-          <button type="submit" disabled={!testo.trim()}>
-            Invia ↵
+          <button type="submit" className="j-invia" disabled={!testo.trim()} aria-label="Invia">
+            <Icona nome="invia" />
           </button>
         </form>
-
-        <div className="j-bottomline">
-          <span>
-            NEURAL CORE <b>V.02</b>
-          </span>
-          <span data-field="source">{fonte}</span>
-          <span className="j-bottom-actions">
-            <button type="button" onClick={() => setCronologia(true)}>
-              Cronologia
-            </button>
-            <button type="button" aria-pressed={pausa} onClick={() => setPausa(!pausa)}>
-              {pausa ? 'Riprendi animazione' : 'Pausa animazione'}
-            </button>
-          </span>
-        </div>
-      </footer>
+      </aside>
 
       {errore && (
         <div className="j-toast" role="status">
           {errore}
         </div>
       )}
-
-      <aside className="j-history" data-aperta={cronologia || undefined} aria-label="Cronologia" aria-hidden={!cronologia}>
-        <header>
-          <span className="j-overline">CRONOLOGIA</span>
-          <button
-            type="button"
-            tabIndex={cronologia ? 0 : -1}
-            onClick={() => {
-              interrompi()
-              if (usaBackend) nuovaConversazione()
-              setVoci([])
-            }}
-          >
-            Nuova conversazione
-          </button>
-          <button type="button" onClick={() => setCronologia(false)} tabIndex={cronologia ? 0 : -1}>
-            Chiudi ✕
-          </button>
-        </header>
-        <div ref={righeCronologia} className="j-history-rows">
-          {voci.length === 0 && <p className="j-history-empty">Ancora nessun messaggio.</p>}
-          {voci.map((v) => (
-            <article key={v.id} className={`j-history-row ${v.ruolo}${v.errore ? ' errore' : ''}`}>
-              <span>{v.ruolo === 'user' ? 'TU' : v.errore ? 'SISTEMA' : 'J.A.R.V.I.S.'}</span>
-              <p>{v.testo || '…'}</p>
-            </article>
-          ))}
-        </div>
-      </aside>
     </div>
   )
 }

@@ -54,14 +54,21 @@ Si apre il browser su http://127.0.0.1:3000. Per spegnere Jarvis premi **Ctrl+C*
 
 ## Come si usa
 
+- **Al centro** la rete neurale: cambia colore e ritmo a seconda di quello che fa Jarvis. Trascinala per ruotarla.
+- **A destra** tutto il resto: il menu, la conversazione e, in fondo, la barra per scrivere (sempre visibile).
+- **A sinistra** i numeri: attività in corso, messaggi, strumenti usati, tempo medio di risposta.
+
 | Azione | Come |
 | --- | --- |
-| Scrivere | casella in basso, poi Invio |
-| Parlare | **Parla con Jarvis** oppure **barra spaziatrice** (consenti il microfono la prima volta) |
-| Interrompere | **Interrompi** oppure **Esc** |
-| Ascolto continuo | risponde quando dici *"Jarvis, …"* |
-| Voce on/off | **Voce attiva / disattivata** |
-| Cronologia e nuova conversazione | **Cronologia** (in basso o nei moduli) |
+| Scrivere | barra in basso a destra, poi Invio |
+| Parlare | pulsante del microfono oppure **barra spaziatrice** (consenti il microfono la prima volta) |
+| Interrompere | lo stesso pulsante (diventa un quadrato) oppure **Esc** |
+| Voce on/off | icona dell'altoparlante in alto a destra |
+| Tema chiaro/scuro, scelta della voce, velocità, ascolto continuo | **Impostazioni** nel menu |
+| Nuova conversazione | **Nuova**, sopra la chat |
+
+Le voci più naturali (gratuite) sono quelle "Natural" di **Microsoft Edge**: apri Jarvis con Edge e scegli la voce
+in Impostazioni (quelle con la ★).
 
 ## Impostazioni
 
