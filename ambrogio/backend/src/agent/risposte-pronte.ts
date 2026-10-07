@@ -78,12 +78,20 @@ const REGOLE: Regola[] = [
     risposta: (c) => {
       const m = momento(c.adesso)
       const saluto = m === 'mattina' ? 'Buongiorno' : m === 'pomeriggio' ? 'Buon pomeriggio' : m === 'sera' ? 'Buonasera' : 'Buonanotte'
-      return scegli([`${saluto}, ${c.appellativo}. Sono qui, cosa posso fare per te?`, `${saluto}, ${c.appellativo}. Ai tuoi ordini.`, `Eccomi, ${c.appellativo}. Dimmi pure.`], c.caso)
+      return scegli(
+        [
+          `${saluto}, ${c.appellativo}. Sono qui, cosa posso fare per te?`,
+          `${saluto}, ${c.appellativo}. Ai tuoi ordini.`,
+          `Ué, ${c.appellativo}! Sun chì, dimmi pure.`,
+          `Eccomi, ${c.appellativo}. Andèm, cosa ti serve?`,
+        ],
+        c.caso,
+      )
     },
   },
   {
     frasi: /^(?:grazie|grazie mille|grazie tante|ti ringrazio|perfetto grazie|ok grazie|va bene grazie|ottimo grazie|grazie ambrogio)$/,
-    risposta: (c) => scegli([`Dovere, ${c.appellativo}.`, 'È un piacere.', 'Sempre a disposizione.', 'Figurati, è il mio mestiere.'], c.caso),
+    risposta: (c) => scegli([`Dovere, ${c.appellativo}.`, 'È un piacere.', 'Sempre a disposizione.', 'Fa nagott, è il mio mestiere.'], c.caso),
   },
   {
     frasi: /^(?:chi sei|chi sei tu|come ti chiami|qual è il tuo nome|presentati|tu chi sei)$/,
@@ -91,7 +99,7 @@ const REGOLE: Regola[] = [
   },
   {
     frasi: /^(?:come stai|come va|tutto bene|come ti senti|come butta)$/,
-    risposta: (c) => scegli(['Benissimo, grazie. Pronto a servirti.', 'In gran forma, come sempre. E tu?', 'Tutto in ordine, grazie. Cosa posso fare per te?'], c.caso),
+    risposta: (c) => scegli(['Benissimo, grazie. Pronto a servirti.', 'In gran forma, come sempre. E tu?', 'Ué, si tira avanti! Tutto in ordine. Cosa posso fare per te?'], c.caso),
   },
   {
     frasi: /^(?:buonanotte|buona notte|notte|vado a dormire)$/,

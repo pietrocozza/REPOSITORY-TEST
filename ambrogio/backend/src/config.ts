@@ -54,6 +54,15 @@ export const config = {
     consentiApiAConsumo: vero('AMBROGIO_CONSENTI_API_A_CONSUMO'),
   },
 
+  /** voce con accento milanese (Google Gemini): la chiave si crea gratis su aistudio.google.com */
+  gemini: {
+    chiave: env('AMBROGIO_GEMINI_CHIAVE'),
+    /** vuoto = sceglie Ambrogio il modello vocale disponibile */
+    modello: env('AMBROGIO_GEMINI_MODELLO'),
+    /** solo per i test (un finto Gemini) */
+    url: env('AMBROGIO_GEMINI_URL') || undefined,
+  },
+
   /** come Ambrogio ti chiama */
   appellativo: env('AMBROGIO_APPELLATIVO', 'Pietro'),
 }

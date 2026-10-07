@@ -171,3 +171,8 @@ export type ElencoAggiornamenti =
 /** controlla = chiedi anche a GitHub se ci sono aggiornamenti nuovi */
 export const caricaAggiornamenti = (controlla = false) => leggi<ElencoAggiornamenti>(`/api/codice${controlla ? '?controlla=1' : ''}`)
 export const caricaModifiche = (sha: string) => leggi<{ sha: string; file: FileCambiato[] }>(`/api/codice/${sha}`)
+
+// ───────── Voce di Ambrogio con Gemini ─────────
+
+export type StatoVoce = { disponibile: boolean; voci: { id: string; descrizione: string }[]; sospesaFinoA: string | null; richiesteOggi: number }
+export const caricaStatoVoce = () => leggi<StatoVoce>('/api/voce')

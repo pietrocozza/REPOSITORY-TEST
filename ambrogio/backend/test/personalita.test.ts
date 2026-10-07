@@ -20,3 +20,11 @@ test("l'imprenditore brillante parla a modo suo ma non si spaccia per una person
   assert.ok(testo.includes('humour nero'))
   assert.ok(testo.includes('non prende mai di mira gruppi di persone'))
 })
+
+test('Ambrogio si presenta come maggiordomo e usa il milanese (tranne «Essenziale»)', async () => {
+  const { istruzioni } = await import('../src/agent/istruzioni.ts')
+  const testo = istruzioni('Pietro', 'maggiordomo')
+  assert.match(testo, /Ti chiami Ambrogio e sei il maggiordomo personale di Pietro/)
+  assert.match(testo, /dialetto milanese[\s\S]*Ghe pensi mi/)
+  assert.doesNotMatch(istruzioni('Pietro', 'essenziale'), /dialetto milanese/)
+})

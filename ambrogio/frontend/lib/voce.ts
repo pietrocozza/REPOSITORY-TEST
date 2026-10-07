@@ -182,11 +182,15 @@ export const nomeVoce = () => vocePreferita?.name ?? 'predefinita di sistema'
 // Le frasi vengono messe in coda: si parla mentre la risposta sta ancora arrivando
 const inCoda = new Set<SpeechSynthesisUtterance>() // riferimenti tenuti vivi (bug di Chrome)
 
-export function pronuncia(testo: string, eventi: { onInizio?: () => void; onParola?: () => void; onFine?: () => void } = {}) {
-  const pulito = testo
+type EventiVoce = { onInizio?: () => void; onParola?: () => void; onFine?: () => void }
+
+const pulisci = (testo: string) =>
+  testo
     .replace(/[*_#`>|~]/g, '')
     .replace(/https?:\/\/\S+/g, '')
     .trim()
+
+function pronunciaEdge(pulito: string, eventi: EventiVoce) {
   if (!pulito || typeof window === 'undefined' || !('speechSynthesis' in window)) {
     eventi.onFine?.()
     return
@@ -208,8 +212,114 @@ export function pronuncia(testo: string, eventi: { onInizio?: () => void; onParo
   window.speechSynthesis.speak(u)
 }
 
+// ───────── Voce di Ambrogio con Gemini (accento milanese) ─────────
+// L'audio lo prepara il backend (che tiene la chiave). Se Gemini non c'è, non risponde o ha finito
+// le richieste gratuite del giorno, si usa la voce di Edge senza interrompere il discorso.
+
+export type MotoreVoce = 'edge' | 'gemini'
+let motore: MotoreVoce = 'edge'
+let voceGemini = 'Charon'
+let geminiInPausaFino = 0
+let avviso: ((messaggio: string) => void) | null = null
+
+/** Sceglie chi parla: le voci di Edge o Ambrogio con Gemini. */
+export function impostaMotore(nuovo: MotoreVoce, voce?: string, onAvviso?: (messaggio: string) => void) {
+  motore = nuovo
+  if (voce) voceGemini = voce
+  if (onAvviso) avviso = onAvviso
+  geminiInPausaFino = 0
+}
+
+/** vero se la prossima frase la dirà Gemini */
+export const parlaGemini = () => motore === 'gemini' && Date.now() > geminiInPausaFino
+
+type Battuta = { testo: string; eventi: EventiVoce; audio: Promise<Blob | null>; annullata: boolean; el?: HTMLAudioElement; finita?: boolean }
+const codaGemini: Battuta[] = []
+let attuale: Battuta | null = null
+
+async function scarica(testo: string): Promise<Blob | null> {
+  try {
+    const res = await fetch('/api/voce', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ testo, voce: voceGemini }),
+    })
+    if (res.ok) return await res.blob()
+    const dati = (await res.json().catch(() => null)) as { errore?: string } | null
+    // limite raggiunto o chiave mancante: per un po' parla Edge, senza riprovare a ogni frase
+    geminiInPausaFino = Date.now() + (res.status === 429 ? 30 : 10) * 60 * 1000
+    if (res.status === 429 || res.status === 409) avviso?.(dati?.errore ?? 'La voce di Gemini non è disponibile: uso quella di Edge.')
+  } catch {
+    geminiInPausaFino = Date.now() + 60 * 1000
+  }
+  return null
+}
+
+function chiudi(b: Battuta) {
+  if (b.finita) return
+  b.finita = true
+  b.eventi.onFine?.()
+}
+
+async function prossima() {
+  const b = codaGemini.shift()
+  attuale = b ?? null
+  if (!b) return
+  const audio = await b.audio
+  if (b.annullata) return
+  const avanti = () => {
+    chiudi(b)
+    if (attuale === b) prossima()
+  }
+  if (!audio) {
+    // questa frase la dice Edge
+    pronunciaEdge(b.testo, { onInizio: b.eventi.onInizio, onParola: b.eventi.onParola, onFine: avanti })
+    return
+  }
+  const indirizzo = URL.createObjectURL(audio)
+  const el = new Audio(indirizzo)
+  b.el = el
+  el.playbackRate = Math.min(1.25, Math.max(0.85, velocita))
+  el.onplay = () => b.eventi.onInizio?.()
+  el.ontimeupdate = () => b.eventi.onParola?.()
+  const fine = () => {
+    URL.revokeObjectURL(indirizzo)
+    avanti()
+  }
+  el.onended = fine
+  el.onerror = fine
+  el.play().catch(() => {
+    // il browser non lascia suonare: questa frase la dice Edge
+    URL.revokeObjectURL(indirizzo)
+    pronunciaEdge(b.testo, { onInizio: b.eventi.onInizio, onParola: b.eventi.onParola, onFine: avanti })
+  })
+}
+
+export function pronuncia(testo: string, eventi: EventiVoce = {}) {
+  const pulito = pulisci(testo)
+  if (!pulito || typeof window === 'undefined') {
+    eventi.onFine?.()
+    return
+  }
+  if (!parlaGemini()) return pronunciaEdge(pulito, eventi)
+  // l'audio si prepara subito, anche mentre la frase prima sta ancora suonando
+  codaGemini.push({ testo: pulito, eventi, audio: scarica(pulito), annullata: false })
+  if (!attuale) prossima()
+}
+
 export function zittisci() {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
+  if (typeof window === 'undefined') return
+  for (const b of codaGemini.splice(0)) {
+    b.annullata = true
+    chiudi(b)
+  }
+  if (attuale) {
+    attuale.annullata = true
+    attuale.el?.pause()
+    chiudi(attuale)
+    attuale = null
+  }
+  if (!('speechSynthesis' in window)) return
   inCoda.clear()
   window.speechSynthesis.cancel()
 }

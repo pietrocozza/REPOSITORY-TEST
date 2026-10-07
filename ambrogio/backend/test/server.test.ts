@@ -117,3 +117,14 @@ test('domanda elementare: risposta immediata senza Claude', async () => {
   assert.match(eventi[0].testo, /^(Sono le|È )/)
   assert.ok(Date.now() - inizio < 1000)
 })
+
+test('voce: senza chiave il backend lo dice (e l’interfaccia userà Edge)', async () => {
+  const h = { Origin: 'http://localhost:3000', 'Content-Type': 'application/json' }
+  const stato = (await (await fetch(`${base}/api/voce`, { headers: h })).json()) as { disponibile: boolean; voci: unknown[] }
+  assert.equal(typeof stato.disponibile, 'boolean')
+  assert.ok(stato.voci.length > 3)
+  if (!stato.disponibile) {
+    const r = await fetch(`${base}/api/voce`, { method: 'POST', headers: h, body: JSON.stringify({ testo: 'Ciao' }) })
+    assert.equal(r.status, 409)
+  }
+})

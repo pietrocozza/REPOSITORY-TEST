@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from 're
 import {
   caricaAggiornamenti,
   caricaAutorizzazioni,
+  caricaStatoVoce,
   caricaConversazione,
   chiediAlServer,
   decidiAutorizzazione,
@@ -13,6 +14,7 @@ import {
   type Autorizzazione,
   type Chiedi,
   type Personalita,
+  type StatoVoce,
 } from '@/lib/chat'
 import Conferma from '@/components/Conferma'
 import Codice, { CHIAVE_VISTO, piuRecente } from '@/components/Codice'
@@ -26,7 +28,9 @@ import {
   eStop,
   estraiFrasi,
   impostaVoce,
+  impostaMotore,
   nomeVoce,
+  parlaGemini,
   preparaVoce,
   pronuncia,
   riconoscimentoDisponibile,
@@ -34,6 +38,7 @@ import {
   vociItaliane,
   zittisci,
   type InfoVoce,
+  type MotoreVoce,
 } from '@/lib/voce'
 import { Icona, type NomeIcona } from '@/components/Icone'
 
@@ -59,8 +64,25 @@ const MENU: { id: Sezione; nome: string; icona: NomeIcona; descrizione: string; 
 // Impostazioni ricordate dal browser
 const CHIAVE_IMPOSTAZIONI = 'ambrogio-impostazioni'
 // attivazione = ascolto continuo con «Ambrogio» (come gli assistenti vocali di casa)
-type Impostazioni = { tema: Tema; voce: string | null; velocita: number; vocale: boolean; attivazione: boolean }
-const IMPOSTAZIONI_INIZIALI: Impostazioni = { tema: 'scuro', voce: null, velocita: 1.02, vocale: true, attivazione: true }
+// motore = chi parla: 'gemini' (Ambrogio con accento milanese, se c'è la chiave) oppure 'edge'
+type Impostazioni = {
+  tema: Tema
+  voce: string | null
+  velocita: number
+  vocale: boolean
+  attivazione: boolean
+  motore: MotoreVoce
+  voceGemini: string
+}
+const IMPOSTAZIONI_INIZIALI: Impostazioni = {
+  tema: 'scuro',
+  voce: null,
+  velocita: 1.02,
+  vocale: true,
+  attivazione: true,
+  motore: 'gemini',
+  voceGemini: 'Charon',
+}
 
 const MESSAGGI_ERRORE_MIC: Record<string, string> = {
   'not-allowed': 'Accesso al microfono non consentito. Abilitalo dall’icona a sinistra dell’indirizzo, oppure scrivi.',
@@ -133,6 +155,9 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   const [velocita, setVelocita] = useState(IMPOSTAZIONI_INIZIALI.velocita)
   const [elencoVoci, setElencoVoci] = useState<InfoVoce[]>([])
   const [voceInUso, setVoceInUso] = useState('—')
+  const [motoreVoce, setMotoreVoce] = useState<MotoreVoce>(IMPOSTAZIONI_INIZIALI.motore)
+  const [voceGemini, setVoceGemini] = useState(IMPOSTAZIONI_INIZIALI.voceGemini)
+  const [statoVoce, setStatoVoce] = useState<StatoVoce | null>(null)
   const [pausa, setPausa] = useState(false)
   const [personalita, setPersonalita] = useState<string | null>(null)
   const [conferme, setConferme] = useState<Autorizzazione[]>([])
@@ -222,6 +247,8 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       attivazioneRef.current = conAttivazione
       if (conAttivazione) setTimeout(() => sentinellaRef.current(), 800)
       impostaVoce(salvate.voce, salvate.velocita)
+      setMotoreVoce(salvate.motore)
+      setVoceGemini(salvate.voceGemini)
       preparaVoce(aggiornaVoci)
       aggiornaVoci()
       impostazioniCaricate.current = true
@@ -241,11 +268,25 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   useEffect(() => {
     if (!impostazioniCaricate.current) return
     try {
-      localStorage.setItem(CHIAVE_IMPOSTAZIONI, JSON.stringify({ tema, voce: voceScelta, velocita, vocale, attivazione: parolaAttivazione }))
+      localStorage.setItem(CHIAVE_IMPOSTAZIONI, JSON.stringify({ tema, voce: voceScelta, velocita, vocale, attivazione: parolaAttivazione, motore: motoreVoce, voceGemini }))
     } catch {
       // archivio del browser non disponibile: le impostazioni valgono solo per questa volta
     }
-  }, [tema, voceScelta, velocita, vocale, parolaAttivazione])
+  }, [tema, voceScelta, velocita, vocale, parolaAttivazione, motoreVoce, voceGemini])
+
+  // Chi parla: Ambrogio con Gemini se c'è la chiave e l'hai scelto, altrimenti le voci di Edge
+  useEffect(() => {
+    if (!usaBackend) return
+    let annullato = false
+    caricaStatoVoce().then((s) => {
+      if (annullato) return
+      setStatoVoce(s)
+      impostaMotore(motoreVoce === 'gemini' && s?.disponibile ? 'gemini' : 'edge', voceGemini, mostraErrore)
+    })
+    return () => {
+      annullato = true
+    }
+  }, [usaBackend, motoreVoce, voceGemini, mostraErrore])
 
   // Mentre Ambrogio lavora, il cronometro a sinistra avanza
   useEffect(() => {
@@ -556,6 +597,8 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       richiesta.current = controller
       let buffer = ''
       let primo = true
+      // con Gemini la risposta si dice tutta insieme (una sola richiesta: le gratuite sono poche)
+      const tuttaInsieme = parlaGemini()
       // frase di cortesia per le ricerche (una sola per domanda)
       let cortesiaDetta = false
       const cortesia = () => {
@@ -599,6 +642,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
             setVoci((vs) => vs.map((v) => (v.id === idRisposta ? { ...v, testo: v.testo + pezzo } : v)))
             if (vocaleRef.current) {
               buffer += pezzo
+              if (tuttaInsieme) return
               const { frasi, resto } = estraiFrasi(buffer)
               buffer = resto
               frasi.forEach((f) => parla(f, t))
@@ -781,7 +825,11 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
 
   const provaVoce = () => {
     zittisci()
-    pronuncia(`Ciao ${NOME_UTENTE}, questa è la mia voce.`)
+    pronuncia(
+      motoreVoce === 'gemini' && statoVoce?.disponibile
+        ? `Ué, ciao ${NOME_UTENTE}! Sono Ambrogio, il tuo maggiordomo. Ghe pensi mi.`
+        : `Ciao ${NOME_UTENTE}, questa è la mia voce.`,
+    )
   }
 
   const scegliVoce = (nome: string | null) => {
@@ -1038,7 +1086,46 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
               </label>
 
               <div className="j-riga j-riga-colonna">
-                <label htmlFor="scelta-voce">Voce</label>
+                <span>
+                  Chi parla
+                  <small>
+                    {statoVoce?.disponibile
+                      ? statoVoce.sospesaFinoA
+                        ? 'Gemini ha finito le richieste gratuite per ora: parla Edge, poi si riprova da solo.'
+                        : 'Ambrogio con accento milanese (Gemini, gratis con un limite di richieste al giorno).'
+                      : 'Per la voce milanese serve la chiave gratuita di Gemini nel file .env (vedi il README).'}
+                  </small>
+                </span>
+                <div className="j-segmenti" role="group" aria-label="Chi parla">
+                  <button type="button" aria-pressed={motoreVoce === 'gemini'} onClick={() => setMotoreVoce('gemini')} disabled={!statoVoce?.disponibile}>
+                    Ambrogio milanese
+                  </button>
+                  <button type="button" aria-pressed={motoreVoce === 'edge' || !statoVoce?.disponibile} onClick={() => setMotoreVoce('edge')}>
+                    Voce di Edge
+                  </button>
+                </div>
+              </div>
+
+              {motoreVoce === 'gemini' && statoVoce?.disponibile && (
+                <div className="j-riga j-riga-colonna">
+                  <label htmlFor="voce-gemini">Voce di Ambrogio</label>
+                  <div className="j-voce">
+                    <select id="voce-gemini" value={voceGemini} onChange={(e) => setVoceGemini(e.target.value)}>
+                      {statoVoce.voci.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.id} – {v.descrizione}
+                        </option>
+                      ))}
+                    </select>
+                    <button type="button" onClick={provaVoce}>
+                      Prova
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="j-riga j-riga-colonna">
+                <label htmlFor="scelta-voce">{motoreVoce === 'gemini' && statoVoce?.disponibile ? 'Voce di riserva (Edge)' : 'Voce'}</label>
                 <div className="j-voce">
                   <select id="scelta-voce" value={voceScelta ?? ''} onChange={(e) => scegliVoce(e.target.value || null)}>
                     <option value="">Automatica ({voceInUso})</option>
