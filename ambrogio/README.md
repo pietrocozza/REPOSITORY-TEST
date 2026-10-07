@@ -109,6 +109,44 @@ In una fase successiva si potrà fare tutto sul PC, senza Internet.
 Le voci più naturali (gratuite) sono quelle "Natural" di **Microsoft Edge**: apri Ambrogio con Edge e scegli la voce
 in Impostazioni (quelle con la ★).
 
+## Collegare Gmail (una volta sola, gratis, circa 10 minuti)
+
+Ambrogio legge la posta con l'**accesso ufficiale di Google**: la tua password non passa mai da lui. Prima si crea
+una piccola "app" Google tutta tua (serve solo a te), poi si preme «Collega Gmail».
+
+**1. Crea il progetto su Google Cloud**
+1. Apri https://console.cloud.google.com ed entra con **l'account Gmail da collegare** (es. pietrocozza.business@gmail.com).
+2. In alto, accanto a «Google Cloud», apri l'elenco dei progetti → **Nuovo progetto** → nome **Ambrogio** → **Crea**.
+   Poi assicurati che in alto sia selezionato il progetto Ambrogio.
+
+**2. Attiva Gmail**
+3. Nella barra di ricerca in alto scrivi **Gmail API**, aprila e premi **Abilita**.
+
+**3. La schermata del permesso** (la pagina che vedrai quando colleghi Gmail)
+4. Cerca **Google Auth Platform** (o «Schermata consenso OAuth») e premi **Inizia**.
+5. Nome app: **Ambrogio** · Email di assistenza: la tua → Avanti. Pubblico: **Esterno** → Avanti. Email di contatto: la tua → Avanti → accetta → **Crea**.
+6. Nella sezione **Pubblico** premi **Pubblica app** e conferma: così il permesso non scade ogni 7 giorni.
+   (Se preferisci lasciarla «in test», aggiungi la tua email tra gli **utenti di test**, ma ogni settimana dovrai ricollegare Gmail.)
+
+**4. Le credenziali per Ambrogio**
+7. Sezione **Client** → **Crea client** → Tipo di applicazione: **App desktop** → nome **Ambrogio** → **Crea**.
+8. Compaiono **ID client** e **Client secret**: copiali (non mandarli a nessuno).
+9. In PowerShell: `notepad $HOME\jarvis-progetto\ambrogio\.env`, aggiungi queste righe con i tuoi valori, salva (Ctrl+S) e chiudi:
+   ```
+   AMBROGIO_GOOGLE_CLIENT_ID=il-tuo-id-client
+   AMBROGIO_GOOGLE_CLIENT_SECRET=il-tuo-client-secret
+   AMBROGIO_GMAIL_INDIRIZZO=pietrocozza.business@gmail.com
+   ```
+
+**5. Collega**
+10. Riavvia Ambrogio → **Menu → Email → Collega Gmail**. Si apre la pagina di Google: scegli l'account.
+11. Google avvisa «**Google non ha verificato questa app**»: è normale, l'app l'hai creata tu. Premi **Avanzate** → **Vai ad Ambrogio**.
+12. Spunta **tutte** le caselle dei permessi di Gmail e premi **Continua**. La finestra si chiude da sola e nella rete si accende la zona **Email**.
+
+Il permesso resta solo sul PC (`data/google-token.json`). Per toglierlo: **Menu → Email → Scollega**, oppure dal tuo
+account Google (Sicurezza → App di terze parti). Ambrogio può leggere e preparare bozze da solo; **per inviare chiede
+sempre il tuo permesso**.
+
 ## Voce di Ambrogio con ElevenLabs (milanese autentico)
 
 La voce migliore: una voce clonata da un vero milanese, sempre la stessa. Costa il piano **Starter** di ElevenLabs

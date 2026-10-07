@@ -74,6 +74,19 @@ export const config = {
     url: env('AMBROGIO_ELEVENLABS_URL') || undefined,
   },
 
+  /**
+   * Accesso a Google (Gmail): credenziali dell'app creata su Google Cloud (tipo "App desktop").
+   * Non sono la password di Pietro: quella non passa mai da Ambrogio.
+   */
+  google: {
+    clientId: env('AMBROGIO_GOOGLE_CLIENT_ID'),
+    clientSecret: env('AMBROGIO_GOOGLE_CLIENT_SECRET'),
+    /** l'account da suggerire nella pagina di Google */
+    email: env('AMBROGIO_GMAIL_INDIRIZZO'),
+    /** solo per i test (un finto Google) */
+    urlFinto: env('AMBROGIO_GOOGLE_URL_FINTO') || undefined,
+  },
+
   /** come Ambrogio ti chiama */
   appellativo: env('AMBROGIO_APPELLATIVO', 'Pietro'),
 }

@@ -1,4 +1,16 @@
 import { TIPI_MEMORIA, type Database, type Livello, type StatoPratica, type TipoMemoria } from '../database/db.ts'
+import type { Gmail } from '../integrazioni/gmail.ts'
+
+/** I servizi esterni collegati (impostati all'avvio): gli strumenti li usano se ci sono */
+export const servizi: { gmail?: Gmail } = {}
+
+const serveGmail = () => {
+  if (!servizi.gmail?.collegato) throw new Error('Gmail non è collegato: Pietro può collegarlo dal menu Email di Ambrogio.')
+  return servizi.gmail
+}
+const quando = (iso: string) =>
+  iso ? new Intl.DateTimeFormat('it-IT', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Rome' }).format(new Date(iso)) : ''
+const indirizzoValido = (a: string) => /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(a.replace(/^.*<([^>]+)>.*$/, '$1'))
 
 // Il catalogo degli strumenti: le UNICHE azioni che Claude può chiedere a Ambrogio.
 // Ogni strumento dichiara il suo livello di permesso:
@@ -145,6 +157,94 @@ export const STRUMENTI: Strumento[] = [
       const lista = db.pratiche(stato)
       if (!lista.length) return 'Nessuna pratica.'
       return lista.map((p) => `[id ${p.id}] ${p.titolo} — ${p.stato}\n  ${p.descrizione}${p.note ? `\n  Note:\n  ${p.note.replace(/\n/g, '\n  ')}` : ''}`).join('\n')
+    },
+  },
+  {
+    nome: 'leggi_email',
+    descrizione:
+      "Elenca le email più recenti di Gmail, oppure quelle che rispondono a una ricerca con la stessa sintassi della casella di Gmail (es. 'from:airbnb is:unread', 'subject:prenotazione newer_than:7d'). Restituisce id, mittente, oggetto, data e anteprima.",
+    livello: 1,
+    schema: {
+      type: 'object',
+      properties: {
+        cerca: { type: 'string', description: 'Ricerca in stile Gmail (vuoto = posta in arrivo)' },
+        quante: { type: 'integer', description: 'Quante email (1–25, di solito 10)' },
+      },
+      required: [],
+      additionalProperties: false,
+    },
+    riassunto: (a) => (testo(a, 'cerca') ? `Cercare email: «${testo(a, 'cerca')}»` : 'Leggere le ultime email'),
+    esegui: async (a) => {
+      const lista = await serveGmail().elenco(testo(a, 'cerca') || 'in:inbox', intero(a, 'quante') || 10)
+      if (!lista.length) return 'Nessuna email trovata.'
+      return lista
+        .map((e) => `[id ${e.id}] ${quando(e.data)} · Da: ${e.da} · Oggetto: ${e.oggetto}${e.nonLetta ? ' · NON LETTA' : ''}\n  ${e.anteprima}`)
+        .join('\n')
+    },
+  },
+  {
+    nome: 'apri_email',
+    descrizione: "Apre un'email di Gmail e ne restituisce il testo completo (serve l'id, trovalo con leggi_email).",
+    livello: 1,
+    schema: {
+      type: 'object',
+      properties: { id: { type: 'string', description: "Id dell'email" } },
+      required: ['id'],
+      additionalProperties: false,
+    },
+    riassunto: () => "Leggere un'email",
+    esegui: async (a) => {
+      const e = await serveGmail().apri(testo(a, 'id'))
+      return `Da: ${e.da}\nA: ${e.a}\nData: ${quando(e.data)}\nOggetto: ${e.oggetto}\n\n${e.testo || '(email senza testo)'}`
+    },
+  },
+  {
+    nome: 'bozza_email',
+    descrizione:
+      "Prepara una bozza in Gmail (NON la invia: resta nelle bozze per Pietro). Per rispondere a un'email indica rispondi_a con il suo id: la bozza resta nella stessa conversazione.",
+    livello: 1,
+    schema: {
+      type: 'object',
+      properties: {
+        a: { type: 'string', description: 'Destinatario (indirizzo email)' },
+        oggetto: { type: 'string', description: 'Oggetto (per le risposte si può lasciare vuoto)' },
+        testo: { type: 'string', description: "Testo dell'email" },
+        rispondi_a: { type: 'string', description: "Facoltativo: id dell'email a cui si risponde" },
+      },
+      required: ['a', 'testo'],
+      additionalProperties: false,
+    },
+    riassunto: (a) => `Preparare una bozza per ${testo(a, 'a')}`,
+    esegui: async (a) => {
+      if (!indirizzoValido(testo(a, 'a'))) return 'Indirizzo del destinatario non valido.'
+      const id = await serveGmail().bozza({ a: testo(a, 'a'), oggetto: testo(a, 'oggetto'), testo: testo(a, 'testo'), rispondiA: testo(a, 'rispondi_a') || undefined })
+      return `Bozza salvata in Gmail (id ${id}). Non è stata inviata.`
+    },
+  },
+  {
+    nome: 'invia_email',
+    descrizione:
+      "Invia un'email da Gmail. Prima dell'invio Pietro deve dare il permesso. Per rispondere a un'email indica rispondi_a con il suo id. Scrivi il testo definitivo: verrà mostrato a Pietro così com'è.",
+    livello: 2,
+    schema: {
+      type: 'object',
+      properties: {
+        a: { type: 'string', description: 'Destinatario (indirizzo email)' },
+        oggetto: { type: 'string', description: 'Oggetto (per le risposte si può lasciare vuoto)' },
+        testo: { type: 'string', description: "Testo dell'email" },
+        rispondi_a: { type: 'string', description: "Facoltativo: id dell'email a cui si risponde" },
+      },
+      required: ['a', 'testo'],
+      additionalProperties: false,
+    },
+    riassunto: (a) => {
+      const t = testo(a, 'testo')
+      return `Inviare un'email a ${testo(a, 'a')}${testo(a, 'oggetto') ? ` («${testo(a, 'oggetto')}»)` : ''}: «${t.length > 280 ? t.slice(0, 280) + '…' : t}»`
+    },
+    esegui: async (a) => {
+      if (!indirizzoValido(testo(a, 'a'))) return 'Indirizzo del destinatario non valido: email non inviata.'
+      const id = await serveGmail().invia({ a: testo(a, 'a'), oggetto: testo(a, 'oggetto'), testo: testo(a, 'testo'), rispondiA: testo(a, 'rispondi_a') || undefined })
+      return `Email inviata (id ${id}).`
     },
   },
 ]

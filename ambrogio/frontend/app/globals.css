@@ -1081,6 +1081,91 @@ select {
   }
 }
 
+/* sezione Email */
+.j-email {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  flex: 1;
+}
+.j-tasto-pieno {
+  margin-top: 6px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: var(--primario) !important;
+  color: #03090f;
+  font-weight: 600;
+}
+.j-email-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  scrollbar-width: thin;
+}
+.j-email-lista button {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  color: var(--tenue);
+}
+.j-email-lista button:hover {
+  background: var(--carta-2) !important;
+}
+.j-email-lista button[data-nonletta] {
+  color: var(--inchiostro);
+}
+.j-email-riga {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.j-email-riga b {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.j-email-lista button:not([data-nonletta]) .j-email-riga b {
+  font-weight: 400;
+}
+.j-email-riga em {
+  font-style: normal;
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgb(255 90 95 / 0.15);
+  color: #ff7a7f;
+}
+.j-email-riga small {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--tenue);
+  white-space: nowrap;
+}
+.j-email-oggetto {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.j-email-anteprima {
+  font-size: 12px;
+  color: var(--tenue);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* stile della voce, a parole */
 .j-stile {
   width: 100%;

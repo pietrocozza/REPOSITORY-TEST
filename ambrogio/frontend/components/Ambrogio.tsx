@@ -5,6 +5,7 @@ import {
   caricaAggiornamenti,
   caricaAutorizzazioni,
   caricaStatoVoce,
+  statoGoogle,
   annotaProblema,
   preparaFrasi,
   trascrivi,
@@ -22,6 +23,7 @@ import {
 } from '@/lib/chat'
 import Conferma from '@/components/Conferma'
 import ProvaMicrofono from '@/components/ProvaMicrofono'
+import SezioneEmail from '@/components/SezioneEmail'
 import { MESSAGGIO_PERMESSO, registraFrase, spiegaRegistrazione } from '@/lib/registra'
 import Codice, { CHIAVE_VISTO, piuRecente } from '@/components/Codice'
 import { SezioneMemoria, SezionePratiche, SezioneRegistro } from '@/components/Sezioni'
@@ -61,7 +63,7 @@ const MENU: { id: Sezione; nome: string; icona: NomeIcona; descrizione: string; 
   { id: 'conversazione', nome: 'Chat', icona: 'chat', descrizione: 'Parla o scrivi a Ambrogio', pronto: true },
   { id: 'oggi', nome: 'Oggi', icona: 'sole', descrizione: 'Il riepilogo della giornata: appuntamenti, promemoria, email importanti e scadenze.', pronto: false },
   { id: 'agenda', nome: 'Agenda', icona: 'calendario', descrizione: 'Appuntamenti e promemoria da Google Calendar, con avvisi prima degli impegni.', pronto: false },
-  { id: 'email', nome: 'Email', icona: 'posta', descrizione: 'Gmail: riassunti, email importanti, bozze di risposta. L’invio solo con il tuo permesso.', pronto: false },
+  { id: 'email', nome: 'Email', icona: 'posta', descrizione: 'Gmail: riassunti, email importanti, bozze di risposta. L’invio solo con il tuo permesso.', pronto: true },
   { id: 'pratiche', nome: 'Pratiche', icona: 'cartella', descrizione: 'Le attività lunghe che Ambrogio segue nel tempo, per esempio una richiesta di rimborso.', pronto: true },
   { id: 'appartamenti', nome: 'Affitti', icona: 'casa', descrizione: 'Prenotazioni, occupazione, ricavi, buchi in calendario e prezzi suggeriti.', pronto: false },
   { id: 'documenti', nome: 'Documenti', icona: 'documento', descrizione: 'Cerca e legge file solo nelle cartelle che autorizzi: PDF, Excel, fatture.', pronto: false },
@@ -494,6 +496,14 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     if (i) setPersonalita(i.personalita)
     else mostraErrore('Non riesco a cambiare personalità: il backend non risponde.')
   }
+
+  // la zona «Email» della rete si accende quando Gmail è collegato
+  const statoEmail = useCallback((s: { collegato: boolean }) => nucleo.current?.impostaZona('Email', s.collegato), [])
+  useEffect(() => {
+    if (!usaBackend) return
+    const t = setTimeout(() => statoGoogle().then((s) => s && statoEmail(s)), 1500)
+    return () => clearTimeout(t)
+  }, [usaBackend, statoEmail])
 
   // ───────── La rete neurale 3D e l'HUD ─────────
 
@@ -1269,6 +1279,15 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
           )}
 
           {sezione === 'registro' && <SezioneRegistro />}
+          {sezione === 'email' && (
+            <SezioneEmail
+              onStato={statoEmail}
+              onChiedi={(domanda) => {
+                setSezione('conversazione')
+                invia(domanda)
+              }}
+            />
+          )}
           {sezione === 'pratiche' && <SezionePratiche />}
 
           {sezione === 'impostazioni' && (

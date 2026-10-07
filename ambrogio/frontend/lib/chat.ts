@@ -215,3 +215,11 @@ export async function trascrivi(audio: Blob): Promise<{ testo: string } | { erro
     return { errore: 'Il motore di Ambrogio non risponde.' }
   }
 }
+
+// ───────── Gmail ─────────
+
+export type StatoGoogle = { configurato: boolean; collegato: boolean; email: string | null }
+export type EmailBreve = { id: string; thread: string; da: string; oggetto: string; data: string; anteprima: string; nonLetta: boolean }
+export const statoGoogle = () => leggi<StatoGoogle>('/api/google')
+export const scollegaGoogle = () => invia('/api/google', 'DELETE')
+export const caricaEmail = () => leggi<{ email: EmailBreve[] }>('/api/email?quante=15')

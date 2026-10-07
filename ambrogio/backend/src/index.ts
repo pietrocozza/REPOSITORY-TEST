@@ -8,6 +8,9 @@ import path from 'node:path'
 import { Database } from './database/db.ts'
 import { GestorePermessi } from './permessi/gestore.ts'
 import { creaServerMcp } from './mcp/server.ts'
+import { AccessoGoogle } from './integrazioni/google.ts'
+import { Gmail } from './integrazioni/gmail.ts'
+import { servizi } from './strumenti/catalogo.ts'
 
 // Avvio del backend locale di Ambrogio.
 
@@ -25,7 +28,19 @@ const agente = new Agente(config, claude ?? { comando: 'claude', prefisso: [], s
   gestore,
   mcp: { url: `http://${config.host}:${config.porta}/mcp`, chiave: chiaveMcp },
 })
-const server = creaServer(config, agente, { mcp: creaServerMcp(gestore, chiaveMcp) })
+// Gmail (se collegato): il permesso di Google resta in data/google-token.json
+const google = new AccessoGoogle({
+  clientId: config.google.clientId,
+  clientSecret: config.google.clientSecret,
+  ritorno: `http://${config.host}:${config.porta}/api/google/ritorno`,
+  cartellaDati: config.cartellaDati,
+  suggerimento: config.google.email || undefined,
+  ...(config.google.urlFinto
+    ? { urlAuth: `${config.google.urlFinto}/auth`, urlToken: `${config.google.urlFinto}/token`, urlApi: config.google.urlFinto }
+    : {}),
+})
+servizi.gmail = new Gmail(google)
+const server = creaServer(config, agente, { mcp: creaServerMcp(gestore, chiaveMcp), google, gmail: servizi.gmail })
 db.registra('sistema', 'Ambrogio avviato')
 
 server.on('error', (err: NodeJS.ErrnoException) => {

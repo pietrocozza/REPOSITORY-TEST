@@ -291,7 +291,7 @@ export const ZONE = [
   { nome: 'Browser', attiva: false },
 ] as const
 
-function createNetwork() {
+function createNetwork(attive: Set<string> = new Set(ZONE.filter((z) => z.attiva).map((z) => z.nome))) {
   const r = random(87421)
   const nodes: Nodo[] = []
   const groups: Vec3[] = []
@@ -307,7 +307,7 @@ function createNetwork() {
     const theta = g * 2.399963
     const center: Vec3 = [Math.sin(phi) * Math.cos(theta) * 0.86, Math.cos(phi) * 0.84, Math.sin(phi) * Math.sin(theta) * 0.74]
     groups.push(center)
-    const luce = ZONE[g].attiva ? 1 : 0.42
+    const luce = attive.has(ZONE[g].nome) ? 1 : 0.42
     hubs.push(nodes.length)
     nodes.push([center[0], center[1], center[2], g / G, 1.25 * luce])
     const zona: number[] = []
@@ -404,7 +404,7 @@ function createNetwork() {
     }
   })
 
-  groups.forEach((a, i) => push(halos, a, a, 140, 0, i / G, ZONE[i].attiva ? 0.04 : 0.014))
+  groups.forEach((a, i) => push(halos, a, a, 140, 0, i / G, attive.has(ZONE[i].nome) ? 0.04 : 0.014))
 
   edges.forEach(([i, j], k) => {
     const a = nodes[i]
@@ -430,7 +430,7 @@ function createNetwork() {
     push(dust, p, p, 1 + r() * 2, r(), r(), r() * 0.5 + 0.1)
   }
 
-  return { nodes, edges, points, lines, pulses, dust, halos, dendrites, hubs }
+  return { nodes, edges, points, lines, pulses, dust, halos, dendrites, hubs, attive }
 }
 
 type Target = { texture: WebGLTexture; framebuffer: WebGLFramebuffer; w: number; h: number }
@@ -655,6 +655,23 @@ export class NucleoNeurale {
     this.input = 0
   }
 
+  /** Accende (o spegne) la zona di una capacità, per esempio «Email» quando Gmail è collegato */
+  impostaZona(nome: string, accesa: boolean) {
+    if (this.network.attive.has(nome) === accesa) return
+    const attive = new Set(this.network.attive)
+    if (accesa) attive.add(nome)
+    else attive.delete(nome)
+    // stessa rete (stesse posizioni), cambiano solo luminosità e connessioni della zona
+    this.network = createNetwork(attive)
+    const g = this.gl
+    for (const name of ['points', 'lines', 'pulses', 'dust', 'halos', 'dendrites'] as NomeBuffer[]) {
+      g.bindBuffer(g.ARRAY_BUFFER, this.buffers[name].buffer)
+      g.bufferData(g.ARRAY_BUFFER, new Float32Array(this.network[name]), g.STATIC_DRAW)
+      this.buffers[name].count = this.network[name].length / 10
+    }
+    this.dirty = true
+  }
+
   setPaused(value: boolean) {
     this.paused = value
     this.dirty = true
@@ -743,7 +760,7 @@ export class NucleoNeurale {
       const f = (2.55 * this.fit) / (4.5 / this.zoom - z)
       const px = (x * f) / (this.width / this.height)
       const py = y * f + 0.1
-      return { nome: ZONE[g].nome, attiva: ZONE[g].attiva, x: ((px + 1) / 2) * this.width, y: ((1 - py) / 2) * this.height, profondita: z }
+      return { nome: ZONE[g].nome, attiva: this.network.attive.has(ZONE[g].nome), x: ((px + 1) / 2) * this.width, y: ((1 - py) / 2) * this.height, profondita: z }
     })
   }
 

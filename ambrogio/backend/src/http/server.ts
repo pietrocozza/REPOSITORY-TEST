@@ -9,6 +9,8 @@ import { Aggiornamenti, shaValido } from '../codice/aggiornamenti.ts'
 import { ErroreVoce, VOCI_GEMINI, VoceGemini } from '../voce/gemini.ts'
 import { VoceElevenLabs } from '../voce/elevenlabs.ts'
 import { Trascrizione } from '../voce/trascrizione.ts'
+import { AccessoGoogle, ErroreGoogle } from '../integrazioni/google.ts'
+import type { Gmail } from '../integrazioni/gmail.ts'
 import { frasiDaPreparare } from '../voce/frasi-pronte.ts'
 import { STILE_VOCE_PREDEFINITO } from '../impostazioni.ts'
 import path from 'node:path'
@@ -53,7 +55,25 @@ async function leggiJson(req: http.IncomingMessage): Promise<Record<string, unkn
 
 type GestoreMcp = (req: http.IncomingMessage, res: http.ServerResponse, corpo: string) => Promise<unknown>
 
-type OpzioniServer = { mcp?: GestoreMcp; codice?: Aggiornamenti; voce?: VoceGemini; elevenlabs?: VoceElevenLabs; trascrizione?: Trascrizione }
+type OpzioniServer = {
+  mcp?: GestoreMcp
+  codice?: Aggiornamenti
+  voce?: VoceGemini
+  elevenlabs?: VoceElevenLabs
+  trascrizione?: Trascrizione
+  google?: AccessoGoogle
+  gmail?: Gmail
+}
+
+/** Pagina mostrata dopo il «Consenti» di Google (si chiude da sola) */
+function paginaGoogle(titolo: string, testo: string, ok: boolean) {
+  const colore = ok ? '#77e6ed' : '#ff947f'
+  return `<!doctype html><html lang="it"><head><meta charset="utf-8"><title>Ambrogio</title></head>
+<body style="margin:0;height:100vh;display:grid;place-items:center;background:#03090f;color:#d3e8ef;font-family:Segoe UI,system-ui,sans-serif">
+<div style="max-width:420px;padding:28px;text-align:center"><div style="font:11px monospace;letter-spacing:3px;color:${colore}">AMBROGIO</div>
+<h1 style="font-weight:400;font-size:22px">${titolo}</h1><p style="color:#8aa3ae;line-height:1.6">${testo}</p></div>
+${ok ? '<script>setTimeout(() => window.close(), 2500)</script>' : ''}</body></html>`
+}
 
 export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServer = {}) {
   // la voce di Ambrogio: ElevenLabs se c'è la sua chiave, altrimenti Gemini, altrimenti (nell'interfaccia) Edge
@@ -191,6 +211,48 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
           if (e.tipo === 'limite') agente.db.registra('voce', e.message)
           const riprovaTra = Math.max(0, Math.round((motore.sospesaFinoA - Date.now()) / 1000))
           return inviaJson(res, e.tipo === 'senza-chiave' ? 409 : e.tipo === 'limite' ? 429 : 502, { errore: e.message, tipo: e.tipo, riprovaTra })
+        }
+      }
+
+      // ───────── Gmail (accesso ufficiale di Google) ─────────
+      const google = opzioni.google
+      if (url.pathname === '/api/google' && google) {
+        if (req.method === 'DELETE') {
+          await google.scollega()
+          agente.db.registra('sistema', 'Gmail scollegato')
+        }
+        return inviaJson(res, 200, google.stato())
+      }
+      if (req.method === 'GET' && url.pathname === '/api/google/collega' && google) {
+        try {
+          res.writeHead(302, { Location: google.indirizzoConsenso(), 'Cache-Control': 'no-store' })
+          return res.end()
+        } catch (err) {
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+          return res.end(paginaGoogle('Gmail non è ancora configurato', (err as Error).message + ' Segui la guida nel README.', false))
+        }
+      }
+      if (req.method === 'GET' && url.pathname === '/api/google/ritorno' && google) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' })
+        if (url.searchParams.get('error')) {
+          return res.end(paginaGoogle('Collegamento annullato', 'Non hai dato il permesso a Google: Gmail resta scollegato. Puoi riprovare quando vuoi dal menu Email.', false))
+        }
+        try {
+          const email = await google.completa(url.searchParams.get('code') ?? '', url.searchParams.get('state') ?? '')
+          agente.db.registra('sistema', `Gmail collegato${email ? `: ${email}` : ''}`)
+          return res.end(paginaGoogle('Gmail collegato', `${email ? `Ambrogio ora può leggere la posta di ${email}.` : 'Fatto.'} Questa finestra si chiude da sola.`, true))
+        } catch (err) {
+          return res.end(paginaGoogle('Qualcosa non è andato', (err as Error).message, false))
+        }
+      }
+      if (req.method === 'GET' && url.pathname === '/api/email' && opzioni.gmail) {
+        if (!opzioni.gmail.collegato) return inviaJson(res, 409, { errore: 'Gmail non è collegato.' })
+        try {
+          const quante = Math.min(25, Number(url.searchParams.get('quante')) || 15)
+          return inviaJson(res, 200, { email: await opzioni.gmail.elenco(url.searchParams.get('cerca') || 'in:inbox', quante) })
+        } catch (err) {
+          const scaduto = err instanceof ErroreGoogle && err.tipo === 'scaduto'
+          return inviaJson(res, scaduto ? 409 : 502, { errore: (err as Error).message })
         }
       }
 
