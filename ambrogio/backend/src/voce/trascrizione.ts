@@ -9,7 +9,7 @@ const MODELLO = 'gemini-2.5-flash'
 const RISERVE = ['gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-3-flash', 'gemini-3-flash-preview', 'gemini-2.0-flash']
 const ISTRUZIONI = `Trascrivi esattamente quello che dice la persona in questo audio (di solito in italiano, a volte con parole in dialetto milanese).
 Chi parla è Pietro, che gestisce case vacanza a Roma e parla con il suo assistente Ambrogio. Parole che usa spesso: Ambrogio, «uè Ambrogio», Airbnb, Vikey, Booking, check-in, check-out, host, ospite, Trastevere, Roma, Gmail, Linphone, revenue, ADR, RevPAR, prezzo a notte, prenotazione, ghe pensi mi.
-Correggi solo gli errori evidenti di riconoscimento, non cambiare il senso. Rispondi SOLO con la trascrizione, senza virgolette, commenti o traduzioni. Se non si sente nessuna parola, rispondi con una riga vuota.`
+Correggi solo gli errori evidenti di riconoscimento, non cambiare il senso. Rispondi SOLO con la trascrizione, senza virgolette, commenti o traduzioni. Se non si sente nessuna parola chiara (solo rumore, fruscio, musica, suoni del telefono, voci lontane), rispondi con una riga vuota: non inventare parole.`
 
 type Opzioni = { chiave: string; modello?: string; url?: string }
 
