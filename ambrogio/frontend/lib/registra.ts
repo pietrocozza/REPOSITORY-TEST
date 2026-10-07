@@ -25,6 +25,8 @@ type Opzioni = {
   onLivello?: (livello: number) => void
   /** appena il microfono è aperto (con il suo nome) */
   onAperto?: (microfono: string) => void
+  /** il microfono non si apre: probabilmente Edge sta chiedendo il permesso */
+  onAttesaPermesso?: () => void
   /** dopo quanto silenzio la frase è finita */
   silenzioMs?: number
   /** se non parli entro questo tempo, si rinuncia */
@@ -40,14 +42,16 @@ const motivoErrore = (err: unknown): MotivoRegistrazione => {
   return 'errore'
 }
 
-export function registraFrase({ onLivello, onAperto, silenzioMs = 1300, attesaMaxMs = 7000, maxMs = 20000 }: Opzioni = {}): Registrazione {
+export function registraFrase({ onLivello, onAperto, onAttesaPermesso, silenzioMs = 1300, attesaMaxMs = 7000, maxMs = 20000 }: Opzioni = {}): Registrazione {
   let fermaOra: (usa: boolean) => void = () => {}
   let annullata = false
 
   const promessa = new Promise<Esito>((risolvi) => {
     if (!navigator.mediaDevices?.getUserMedia) return risolvi({ audio: null, motivo: 'nessuno', livelloMax: 0, microfono: '' })
+    const attesa = setTimeout(() => onAttesaPermesso?.(), 2500)
     navigator.mediaDevices
       .getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
+      .finally(() => clearTimeout(attesa))
       .then((flusso) => {
         const microfono = flusso.getAudioTracks()[0]?.label ?? ''
         if (annullata) {
@@ -147,3 +151,6 @@ export function spiegaRegistrazione(e: Esito): string | null {
       return 'Non riesco ad aprire il microfono. Riprova; se continua, riavvia Ambrogio.'
   }
 }
+
+export const MESSAGGIO_PERMESSO =
+  'Edge sta chiedendo il permesso per il microfono: guarda in alto nella finestra di Ambrogio (icona del microfono o del lucchetto) e premi «Consenti».'

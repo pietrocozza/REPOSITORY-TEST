@@ -137,3 +137,15 @@ test('trascrizione: accetta solo audio, e senza chiave lo dice', async () => {
   const estraneo = await fetch(`${base}/api/trascrivi`, { method: 'POST', headers: { Origin: 'https://sito-malevolo.example', 'Content-Type': 'audio/webm' }, body: Buffer.from('x') })
   assert.equal(estraneo.status, 403)
 })
+
+test('stile della voce: si salva, e vuoto torna quello predefinito', async () => {
+  const imposta = async (corpo?: object) =>
+    (await (
+      await fetch(`${base}/api/impostazioni`, corpo ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) } : {})
+    ).json()) as { stileVoce: string; stileVocePredefinito: string }
+  const iniziale = await imposta()
+  assert.equal(iniziale.stileVoce, iniziale.stileVocePredefinito)
+  assert.equal((await imposta({ stileVoce: 'Parla come un vecchio sciur milanese.' })).stileVoce, 'Parla come un vecchio sciur milanese.')
+  assert.equal(JSON.parse(fs.readFileSync(path.join(tmp, 'impostazioni.json'), 'utf8')).stileVoce, 'Parla come un vecchio sciur milanese.')
+  assert.equal((await imposta({ stileVoce: '  ' })).stileVoce, iniziale.stileVocePredefinito)
+})

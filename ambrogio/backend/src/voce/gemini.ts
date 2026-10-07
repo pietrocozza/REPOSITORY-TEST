@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
+import { STILE_VOCE_PREDEFINITO } from '../impostazioni.ts'
 
 // La voce di Ambrogio con Google Gemini (sintesi vocale, "TTS"): italiano con accento milanese.
 // La chiave sta solo nel file .env (AMBROGIO_GEMINI_CHIAVE) e non arriva mai all'interfaccia.
@@ -23,11 +24,8 @@ export const VOCI_GEMINI = [
 // sempre lo stesso modello, così la voce non cambia (si può indicarne un altro nel file .env)
 const MODELLO = 'gemini-2.5-flash-preview-tts'
 
-// Uno stile solo, preciso, sempre uguale: così ogni frase ha lo stesso carattere e lo stesso accento
-const STILE = `Sei Ambrogio, un maggiordomo milanese sui cinquant'anni: allegro, cordiale e un po' furbo.
-Parla in italiano con un accento milanese marcato e costante dalla prima all'ultima parola: vocali chiuse (la "e" e la "o" chiuse alla milanese), cadenza meneghina, tono sorridente.
-Ritmo vivace ma chiaro. Le parole in dialetto milanese pronunciale da milanese doc.
-Leggi solo il testo tra virgolette, senza aggiungere nulla.`
+// Lo stile predefinito (si cambia a parole nelle Impostazioni): uno solo, sempre uguale per tutte le frasi
+const STILE = STILE_VOCE_PREDEFINITO
 
 export class ErroreVoce extends Error {
   readonly tipo: 'senza-chiave' | 'limite' | 'errore'
@@ -37,7 +35,7 @@ export class ErroreVoce extends Error {
   }
 }
 
-type Opzioni = { chiave: string; modello?: string; cartellaCache: string; url?: string; pagamento?: boolean }
+type Opzioni = { chiave: string; modello?: string; cartellaCache: string; url?: string; pagamento?: boolean; stile?: () => string }
 
 export class VoceGemini {
   private opz: Opzioni
@@ -101,8 +99,13 @@ export class VoceGemini {
     return true
   }
 
+  /** le istruzioni di lettura: lo stile scelto da Pietro (o quello predefinito) e la regola finale */
+  private istruzioni() {
+    return `${this.opz.stile?.() ?? STILE}\nLeggi solo il testo tra virgolette, senza aggiungere nulla.`
+  }
+
   private fileCache(testo: string, voce: string) {
-    const h = createHash('sha256').update(`${voce}\n${STILE}\n${normalizza(testo)}`).digest('hex').slice(0, 32)
+    const h = createHash('sha256').update(`${voce}\n${this.istruzioni()}\n${normalizza(testo)}`).digest('hex').slice(0, 32)
     return path.join(this.opz.cartellaCache, `${h}.wav`)
   }
 
@@ -135,7 +138,7 @@ export class VoceGemini {
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': this.opz.chiave },
       signal: AbortSignal.timeout(30_000),
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `${STILE}\n\n«${testo}»` }] }],
+        contents: [{ parts: [{ text: `${this.istruzioni()}\n\n«${testo}»` }] }],
         generationConfig: {
           responseModalities: ['AUDIO'],
           // meno variazioni da una frase all'altra

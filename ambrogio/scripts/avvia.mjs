@@ -8,6 +8,7 @@ import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { consentiMicrofono } from '../backend/src/finestra.ts'
 
 const radice = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const PORTA_UI = Number(process.env.AMBROGIO_PORTA_UI ?? 3000)
@@ -61,6 +62,12 @@ process.on('SIGTERM', () => spegni(0))
 //    (un Edge normale blocca l'audio delle pagine finché non le tocchi);
 //  - il permesso del microfono e le impostazioni restano solo per Ambrogio.
 function opzioniFinestra() {
+  // il microfono è già consentito alla pagina di Ambrogio (solo a quella)
+  try {
+    consentiMicrofono(path.join(radice, 'data', 'finestra-edge'), [INDIRIZZO, INDIRIZZO.replace('127.0.0.1', 'localhost')])
+  } catch {
+    // se non riesce, Edge chiederà il permesso come al solito
+  }
   return [
     `--app=${INDIRIZZO}`,
     `--user-data-dir=${path.join(radice, 'data', 'finestra-edge')}`,

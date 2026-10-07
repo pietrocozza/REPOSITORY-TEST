@@ -2,7 +2,8 @@
 
 import { useRef, useState } from 'react'
 import { trascrivi } from '@/lib/chat'
-import { registraFrase, spiegaRegistrazione } from '@/lib/registra'
+import { MESSAGGIO_PERMESSO, registraFrase, spiegaRegistrazione } from '@/lib/registra'
+import { annotaProblema } from '@/lib/chat'
 
 // Prova del microfono nelle Impostazioni: si vede se il microfono sente (la barra si muove),
 // quale microfono usa Windows e cosa capisce Ambrogio. Non manda niente a Claude.
@@ -18,17 +19,27 @@ export default function ProvaMicrofono({ conGemini }: { conGemini: boolean }) {
   const prova = async () => {
     if (fase.tipo === 'ascolto') return annulla.current()
     setFase({ tipo: 'ascolto' })
-    const r = registraFrase({ onLivello: setLivello, onAperto: setMicrofono, attesaMaxMs: 6000 })
+    const r = registraFrase({
+      onLivello: setLivello,
+      onAperto: (m) => {
+        setMicrofono(m)
+        setFase({ tipo: 'ascolto' })
+      },
+      onAttesaPermesso: () => setFase({ tipo: 'problema', testo: MESSAGGIO_PERMESSO }),
+      attesaMaxMs: 6000,
+    })
     annulla.current = r.annulla
     const esito = await r.promessa
     if (esito.microfono) setMicrofono(esito.microfono)
     if (!esito.audio) {
       const problema = spiegaRegistrazione(esito)
+      if (problema) annotaProblema(`Prova del microfono: ${problema}`)
       return setFase(problema ? { tipo: 'problema', testo: problema } : { tipo: 'pronta' })
     }
     if (!conGemini) return setFase({ tipo: 'capito', testo: 'Il microfono funziona (per capire le parole serve la chiave di Gemini).' })
     setFase({ tipo: 'capisco' })
     const t = await trascrivi(esito.audio)
+    if ('errore' in t) annotaProblema(`Prova del microfono: ${t.errore}`)
     setFase('errore' in t ? { tipo: 'problema', testo: t.errore } : { tipo: 'capito', testo: t.testo ? `Ho capito: «${t.testo}»` : 'Ti ho sentito, ma non ho capito le parole.' })
   }
 
@@ -40,7 +51,7 @@ export default function ProvaMicrofono({ conGemini }: { conGemini: boolean }) {
       </span>
       <div className="j-prova-mic">
         <button type="button" onClick={prova} disabled={fase.tipo === 'capisco'}>
-          {fase.tipo === 'ascolto' ? 'Ferma' : fase.tipo === 'capisco' ? 'Capisco…' : 'Prova'}
+          {fase.tipo === 'ascolto' ? 'Ferma' : fase.tipo === 'capisco' ? 'Capisco…' : fase.tipo === 'pronta' ? 'Prova' : 'Riprova'}
         </button>
         <div className="j-livello" aria-label="Livello del microfono">
           <i style={{ width: `${Math.round(livello * 100)}%` }} />

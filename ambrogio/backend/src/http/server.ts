@@ -10,6 +10,7 @@ import { ErroreVoce, VOCI_GEMINI, VoceGemini } from '../voce/gemini.ts'
 import { VoceElevenLabs } from '../voce/elevenlabs.ts'
 import { Trascrizione } from '../voce/trascrizione.ts'
 import { frasiDaPreparare } from '../voce/frasi-pronte.ts'
+import { STILE_VOCE_PREDEFINITO } from '../impostazioni.ts'
 import path from 'node:path'
 
 // Server HTTP locale (solo 127.0.0.1). Accetta richieste unicamente dall'interfaccia di Ambrogio:
@@ -57,7 +58,7 @@ type OpzioniServer = { mcp?: GestoreMcp; codice?: Aggiornamenti; voce?: VoceGemi
 export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServer = {}) {
   // la voce di Ambrogio: ElevenLabs se c'è la sua chiave, altrimenti Gemini, altrimenti (nell'interfaccia) Edge
   const cartellaVoce = path.join(config.cartellaDati, 'voce')
-  const gemini = opzioni.voce ?? new VoceGemini({ ...config.gemini, cartellaCache: cartellaVoce })
+  const gemini = opzioni.voce ?? new VoceGemini({ ...config.gemini, cartellaCache: cartellaVoce, stile: () => agente.stileVoce })
   const eleven = opzioni.elevenlabs ?? new VoceElevenLabs({ ...config.elevenlabs, cartellaCache: cartellaVoce })
   const orecchie = opzioni.trascrizione ?? new Trascrizione({ chiave: config.gemini.chiave, url: config.gemini.url })
   const codice = opzioni.codice ?? new Aggiornamenti(CARTELLA_AMBROGIO)
@@ -79,6 +80,14 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
 
       if (req.method === 'GET' && url.pathname === '/api/conversazione') {
         return inviaJson(res, 200, { sessione: agente.sessione.id, messaggi: agente.messaggi() })
+      }
+
+      if (req.method === 'POST' && url.pathname === '/api/registro') {
+        const dati = await leggiJson(req)
+        const descrizione = typeof dati.descrizione === 'string' ? dati.descrizione.trim().slice(0, 500) : ''
+        if (!descrizione) return inviaJson(res, 400, { errore: 'Descrizione vuota.' })
+        agente.db.registra('problema', descrizione)
+        return inviaJson(res, 200, { ok: true })
       }
 
       if (req.method === 'GET' && url.pathname === '/api/registro') {
@@ -223,8 +232,17 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
             if (!personalitaValida(dati.personalita)) return inviaJson(res, 400, { errore: 'Personalità sconosciuta.' })
             agente.impostaPersonalita(dati.personalita)
           }
+          if (dati.stileVoce !== undefined) {
+            if (typeof dati.stileVoce !== 'string') return inviaJson(res, 400, { errore: 'Stile non valido.' })
+            agente.impostaStileVoce(dati.stileVoce)
+          }
         }
-        return inviaJson(res, 200, { personalita: agente.personalita, personalitaDisponibili: agente.elencoPersonalita() })
+        return inviaJson(res, 200, {
+          personalita: agente.personalita,
+          personalitaDisponibili: agente.elencoPersonalita(),
+          stileVoce: agente.stileVoce,
+          stileVocePredefinito: STILE_VOCE_PREDEFINITO,
+        })
       }
 
       if (req.method === 'POST' && url.pathname === '/api/conversazione/nuova') {

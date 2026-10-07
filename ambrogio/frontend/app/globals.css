@@ -1030,6 +1030,29 @@ select {
   border-left: 4px solid var(--errore);
   font-size: 13px;
   line-height: 1.55;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 12px;
+  align-items: start;
+}
+.j-toast[data-fisso] {
+  width: min(560px, calc(100% - 32px));
+  font-size: 14px;
+}
+.j-toast button {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--tenue);
+}
+.j-toast button:hover {
+  background: var(--carta-2) !important;
+  color: var(--inchiostro);
+}
+.j-toast small {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--tenue);
 }
 
 /* ───────── Schermi stretti: una colonna sola, la pagina scorre ───────── */
@@ -1056,6 +1079,32 @@ select {
     transform: scale(0.6);
     opacity: 0.6;
   }
+}
+
+/* stile della voce, a parole */
+.j-stile {
+  width: 100%;
+  resize: vertical;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--linea);
+  background: var(--carta-2);
+  color: var(--inchiostro);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.j-stile-tasti {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.j-stile-tasti button {
+  padding: 7px 12px;
+  border-radius: 11px;
+  background: var(--primario-tenue) !important;
+  color: var(--primario);
+  font-size: 13px;
 }
 
 /* prova del microfono */

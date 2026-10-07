@@ -2,12 +2,16 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { personalitaValida, type IdPersonalita } from './agent/istruzioni.ts'
 
-// Preferenze di Ambrogio che servono al backend (per ora: la personalità), salvate in data/impostazioni.json.
-// Nella fase "memoria" passeranno nel database SQLite.
+// Preferenze di Ambrogio che servono al backend, salvate in data/impostazioni.json:
+// la personalità e come deve parlare la voce (accento e tono, spiegati a parole a Gemini).
 
-export type ImpostazioniAgente = { personalita: IdPersonalita }
+export const STILE_VOCE_PREDEFINITO = `Sei Ambrogio, un maggiordomo milanese sui cinquant'anni: allegro, cordiale e un po' furbo.
+Parla in italiano con un accento milanese marcato e costante dalla prima all'ultima parola: vocali chiuse (la "e" e la "o" chiuse alla milanese), cadenza meneghina, tono sorridente.
+Ritmo vivace ma chiaro. Le parole in dialetto milanese pronunciale da milanese doc.`
 
-const PREDEFINITE: ImpostazioniAgente = { personalita: 'maggiordomo' }
+export type ImpostazioniAgente = { personalita: IdPersonalita; stileVoce: string }
+
+const PREDEFINITE: ImpostazioniAgente = { personalita: 'maggiordomo', stileVoce: STILE_VOCE_PREDEFINITO }
 
 export class ArchivioImpostazioni {
   private file: string
@@ -19,6 +23,7 @@ export class ArchivioImpostazioni {
     try {
       const dati = JSON.parse(fs.readFileSync(this.file, 'utf8'))
       if (personalitaValida(dati.personalita)) this.valori.personalita = dati.personalita
+      if (typeof dati.stileVoce === 'string' && dati.stileVoce.trim()) this.valori.stileVoce = dati.stileVoce.slice(0, 1500)
     } catch {
       // nessuna impostazione salvata: valori predefiniti
     }
@@ -30,6 +35,8 @@ export class ArchivioImpostazioni {
 
   aggiorna(nuove: Partial<ImpostazioniAgente>) {
     if (nuove.personalita && personalitaValida(nuove.personalita)) this.valori.personalita = nuove.personalita
+    // stile vuoto = si torna a quello predefinito
+    if (typeof nuove.stileVoce === 'string') this.valori.stileVoce = nuove.stileVoce.trim().slice(0, 1500) || STILE_VOCE_PREDEFINITO
     fs.mkdirSync(path.dirname(this.file), { recursive: true })
     fs.writeFileSync(this.file, JSON.stringify(this.valori, null, 2))
     return this.attuali

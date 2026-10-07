@@ -101,7 +101,17 @@ export async function nuovaConversazione() {
 
 /** Personalità di Ambrogio (decide il modo di parlare; vive nel backend) */
 export type Personalita = { id: string; nome: string; descrizione: string }
-export type ImpostazioniAgente = { personalita: string; personalitaDisponibili: Personalita[] }
+export type ImpostazioniAgente = { personalita: string; personalitaDisponibili: Personalita[]; stileVoce?: string; stileVocePredefinito?: string }
+
+/** come deve parlare la voce di Ambrogio (accento e tono, a parole); vuoto = stile predefinito */
+export async function salvaStileVoce(stileVoce: string): Promise<ImpostazioniAgente | null> {
+  try {
+    const res = await fetch('/api/impostazioni', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stileVoce }) })
+    return res.ok ? await res.json() : null
+  } catch {
+    return null
+  }
+}
 
 export async function impostazioniAgente(personalita?: string): Promise<ImpostazioniAgente | null> {
   try {
@@ -146,6 +156,8 @@ export const caricaMemorie = () => leggi<{ memorie: Memoria[] }>('/api/memorie')
 export const cancellaMemoria = (id: number) => invia(`/api/memorie/${id}`, 'DELETE')
 export const caricaPratiche = () => leggi<{ pratiche: Pratica[] }>('/api/pratiche')
 export const caricaRegistro = () => leggi<{ voci: VoceRegistro[] }>('/api/registro')
+/** scrive nel Registro un problema visto dall'interfaccia (es. il microfono), così si può rileggere con calma */
+export const annotaProblema = (descrizione: string) => invia('/api/registro', 'POST', { descrizione })
 export const caricaAutorizzazioni = () =>
   leggi<{ inAttesa: Autorizzazione[]; permanenti: { strumento: string; concesso: string }[] }>('/api/autorizzazioni')
 export const decidiAutorizzazione = (id: number, concedi: boolean, sempre = false) =>

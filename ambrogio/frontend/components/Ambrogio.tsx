@@ -5,12 +5,14 @@ import {
   caricaAggiornamenti,
   caricaAutorizzazioni,
   caricaStatoVoce,
+  annotaProblema,
   preparaFrasi,
   trascrivi,
   caricaConversazione,
   chiediAlServer,
   decidiAutorizzazione,
   impostazioniAgente,
+  salvaStileVoce,
   leggiStatoBackend,
   nuovaConversazione,
   type Autorizzazione,
@@ -20,7 +22,7 @@ import {
 } from '@/lib/chat'
 import Conferma from '@/components/Conferma'
 import ProvaMicrofono from '@/components/ProvaMicrofono'
-import { registraFrase, spiegaRegistrazione } from '@/lib/registra'
+import { MESSAGGIO_PERMESSO, registraFrase, spiegaRegistrazione } from '@/lib/registra'
 import Codice, { CHIAVE_VISTO, piuRecente } from '@/components/Codice'
 import { SezioneMemoria, SezionePratiche, SezioneRegistro } from '@/components/Sezioni'
 import { disegnaHud } from '@/lib/hud'
@@ -172,6 +174,8 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   const [parziale, setParziale] = useState('')
   const [testo, setTesto] = useState('')
   const [errore, setErrore] = useState<string | null>(null)
+  /** un messaggio importante resta finché non lo chiudi */
+  const [erroreFisso, setErroreFisso] = useState(false)
   const [vocale, setVocale] = useState(true)
   const [parolaAttivazione, setParolaAttivazione] = useState(false)
   const [microfono, setMicrofono] = useState(true)
@@ -193,6 +197,11 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   const [codiceNuovo, setCodiceNuovo] = useState(false)
   const [menuAperto, setMenuAperto] = useState(false)
   const [elencoPersonalita, setElencoPersonalita] = useState<Personalita[]>([])
+  // come deve parlare la voce di Ambrogio, spiegato a parole a Gemini
+  const [stileVoce, setStileVoce] = useState('')
+  const [stilePredefinito, setStilePredefinito] = useState('')
+  const [bozzaStile, setBozzaStile] = useState('')
+  const [versioneStile, setVersioneStile] = useState(0)
   // statistiche della sessione, per i numeri a sinistra
   const [inizioTurno, setInizioTurno] = useState<number | null>(null)
   const [tempi, setTempi] = useState<number[]>([])
@@ -248,11 +257,17 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     attivazioneRef.current = parolaAttivazione
   }, [stato, voci, vocale, parolaAttivazione])
 
-  const mostraErrore = useCallback((msg: string) => {
+  // fisso = resta finché non lo chiudi, e si scrive anche nel Registro (per i problemi da risolvere)
+  const erroreFissoRef = useRef(false)
+  const mostraErrore = useCallback((msg: string, fisso = false) => {
+    // un avviso qualsiasi non copre un messaggio importante ancora aperto
+    if (!fisso && erroreFissoRef.current) return
+    erroreFissoRef.current = fisso
     setErrore(msg)
+    setErroreFisso(fisso)
     clearTimeout(timerErrore.current)
-    // i messaggi lunghi (con il rimedio) restano di più
-    timerErrore.current = setTimeout(() => setErrore(null), Math.max(6000, msg.length * 80))
+    if (fisso) annotaProblema(msg)
+    else timerErrore.current = setTimeout(() => setErrore(null), Math.max(6000, msg.length * 80))
   }, [])
 
   // Avvio: microfono, voci disponibili e impostazioni salvate
@@ -351,7 +366,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     preparaFrasi(voceAmbrogio, frasiInterfaccia)
       .then(() => caricaStatoVoce())
       .then((s) => s && setStatoVoce(s))
-  }, [voceAmbrogio, motoreVoce, statoVoce?.fornitore, statoVoce?.pagamento])
+  }, [voceAmbrogio, motoreVoce, statoVoce?.fornitore, statoVoce?.pagamento, versioneStile])
 
   // mentre l'archivio si prepara, il conteggio nelle Impostazioni si aggiorna
   const preparazioneInCorso = Boolean(statoVoce?.preparazione?.inCorso)
@@ -451,11 +466,25 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       if (annullato || !i) return
       setPersonalita(i.personalita)
       setElencoPersonalita(i.personalitaDisponibili)
+      setStileVoce(i.stileVoce ?? '')
+      setBozzaStile(i.stileVoce ?? '')
+      setStilePredefinito(i.stileVocePredefinito ?? '')
     })
     return () => {
       annullato = true
     }
   }, [usaBackend])
+
+  // nuovo stile: si salva, si ascolta subito con la prova, e l'archivio delle frasi si rifà
+  const applicaStile = async (testo: string) => {
+    const i = await salvaStileVoce(testo)
+    if (!i) return mostraErrore('Non riesco a salvare lo stile: il backend non risponde.')
+    setStileVoce(i.stileVoce ?? '')
+    setBozzaStile(i.stileVoce ?? '')
+    setVersioneStile((v) => v + 1)
+    zittisci()
+    pronuncia(FRASE_PROVA)
+  }
 
   const scegliPersonalita = async (id: string) => {
     setPersonalita(id)
@@ -563,7 +592,10 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
 
       if (ascoltoGemini.current) {
         // registra la frase (si ferma da solo quando smetti di parlare) e la fa trascrivere a Gemini
-        const registrazione = registraFrase({ onLivello: (l) => (livello.current = l) })
+        const registrazione = registraFrase({
+          onLivello: (l) => (livello.current = l),
+          onAttesaPermesso: () => mostraErrore(MESSAGGIO_PERMESSO, true),
+        })
         fermaAscolto.current = () => registrazione.annulla()
         registrazione.promessa.then(async (esito) => {
           if (turno.current !== turnoInizio || !comandoInCorso.current) return
@@ -572,7 +604,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
           if (!audio) {
             setStato('pronto')
             const spiegazione = spiegaRegistrazione(esito)
-            if (spiegazione) mostraErrore(spiegazione)
+            if (spiegazione) mostraErrore(spiegazione, esito.motivo !== 'silenzio' || esito.livelloMax < 0.004)
             return
           }
           setStato('elaborazione')
@@ -582,7 +614,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
           setParziale('')
           if ('errore' in capito) {
             setStato('pronto')
-            mostraErrore(capito.errore)
+            mostraErrore(`Non riesco a capire l’audio: ${capito.errore}`, true)
           } else if (!capito.testo) {
             setStato('pronto')
             mostraErrore('Non ho capito bene: puoi ripetere?')
@@ -760,6 +792,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       const t = ++turno.current
       frasiInCoda.current = 0
       flussoFinito.current = false
+      erroreFissoRef.current = false
       setErrore(null)
       setParziale('')
       setStato('elaborazione')
@@ -1341,6 +1374,24 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
                 </div>
               )}
 
+              {motoreVoce === 'gemini' && statoVoce?.fornitore === 'gemini' && statoVoce.disponibile && (
+                <div className="j-riga j-riga-colonna">
+                  <label htmlFor="stile-voce">
+                    Come deve parlare Ambrogio
+                    <small>Spiega a parole accento, tono e ritmo (per esempio: «accento milanese stretto, da vecchio sciur, lento e ironico»). Vale per tutte le frasi.</small>
+                  </label>
+                  <textarea id="stile-voce" className="j-stile" rows={5} value={bozzaStile} onChange={(e) => setBozzaStile(e.target.value)} />
+                  <div className="j-stile-tasti">
+                    <button type="button" onClick={() => applicaStile(bozzaStile)} disabled={!bozzaStile.trim() || bozzaStile === stileVoce}>
+                      Salva e prova
+                    </button>
+                    <button type="button" onClick={() => applicaStile('')} disabled={stileVoce === stilePredefinito}>
+                      Torna allo stile iniziale
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {motoreVoce === 'gemini' && statoVoce?.fornitore === 'elevenlabs' && statoVoce.disponibile && (
                 <div className="j-riga j-riga-colonna">
                   <span>
@@ -1469,8 +1520,20 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       {codiceAperto && <Codice onChiudi={() => setCodiceAperto(false)} />}
 
       {errore && (
-        <div className="j-toast" role="status">
-          {errore}
+        <div className="j-toast" role="status" data-fisso={erroreFisso || undefined}>
+          <span>{errore}</span>
+          <button
+            type="button"
+            onClick={() => {
+              erroreFissoRef.current = false
+              setErrore(null)
+            }}
+            aria-label="Chiudi il messaggio"
+            title="Chiudi"
+          >
+            ✕
+          </button>
+          {erroreFisso && <small>Lo trovi anche in Menu → Registro.</small>}
         </div>
       )}
     </div>

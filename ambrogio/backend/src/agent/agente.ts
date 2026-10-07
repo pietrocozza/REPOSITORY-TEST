@@ -91,6 +91,15 @@ export class Agente {
     return this.impostazioni.attuali.personalita
   }
 
+  /** come deve parlare la voce di Ambrogio (accento e tono, a parole) */
+  get stileVoce() {
+    return this.impostazioni.attuali.stileVoce
+  }
+
+  impostaStileVoce(stile: string) {
+    this.impostazioni.aggiorna({ stileVoce: stile })
+  }
+
   elencoPersonalita() {
     return Object.entries(PERSONALITA).map(([id, p]) => ({ id, nome: p.nome, descrizione: p.descrizione }))
   }

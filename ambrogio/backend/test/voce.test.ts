@@ -94,3 +94,13 @@ test('archivio delle frasi pronte: le registra una volta, poi gratis; solo con i
   assert.ok(v.giaPronta('Pirla!', 'Charon'))
   assert.ok(!v.giaPronta('Pirla!', 'Kore'), 'ogni voce ha il suo archivio')
 })
+
+test('stile della voce scelto a parole: arriva a Gemini e cambia l’archivio', async () => {
+  let stile = 'Accento milanese leggero, voce calma.'
+  const v = new VoceGemini({ chiave: 'segreta', modello: 'gemini-3.1-flash-tts-preview', cartellaCache: cache(), url, stile: () => stile })
+  await v.sintetizza('Ghe pensi mi.', 'Charon')
+  assert.match(richieste.at(-1)!.corpo.contents[0].parts[0].text, /^Accento milanese leggero, voce calma\.\nLeggi solo il testo/)
+  assert.ok(v.giaPronta('Ghe pensi mi.', 'Charon'))
+  stile = 'Accento milanese fortissimo.'
+  assert.ok(!v.giaPronta('Ghe pensi mi.', 'Charon'), 'con uno stile nuovo la frase va registrata di nuovo')
+})
