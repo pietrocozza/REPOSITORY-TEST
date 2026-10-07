@@ -21,6 +21,12 @@ export const VOCI_GEMINI = [
   { id: 'Sulafat', descrizione: 'femminile, calda' },
 ] as const
 
+// La registrazione anticipata delle frasi fisse non deve mangiarsi le voci del giorno: anche a pagamento il modello
+// vocale "di prova" di Google concede poche richieste (circa 10 al minuto e 100 al giorno). Quindi al massimo
+// questa quota al giorno, una ogni 7 secondi; il resto delle frasi si registra nei giorni dopo.
+export const MAX_PREPARA_AL_GIORNO = 40
+const PAUSA_PREPARA_MS = 7000
+
 // sempre lo stesso modello, così la voce non cambia (si può indicarne un altro nel file .env)
 const MODELLO = 'gemini-2.5-flash-preview-tts'
 
@@ -46,6 +52,31 @@ export class VoceGemini {
 
   constructor(opz: Opzioni) {
     this.opz = opz
+    // quante voci si sono chieste oggi (resta anche se Ambrogio si riavvia)
+    try {
+      const c = JSON.parse(fs.readFileSync(this.fileConteggio, 'utf8')) as { giorno?: string; richieste?: number }
+      if (c.giorno === this.giorno && typeof c.richieste === 'number') this.richiesteOggi = c.richieste
+    } catch {
+      // primo avvio
+    }
+  }
+
+  private get fileConteggio() {
+    return path.join(this.opz.cartellaCache, 'conteggio.json')
+  }
+
+  private contaRichiesta() {
+    if (this.giorno !== new Date().toDateString()) {
+      this.giorno = new Date().toDateString()
+      this.richiesteOggi = 0
+    }
+    this.richiesteOggi++
+    try {
+      fs.mkdirSync(this.opz.cartellaCache, { recursive: true })
+      fs.writeFileSync(this.fileConteggio, JSON.stringify({ giorno: this.giorno, richieste: this.richiesteOggi }))
+    } catch {
+      // non importante
+    }
   }
 
   get disponibile() {
@@ -76,7 +107,7 @@ export class VoceGemini {
    * secondo e mezzo per non superare i limiti al minuto. Solo con il pagamento a consumo:
    * con la versione gratuita consumerebbe le poche richieste del giorno.
    */
-  prepara(frasi: string[], voce: string, pausaMs = 1500) {
+  prepara(frasi: string[], voce: string, pausaMs = PAUSA_PREPARA_MS, massimo = MAX_PREPARA_AL_GIORNO) {
     if (!this.disponibile || !this.opz.pagamento) return false
     if (this.preparazione?.inCorso) return true
     const mancanti = frasi.filter((f) => !this.giaPronta(f, voce))
@@ -85,6 +116,8 @@ export class VoceGemini {
     void (async () => {
       for (const frase of mancanti) {
         if (this.sospesaFinoA > Date.now()) break
+        // le voci rimaste oggi servono per parlare davvero (e per il telefono)
+        if (this.richiesteOggi >= massimo) break
         try {
           await this.sintetizza(frase, voce)
           stato.pronte++
@@ -116,10 +149,6 @@ export class VoceGemini {
     if (fs.existsSync(file)) return fs.readFileSync(file)
     if (this.sospesaFinoA > Date.now()) throw new ErroreVoce('limite', 'Limite di Gemini raggiunto: riprovo più tardi.')
 
-    if (this.giorno !== new Date().toDateString()) {
-      this.giorno = new Date().toDateString()
-      this.richiesteOggi = 0
-    }
     try {
       const wav = await this.chiedi(this.opz.modello || MODELLO, testo, voce)
       fs.mkdirSync(this.opz.cartellaCache, { recursive: true })
@@ -132,7 +161,7 @@ export class VoceGemini {
 
   private async chiedi(modello: string, testo: string, voce: string) {
     const base = this.opz.url ?? 'https://generativelanguage.googleapis.com'
-    this.richiesteOggi++
+    this.contaRichiesta()
     const res = await fetch(`${base}/v1beta/models/${modello}:generateContent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': this.opz.chiave },
@@ -154,7 +183,7 @@ export class VoceGemini {
       const giornaliero = /PerDay|per day/i.test(corpo)
       const attesa = Number(corpo.match(/"retryDelay":\s*"(\d+)/)?.[1] ?? 60)
       this.sospesaFinoA = Date.now() + (giornaliero ? 60 * 60 : attesa) * 1000
-      throw new ErroreVoce('limite', giornaliero ? 'Richieste gratuite di Gemini finite per oggi.' : `Troppe richieste a Gemini in poco tempo: riprovo tra ${attesa} secondi.`)
+      throw new ErroreVoce('limite', giornaliero ? 'Voci di Gemini finite per oggi (limite di Google).' : `Troppe richieste a Gemini in poco tempo: riprovo tra ${attesa} secondi.`)
     }
     if (res.status === 400 || res.status === 401 || res.status === 403) {
       const dettaglio = await res.text().catch(() => '')

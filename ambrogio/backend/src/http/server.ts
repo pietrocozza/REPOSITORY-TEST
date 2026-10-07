@@ -9,6 +9,7 @@ import { Aggiornamenti, shaValido } from '../codice/aggiornamenti.ts'
 import { ErroreVoce, VOCI_GEMINI, VoceGemini } from '../voce/gemini.ts'
 import { VoceElevenLabs } from '../voce/elevenlabs.ts'
 import { Trascrizione } from '../voce/trascrizione.ts'
+import { sintetizzaWindows } from '../voce/windows.ts'
 import { AccessoGoogle, ErroreGoogle } from '../integrazioni/google.ts'
 import type { Gmail } from '../integrazioni/gmail.ts'
 import { frasiDaPreparare } from '../voce/frasi-pronte.ts'
@@ -127,6 +128,29 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
   }
   const accesoDa = Date.now()
 
+  /**
+   * La voce al telefono: Gemini con la voce scelta; se Gemini è al limite per pochi secondi si aspetta,
+   * altrimenti si usa la voce di Windows (gratis) per non lasciare Pietro senza risposta.
+   */
+  async function vocePerTelefono(testo: string): Promise<Buffer> {
+    const voce = VOCI_GEMINI.find((v) => v.id === voceTelefono)?.id ?? VOCI_GEMINI[0].id
+    for (let tentativo = 0; tentativo < 2; tentativo++) {
+      try {
+        return await gemini.sintetizza(testo, voce)
+      } catch (err) {
+        const attesa = gemini.sospesaFinoA - Date.now()
+        if (err instanceof ErroreVoce && err.tipo === 'limite' && tentativo === 0 && attesa > 0 && attesa <= 35_000) {
+          await new Promise((r) => setTimeout(r, attesa + 500))
+          continue
+        }
+        if (process.platform !== 'win32') throw err
+        agente.db.registra('voce', `Telefono: Gemini non disponibile (${(err as Error).message}), uso la voce di Windows`)
+        return sintetizzaWindows(testo)
+      }
+    }
+    return sintetizzaWindows(testo)
+  }
+
   let telefonataInCorso = false
   let ultimaTelefonata: (EsitoTelefonata & { quando: string }) | null = null
 
@@ -137,7 +161,7 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
     const telefonata = new Telefonata({
       telefono,
       cartella: cartellaTelefono,
-      sintetizza: (testo) => gemini.sintetizza(testo, VOCI_GEMINI.find((v) => v.id === voceTelefono)?.id ?? VOCI_GEMINI[0].id),
+      sintetizza: (testo) => vocePerTelefono(testo),
       trascrivi: (audio) => orecchie.trascrivi(audio, 'audio/wav'),
       rispondi: async (richiesta) => {
         let testo = ''
@@ -337,7 +361,8 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
       }
       if (req.method === 'POST' && url.pathname === '/api/telefono/prova') {
         if (!config.telefono.configurato) return inviaJson(res, 409, { errore: 'Telefono non configurato: mancano le righe di Linphone nel file .env.' })
-        if (!gemini.disponibile) return inviaJson(res, 409, { errore: 'Per parlare al telefono serve la chiave di Gemini nel file .env.' })
+        if (!gemini.disponibile && process.platform !== 'win32')
+          return inviaJson(res, 409, { errore: 'Per parlare al telefono serve la chiave di Gemini nel file .env.' })
         if (telefonataInCorso) return inviaJson(res, 409, { errore: 'C’è già una telefonata in corso.' })
         void telefona(
           'telefonata di prova del nuovo telefono. Chiedigli se ti sente bene, fai due chiacchiere di cortesia e, quando saluta, salutalo.',
