@@ -54,6 +54,32 @@ function spegni(codice = 0) {
 process.on('SIGINT', () => spegni(0))
 process.on('SIGTERM', () => spegni(0))
 
+// Apre Jarvis: su Windows in una finestra tutta sua (Microsoft Edge in modalità app, senza barra degli indirizzi,
+// con le voci "Natural"); altrove nel browser predefinito. JARVIS_FINESTRA_APP=0 per usare il browser normale.
+function apriFinestra() {
+  if (process.env.JARVIS_NON_APRIRE_BROWSER) return
+  const app = process.platform === 'win32' && process.env.JARVIS_FINESTRA_APP !== '0'
+  const comando =
+    process.platform === 'win32'
+      ? ['cmd', app ? ['/c', 'start', '', 'msedge', `--app=${INDIRIZZO}`] : ['/c', 'start', '', INDIRIZZO]]
+      : process.platform === 'darwin'
+        ? ['open', [INDIRIZZO]]
+        : ['xdg-open', [INDIRIZZO]]
+  spawn(comando[0], comando[1], { stdio: 'ignore', detached: true, windowsHide: true }).on('error', () => {}).unref()
+}
+
+// Se Jarvis è già acceso (per esempio doppio clic sull'icona una seconda volta) basta riaprire la finestra
+try {
+  const res = await fetch(`${INDIRIZZO}/api/stato`, { signal: AbortSignal.timeout(1500) })
+  if (res.ok) {
+    console.log('\nJarvis è già acceso: apro la finestra.\n')
+    apriFinestra()
+    process.exit(0)
+  }
+} catch {
+  // non è acceso: si avvia
+}
+
 console.log('\nAvvio di J.A.R.V.I.S.…\n')
 avvia('backend', ['--disable-warning=ExperimentalWarning', path.join('src', 'index.ts')], path.join(radice, 'backend'))
 // --hostname 127.0.0.1: l'interfaccia è raggiungibile solo da questo computer
@@ -72,9 +98,6 @@ async function apriBrowser() {
   }
   if (spegnimento) return
   console.log(`\nJarvis è pronto: ${INDIRIZZO}  (per spegnerlo premi Ctrl+C in questa finestra)\n`)
-  if (process.env.JARVIS_NON_APRIRE_BROWSER) return
-  const comando =
-    process.platform === 'win32' ? ['cmd', ['/c', 'start', '', INDIRIZZO]] : process.platform === 'darwin' ? ['open', [INDIRIZZO]] : ['xdg-open', [INDIRIZZO]]
-  spawn(comando[0], comando[1], { stdio: 'ignore', detached: true, windowsHide: true }).on('error', () => {}).unref()
+  apriFinestra()
 }
 apriBrowser()

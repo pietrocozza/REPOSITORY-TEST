@@ -50,7 +50,20 @@ In **PowerShell**, dentro la cartella `jarvis`:
 npm start
 ```
 
-Si apre il browser su http://127.0.0.1:3000. Per spegnere Jarvis premi **Ctrl+C** nella finestra di PowerShell.
+Jarvis si apre in una finestra tutta sua (Microsoft Edge in modalità app). Per spegnerlo premi **Ctrl+C**
+nella finestra di PowerShell, oppure chiudi quella finestra.
+
+### Icona sul desktop (consigliato)
+
+Una volta sola, in PowerShell nella cartella `jarvis`:
+
+```powershell
+npm run collegamento
+```
+
+Sul desktop compare l'icona **Jarvis**: con un doppio clic si accende e si apre. La finestra di PowerShell
+parte ridotta a icona nella barra in basso: è il "motore" di Jarvis, chiudendola si spegne.
+Se Jarvis è già acceso, il doppio clic riapre solo la finestra.
 
 ## Come si usa
 

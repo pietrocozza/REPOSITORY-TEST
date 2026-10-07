@@ -14,7 +14,9 @@ test('ogni personalità mantiene le regole di sicurezza e di voce', () => {
 test("l'imprenditore brillante parla a modo suo ma non si spaccia per una persona reale", () => {
   const testo = istruzioni('Pietro', 'imprenditore')
   assert.ok(testo.includes('mi consenta'))
-  assert.ok(testo.includes('Con Pietro sei caloroso'))
+  assert.ok(testo.includes('anche Pietro e te stesso'))
   assert.ok(testo.includes('non sei una persona reale'))
   assert.ok(testo.includes('non parli di politica'))
+  assert.ok(testo.includes('humour nero'))
+  assert.ok(testo.includes('non prende mai di mira gruppi di persone'))
 })

@@ -2,7 +2,7 @@
   "name": "jarvis",
   "version": "0.2.0",
   "private": true,
-  "description": "J.A.R.V.I.S. – assistente personale locale con Claude Code",
+  "description": "J.A.R.V.I.S. \u2013 assistente personale locale con Claude Code",
   "workspaces": [
     "frontend",
     "backend"
@@ -14,7 +14,8 @@
     "start": "node scripts/avvia.mjs",
     "controlla": "node backend/src/diagnostica.ts",
     "test": "node --test \"backend/test/*.test.ts\"",
-    "verifica": "tsc -p backend/tsconfig.json && npm run lint -w frontend && npm test"
+    "verifica": "tsc -p backend/tsconfig.json && npm run lint -w frontend && npm test",
+    "collegamento": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/crea-collegamento.ps1"
   },
   "devDependencies": {
     "@types/node": "^22",
