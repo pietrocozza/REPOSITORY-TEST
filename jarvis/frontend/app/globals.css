@@ -955,6 +955,8 @@ select {
   flex-direction: column;
   gap: 14px;
   padding: 18px;
+  padding-top: max(18px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(18px, env(safe-area-inset-bottom, 0px));
   background: radial-gradient(ellipse at 50% 30%, #0a2535, #03090f 70%);
   color: var(--c-testo);
   color-scheme: dark;
@@ -1184,8 +1186,9 @@ select {
   top: -6px;
   z-index: 1;
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 12px;
+  gap: 2px 12px;
   padding: 10px 20px;
   margin-bottom: 4px;
   background: rgb(6 18 26 / 0.92);
@@ -1193,6 +1196,8 @@ select {
   font-family: 'Aptos', 'Segoe UI', system-ui, sans-serif;
 }
 .j-cod-file b {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font: 500 13px ui-monospace, Consolas, monospace;
   color: #e2f4f8;
 }
@@ -1409,7 +1414,7 @@ select {
 
 @media (max-width: 760px) {
   .j-codice {
-    padding: 10px;
+    padding: max(10px, env(safe-area-inset-top, 0px)) 10px max(10px, env(safe-area-inset-bottom, 0px));
   }
   .j-codice-corpo {
     grid-template-columns: 1fr;
@@ -1417,6 +1422,13 @@ select {
   }
   .j-codice-elenco {
     max-height: 120px;
+  }
+  .j-cod-num {
+    width: 40px;
+    padding-right: 10px;
+  }
+  .j-codice-editor {
+    font-size: 12px;
   }
   .j-codice-comandi {
     flex-wrap: wrap;
