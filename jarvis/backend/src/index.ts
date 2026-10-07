@@ -23,6 +23,9 @@ server.on('error', (err: NodeJS.ErrnoException) => {
 server.listen(config.porta, config.host, async () => {
   console.log(`[jarvis] backend in ascolto su http://${config.host}:${config.porta} (solo questo computer)`)
   // controlli di salute dopo l'avvio, così l'interfaccia non resta in attesa
+  // Claude Code si accende subito, così il primo messaggio non aspetta
+  agente.prepara()
+  console.log(`[jarvis] Claude Code: modalità ${agente.modalita}`)
   const esito = await diagnostica(config)
   for (const c of esito.controlli) {
     console.log(`[jarvis] ${c.ok ? 'OK' : 'NO'} ${c.nome}: ${c.dettaglio}`)
@@ -31,7 +34,7 @@ server.listen(config.porta, config.host, async () => {
 })
 
 const spegni = () => {
-  agente.interrompi()
+  agente.spegni()
   server.close(() => process.exit(0))
   setTimeout(() => process.exit(0), 2000).unref()
 }

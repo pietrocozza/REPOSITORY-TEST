@@ -35,6 +35,13 @@ export const config = {
     percorso: env('JARVIS_CLAUDE_PATH'),
     /** modello di Claude Code (vuoto = quello predefinito del tuo abbonamento) */
     modello: env('JARVIS_MODELLO'),
+    /**
+     * Quanto Claude "ragiona" prima di rispondere: low (più rapido, adatto alla chat), medium, high.
+     * Più alto = risposte più ponderate ma più lente e più consumo dell'abbonamento.
+     */
+    effort: env('JARVIS_EFFORT', 'low'),
+    /** Claude Code resta acceso tra un messaggio e l'altro (più veloce). JARVIS_MODALITA_VELOCE=0 per disattivarla. */
+    modalitaVeloce: env('JARVIS_MODALITA_VELOCE', '1') !== '0',
     /** tempo massimo per una risposta, in secondi */
     timeoutSecondi: Number(env('JARVIS_TIMEOUT', '300')),
     /**

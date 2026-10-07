@@ -20,7 +20,10 @@ before(async () => {
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
 })
-after(() => server.close())
+after(() => {
+  agente.spegni()
+  server.close()
+})
 
 const chat = (messaggio: string, origin = 'http://localhost:3000') =>
   fetch(`${base}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin }, body: JSON.stringify({ messaggio }) })
@@ -40,6 +43,8 @@ test('chat: eventi NDJSON in ordine, conversazione ricordata', async () => {
 })
 
 test('sessione persa: Jarvis ne apre una nuova e risponde lo stesso', async () => {
+  // come dopo un riavvio di Jarvis: Claude Code ripartirà provando a riprendere la conversazione salvata
+  agente.spegni()
   process.env.FINTO_SCENARIO = 'sessione'
   const prima = JSON.parse(fs.readFileSync(path.join(tmp, 'sessione.json'), 'utf8')).id
   const eventi = (await (await chat('ancora')).text()).trim().split('\n').map((r) => JSON.parse(r))
@@ -57,4 +62,16 @@ test('stato e nuova conversazione', async () => {
   assert.ok(Array.isArray(stato.controlli))
   const nuova = (await (await fetch(`${base}/api/conversazione/nuova`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).json()) as { ok: boolean }
   assert.equal(nuova.ok, true)
+})
+
+test('se la modalità veloce non funziona, Jarvis risponde lo stesso con quella di riserva', async () => {
+  const dati = fs.mkdtempSync(path.join(os.tmpdir(), 'jarvis-riserva-'))
+  const a = new Agente({ ...cfg, cartellaDati: dati, cartellaLavoro: path.join(dati, 'agente') }, { comando: process.execPath, prefisso: [FINTO], shell: false, descrizione: 'finto' })
+  process.env.FINTO_SCENARIO = 'rotto'
+  const eventi: { tipo: string }[] = []
+  assert.equal(await a.chat('ciao', (e) => eventi.push(e)), 'ok')
+  assert.equal(a.modalita, 'un avvio per messaggio')
+  assert.ok(!eventi.some((e) => e.tipo === 'errore'), "l'errore della modalità veloce non deve arrivare all'interfaccia")
+  assert.equal(eventi.at(-1)?.tipo, 'fine')
+  a.spegni()
 })

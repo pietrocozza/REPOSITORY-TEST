@@ -1,16 +1,19 @@
-import { spawn } from 'node:child_process'
+import { spawn, type ChildProcess } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import readline from 'node:readline'
 import type { Eseguibile } from './eseguibile.ts'
 import type { EventoAgente } from './eventi.ts'
 
-// Esegue UN turno di conversazione con Claude Code installato sul PC (modalità "headless", -p).
+// Collegamento con Claude Code installato sul PC (modalità "headless", -p).
 // Claude Code usa l'account con cui hai fatto il login: nessuna chiave API nel progetto.
 // Il messaggio passa da stdin (non dalla riga di comando), così nessun testo può diventare un comando.
+//
+// Due modalità:
+//  - ProcessoClaude: Claude Code resta acceso e riceve i messaggi uno dopo l'altro (veloce, predefinita)
+//  - eseguiTurno:    Claude Code viene avviato da zero per ogni messaggio (più lento, usato come riserva)
 
-export type OpzioniTurno = {
-  messaggio: string
+export type Avvio = {
   sessione: { id: string; avviata: boolean }
   eseguibile: Eseguibile
   cartellaLavoro: string
@@ -18,12 +21,18 @@ export type OpzioniTurno = {
   /** strumenti integrati di Claude Code concessi (es. WebSearch). Tutti gli altri restano spenti. */
   strumenti: string[]
   modello?: string
-  timeoutMs: number
+  /** quanto "ragionare" prima di rispondere: low è il più rapido */
+  effort?: string
   consentiApiAConsumo: boolean
-  signal?: AbortSignal
-  onEvento: (e: EventoAgente) => void
   /** chiamato appena Claude Code ha creato/aperto la sessione */
   onSessioneAperta?: () => void
+}
+
+export type OpzioniTurno = Avvio & {
+  messaggio: string
+  timeoutMs: number
+  signal?: AbortSignal
+  onEvento: (e: EventoAgente) => void
 }
 
 export type EsitoTurno = 'ok' | 'errore' | 'interrotto' | 'sessione-mancante'
@@ -58,9 +67,9 @@ export function spiegaErrore(testo: string): string {
   return `Claude Code ha restituito un errore: ${t.slice(0, 300) || 'motivo sconosciuto'}`
 }
 
-const sessioneMancante = (testo: string) => /no conversation found|session.{0,40}not found|could not find session/i.test(testo)
+export const sessioneMancante = (testo: string) => /no conversation found|session.{0,40}not found|could not find session/i.test(testo)
 
-export function costruisciArgomenti(o: Pick<OpzioniTurno, 'sessione' | 'strumenti' | 'modello'>, fileIstruzioni: string) {
+export function costruisciArgomenti(o: Pick<Avvio, 'sessione' | 'strumenti' | 'modello' | 'effort'>, fileIstruzioni: string, persistente = false) {
   const args = [
     '-p',
     '--output-format', 'stream-json',
@@ -72,36 +81,299 @@ export function costruisciArgomenti(o: Pick<OpzioniTurno, 'sessione' | 'strument
     '--strict-mcp-config',
     '--system-prompt-file', fileIstruzioni,
   ]
+  if (persistente) args.push('--input-format', 'stream-json')
   if (o.strumenti.length) args.push('--allowedTools', ...o.strumenti)
   args.push(...(o.sessione.avviata ? ['--resume', o.sessione.id] : ['--session-id', o.sessione.id]))
   if (o.modello) args.push('--model', o.modello)
+  if (o.effort) args.push('--effort', o.effort)
   return args
+}
+
+/** Avvia il processo di Claude Code con l'ambiente ripulito dalle chiavi a consumo. */
+function avviaClaude(o: Avvio, persistente: boolean): ChildProcess {
+  fs.mkdirSync(o.cartellaLavoro, { recursive: true })
+  const fileIstruzioni = path.join(o.cartellaLavoro, 'istruzioni-jarvis.txt')
+  fs.writeFileSync(fileIstruzioni, o.istruzioni)
+
+  const env = { ...process.env }
+  if (!o.consentiApiAConsumo) for (const v of VARIABILI_A_CONSUMO) delete env[v]
+
+  let args = [...o.eseguibile.prefisso, ...costruisciArgomenti(o, fileIstruzioni, persistente)]
+  // solo nel caso estremo in cui serve il prompt dei comandi: ogni argomento tra virgolette
+  if (o.eseguibile.shell) args = args.map((a) => `"${a.replace(/"/g, '')}"`)
+
+  return spawn(o.eseguibile.comando, args, {
+    cwd: o.cartellaLavoro,
+    env,
+    shell: o.eseguibile.shell,
+    windowsHide: true,
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
+}
+
+function termina(figlio: ChildProcess) {
+  if (figlio.exitCode !== null || figlio.killed) return
+  if (process.platform === 'win32' && figlio.pid) {
+    // chiude anche eventuali processi figli
+    spawn('taskkill', ['/pid', String(figlio.pid), '/T', '/F'], { windowsHide: true }).on('error', () => figlio.kill())
+  } else {
+    figlio.kill()
+  }
 }
 
 type Riga = Record<string, unknown> & { type?: string }
 
+const messaggioBlocco = (fonte: string) =>
+  `Ho fermato la richiesta: Claude Code stava per usare una chiave API a consumo (${fonte}) invece del tuo abbonamento. Se vuoi davvero usarla, scrivi JARVIS_CONSENTI_API_A_CONSUMO=1 nel file .env.`
+
+/** Controlla la riga iniziale di Claude Code: restituisce un messaggio di blocco se userebbe un servizio a consumo. */
+function controllaInit(r: Riga, consentiApiAConsumo: boolean): string | null {
+  const fonte = typeof r.apiKeySource === 'string' ? r.apiKeySource : 'none'
+  return fonte !== 'none' && !consentiApiAConsumo ? messaggioBlocco(fonte) : null
+}
+
+/**
+ * Traduce le righe di Claude Code di UN turno in eventi per l'interfaccia.
+ * Restituisce l'esito quando arriva la riga finale ("result").
+ */
+function creaInterprete(onEvento: (e: EventoAgente) => void) {
+  let testoEmesso = false
+  let separatore = false
+  let vistiParziali = false
+  const strumentiAnnunciati = new Set<string>()
+
+  const emettiTesto = (testo: string) => {
+    if (!testo) return
+    if (separatore && testoEmesso) testo = '\n\n' + testo
+    separatore = false
+    testoEmesso = true
+    onEvento({ tipo: 'testo', testo })
+  }
+  const annunciaStrumento = (nome: string, id: string) => {
+    if (strumentiAnnunciati.has(id)) return
+    strumentiAnnunciati.add(id)
+    onEvento({ tipo: 'stato', stato: 'WORKING', strumento: nome, descrizione: descriviStrumento(nome) })
+  }
+
+  return (r: Riga): EsitoTurno | null => {
+    switch (r.type) {
+      case 'stream_event': {
+        vistiParziali = true
+        const ev = r.event as Record<string, unknown> | undefined
+        if (!ev) return null
+        if (ev.type === 'message_start') separatore = true
+        if (ev.type === 'content_block_start') {
+          const blocco = ev.content_block as { type?: string; name?: string; id?: string } | undefined
+          if (blocco && (blocco.type === 'tool_use' || blocco.type === 'server_tool_use') && blocco.name)
+            annunciaStrumento(blocco.name, blocco.id ?? blocco.name + Math.random())
+        }
+        if (ev.type === 'content_block_delta') {
+          const delta = ev.delta as { type?: string; text?: string } | undefined
+          if (delta?.type === 'text_delta' && delta.text) emettiTesto(delta.text)
+        }
+        return null
+      }
+      case 'assistant': {
+        const contenuto = ((r.message as { content?: unknown[] })?.content ?? []) as { type?: string; text?: string; name?: string; id?: string }[]
+        for (const b of contenuto) {
+          if (b.type === 'tool_use' && b.name) annunciaStrumento(b.name, b.id ?? b.name)
+          // se la versione di Claude Code non manda i pezzi parziali, usa il messaggio intero
+          if (!vistiParziali && b.type === 'text' && b.text) {
+            separatore = true
+            emettiTesto(b.text)
+          }
+        }
+        return null
+      }
+      case 'user': {
+        // risultati degli strumenti: Claude torna a ragionare (le eco dei messaggi utente non hanno tool_result)
+        const contenuto = ((r.message as { content?: unknown })?.content ?? []) as unknown
+        if (Array.isArray(contenuto) && contenuto.some((b) => (b as { type?: string })?.type === 'tool_result'))
+          onEvento({ tipo: 'stato', stato: 'THINKING' })
+        return null
+      }
+      case 'result': {
+        const testo = typeof r.result === 'string' ? r.result : ''
+        const errore = r.is_error === true || (typeof r.subtype === 'string' && r.subtype !== 'success')
+        if (!errore) {
+          if (!testoEmesso && testo) emettiTesto(testo)
+          return 'ok'
+        }
+        if (sessioneMancante(testo)) return 'sessione-mancante'
+        onEvento({ tipo: 'errore', messaggio: spiegaErrore(testo || String(r.subtype ?? '')) })
+        return 'errore'
+      }
+    }
+    return null
+  }
+}
+
+function leggiRighe(figlio: ChildProcess, suRiga: (r: Riga) => void) {
+  readline.createInterface({ input: figlio.stdout! }).on('line', (riga) => {
+    const pulita = riga.trim()
+    if (!pulita.startsWith('{')) return
+    let r: Riga
+    try {
+      r = JSON.parse(pulita)
+    } catch {
+      return // riga non JSON: ignorata
+    }
+    suRiga(r)
+  })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Modalità veloce: Claude Code resta acceso
+// ─────────────────────────────────────────────────────────────────────────────
+
+type TurnoInCorso = {
+  interpreta: (r: Riga) => EsitoTurno | null
+  onEvento: (e: EventoAgente) => void
+  fine: (esito: EsitoTurno) => void
+}
+
+export class ProcessoClaude {
+  private avvio: Avvio
+  private figlio: ChildProcess | null = null
+  private turno: TurnoInCorso | null = null
+  private stderr = ''
+  private blocco: string | null = null
+  private avviatoAlle = 0
+  /** true se il processo si è chiuso subito dopo l'avvio: la modalità veloce non funziona su questo PC */
+  fallito = false
+
+  constructor(avvio: Avvio) {
+    this.avvio = avvio
+  }
+
+  get acceso() {
+    return !!this.figlio && this.figlio.exitCode === null && !this.figlio.killed
+  }
+
+  /** età del processo in millisecondi (le istruzioni, con data e ora, si aggiornano riavviandolo) */
+  get eta() {
+    return this.acceso ? Date.now() - this.avviatoAlle : Infinity
+  }
+
+  /** Accende Claude Code in anticipo, così il primo messaggio non aspetta l'avvio. */
+  accendi(avvio?: Avvio) {
+    if (avvio) this.avvio = avvio
+    if (this.acceso) return
+    this.stderr = ''
+    this.blocco = null
+    this.avviatoAlle = Date.now()
+    let figlio: ChildProcess
+    try {
+      figlio = avviaClaude(this.avvio, true)
+    } catch (err) {
+      this.fallito = true
+      this.stderr = String(err)
+      return
+    }
+    this.figlio = figlio
+    figlio.stdin!.on('error', () => {})
+    figlio.stderr!.on('data', (d) => {
+      this.stderr = (this.stderr + d.toString()).slice(-4000)
+    })
+    leggiRighe(figlio, (r) => {
+      // righe di un processo vecchio (già chiuso o sostituito): ignorate
+      if (this.figlio !== figlio) return
+      if (r.type === 'system' && r.subtype === 'init') {
+        this.avvio.onSessioneAperta?.()
+        this.blocco = controllaInit(r, this.avvio.consentiApiAConsumo)
+        if (this.blocco) {
+          this.turno?.onEvento({ tipo: 'errore', messaggio: this.blocco })
+          this.turno?.fine('errore')
+          termina(figlio)
+        }
+        return
+      }
+      const t = this.turno
+      if (!t) return
+      const esito = t.interpreta(r)
+      if (esito) t.fine(esito)
+    })
+    figlio.on('error', (err) => {
+      this.stderr += String(err)
+    })
+    figlio.on('close', () => {
+      // la chiusura di un processo vecchio (es. dopo un'interruzione) non riguarda il turno attuale
+      if (this.figlio !== figlio) return
+      this.figlio = null
+      const durata = Date.now() - this.avviatoAlle
+      const t = this.turno
+      if (t) {
+        const motivo = this.stderr || 'Claude Code si è chiuso inaspettatamente.'
+        if (sessioneMancante(motivo)) t.fine('sessione-mancante')
+        else {
+          // se si chiude entro pochi secondi dall'avvio senza aver mai risposto, la modalità veloce non va
+          if (durata < 15000) this.fallito = true
+          t.onEvento({ tipo: 'errore', messaggio: spiegaErrore(motivo) })
+          t.fine('errore')
+        }
+      }
+    })
+  }
+
+  spegni() {
+    if (this.figlio) termina(this.figlio)
+    this.figlio = null
+  }
+
+  /** Invia un messaggio a Claude Code già acceso e attende la fine della risposta. */
+  invia(messaggio: string, opzioni: { timeoutMs: number; signal?: AbortSignal; onEvento: (e: EventoAgente) => void }): Promise<EsitoTurno> {
+    return new Promise((resolve) => {
+      if (!this.acceso) this.accendi()
+      const figlio = this.figlio
+      if (!figlio) {
+        opzioni.onEvento({ tipo: 'errore', messaggio: spiegaErrore(this.stderr) })
+        return resolve('errore')
+      }
+      if (this.blocco) {
+        opzioni.onEvento({ tipo: 'errore', messaggio: this.blocco })
+        return resolve('errore')
+      }
+
+      let finito = false
+      const fine = (esito: EsitoTurno) => {
+        if (finito) return
+        finito = true
+        clearTimeout(timer)
+        opzioni.signal?.removeEventListener('abort', interrompi)
+        if (this.turno === turno) this.turno = null
+        resolve(esito)
+      }
+      const interrompi = () => {
+        // per fermare Claude a metà risposta si chiude il processo; al prossimo messaggio riparte con --resume
+        this.spegni()
+        fine('interrotto')
+      }
+      const timer = setTimeout(() => {
+        opzioni.onEvento({ tipo: 'errore', messaggio: `Claude Code non ha risposto entro ${Math.round(opzioni.timeoutMs / 1000)} secondi.` })
+        this.spegni()
+        fine('errore')
+      }, opzioni.timeoutMs)
+
+      const turno: TurnoInCorso = { interpreta: creaInterprete(opzioni.onEvento), onEvento: opzioni.onEvento, fine }
+      this.turno = turno
+      opzioni.signal?.addEventListener('abort', interrompi, { once: true })
+      if (opzioni.signal?.aborted) return interrompi()
+
+      const riga = { type: 'user', message: { role: 'user', content: [{ type: 'text', text: messaggio }] } }
+      figlio.stdin!.write(JSON.stringify(riga) + '\n')
+    })
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Modalità di riserva: un avvio di Claude Code per ogni messaggio
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function eseguiTurno(o: OpzioniTurno): Promise<EsitoTurno> {
   return new Promise((resolve) => {
-    fs.mkdirSync(o.cartellaLavoro, { recursive: true })
-    const fileIstruzioni = path.join(o.cartellaLavoro, 'istruzioni-jarvis.txt')
-    fs.writeFileSync(fileIstruzioni, o.istruzioni)
-
-    const env = { ...process.env }
-    if (!o.consentiApiAConsumo) for (const v of VARIABILI_A_CONSUMO) delete env[v]
-
-    let args = [...o.eseguibile.prefisso, ...costruisciArgomenti(o, fileIstruzioni)]
-    // solo nel caso estremo in cui serve il prompt dei comandi: ogni argomento tra virgolette
-    if (o.eseguibile.shell) args = args.map((a) => `"${a.replace(/"/g, '')}"`)
-
-    let figlio: ReturnType<typeof spawn>
+    let figlio: ChildProcess
     try {
-      figlio = spawn(o.eseguibile.comando, args, {
-        cwd: o.cartellaLavoro,
-        env,
-        shell: o.eseguibile.shell,
-        windowsHide: true,
-        stdio: ['pipe', 'pipe', 'pipe'],
-      })
+      figlio = avviaClaude(o, false)
     } catch (err) {
       o.onEvento({ tipo: 'errore', messaggio: spiegaErrore(String(err)) })
       return resolve('errore')
@@ -112,24 +384,11 @@ export function eseguiTurno(o: OpzioniTurno): Promise<EsitoTurno> {
     let bloccato = false
     let esitoFinale: EsitoTurno | null = null
     let stderr = ''
-    let testoEmesso = false
-    let separatore = false
-    let vistiParziali = false
-    const strumentiAnnunciati = new Set<string>()
-
-    const termina = () => {
-      if (figlio.exitCode !== null || figlio.killed) return
-      if (process.platform === 'win32' && figlio.pid) {
-        // chiude anche eventuali processi figli
-        spawn('taskkill', ['/pid', String(figlio.pid), '/T', '/F'], { windowsHide: true }).on('error', () => figlio.kill())
-      } else {
-        figlio.kill()
-      }
-    }
+    const interpreta = creaInterprete(o.onEvento)
 
     const suInterruzione = () => {
       interrotto = true
-      termina()
+      termina(figlio)
     }
     o.signal?.addEventListener('abort', suInterruzione, { once: true })
     if (o.signal?.aborted) suInterruzione()
@@ -137,102 +396,27 @@ export function eseguiTurno(o: OpzioniTurno): Promise<EsitoTurno> {
     const timer = setTimeout(() => {
       o.onEvento({ tipo: 'errore', messaggio: `Claude Code non ha risposto entro ${Math.round(o.timeoutMs / 1000)} secondi.` })
       esitoFinale = 'errore'
-      termina()
+      termina(figlio)
     }, o.timeoutMs)
 
-    const emettiTesto = (testo: string) => {
-      if (!testo) return
-      if (separatore && testoEmesso) testo = '\n\n' + testo
-      separatore = false
-      testoEmesso = true
-      o.onEvento({ tipo: 'testo', testo })
-    }
-
-    const annunciaStrumento = (nome: string, id: string) => {
-      if (strumentiAnnunciati.has(id)) return
-      strumentiAnnunciati.add(id)
-      o.onEvento({ tipo: 'stato', stato: 'WORKING', strumento: nome, descrizione: descriviStrumento(nome) })
-    }
-
-    const gestisci = (r: Riga) => {
-      switch (r.type) {
-        case 'system': {
-          if (r.subtype !== 'init') return
-          o.onSessioneAperta?.()
-          const fonte = typeof r.apiKeySource === 'string' ? r.apiKeySource : 'none'
-          if (fonte !== 'none' && !o.consentiApiAConsumo) {
-            // Regola sui costi: mai usare chiavi API a consumo senza autorizzazione esplicita
-            bloccato = true
-            o.onEvento({
-              tipo: 'errore',
-              messaggio: `Ho fermato la richiesta: Claude Code stava per usare una chiave API a consumo (${fonte}) invece del tuo abbonamento. Se vuoi davvero usarla, scrivi JARVIS_CONSENTI_API_A_CONSUMO=1 nel file .env.`,
-            })
-            termina()
-          }
-          return
+    leggiRighe(figlio, (r) => {
+      if (r.type === 'system' && r.subtype === 'init') {
+        o.onSessioneAperta?.()
+        const blocco = controllaInit(r, o.consentiApiAConsumo)
+        if (blocco) {
+          // Regola sui costi: mai usare chiavi API a consumo senza autorizzazione esplicita
+          bloccato = true
+          o.onEvento({ tipo: 'errore', messaggio: blocco })
+          termina(figlio)
         }
-        case 'stream_event': {
-          vistiParziali = true
-          const ev = r.event as Record<string, unknown> | undefined
-          if (!ev) return
-          if (ev.type === 'message_start') separatore = true
-          if (ev.type === 'content_block_start') {
-            const blocco = ev.content_block as { type?: string; name?: string; id?: string } | undefined
-            if (blocco && (blocco.type === 'tool_use' || blocco.type === 'server_tool_use') && blocco.name)
-              annunciaStrumento(blocco.name, blocco.id ?? blocco.name + Math.random())
-          }
-          if (ev.type === 'content_block_delta') {
-            const delta = ev.delta as { type?: string; text?: string } | undefined
-            if (delta?.type === 'text_delta' && delta.text) emettiTesto(delta.text)
-          }
-          return
-        }
-        case 'assistant': {
-          const contenuto = ((r.message as { content?: unknown[] })?.content ?? []) as { type?: string; text?: string; name?: string; id?: string }[]
-          for (const b of contenuto) {
-            if (b.type === 'tool_use' && b.name) annunciaStrumento(b.name, b.id ?? b.name)
-            // se la versione di Claude Code non manda i pezzi parziali, usa il messaggio intero
-            if (!vistiParziali && b.type === 'text' && b.text) {
-              separatore = true
-              emettiTesto(b.text)
-            }
-          }
-          return
-        }
-        case 'user':
-          // risultati degli strumenti: Claude torna a ragionare
-          o.onEvento({ tipo: 'stato', stato: 'THINKING' })
-          return
-        case 'result': {
-          const testo = typeof r.result === 'string' ? r.result : ''
-          const errore = r.is_error === true || (typeof r.subtype === 'string' && r.subtype !== 'success')
-          if (!errore) {
-            if (!testoEmesso && testo) emettiTesto(testo)
-            esitoFinale = 'ok'
-          } else if (sessioneMancante(testo)) {
-            esitoFinale = 'sessione-mancante'
-          } else {
-            esitoFinale = 'errore'
-            o.onEvento({ tipo: 'errore', messaggio: spiegaErrore(testo || String(r.subtype ?? '')) })
-          }
-          return
-        }
+        return
       }
-    }
-
-    readline.createInterface({ input: figlio.stdout! }).on('line', (riga) => {
-      const pulita = riga.trim()
-      if (!pulita.startsWith('{')) return
-      try {
-        gestisci(JSON.parse(pulita))
-      } catch {
-        // riga non JSON: ignorata
-      }
+      const esito = interpreta(r)
+      if (esito && !esitoFinale) esitoFinale = esito
     })
     figlio.stderr!.on('data', (d) => {
       stderr = (stderr + d.toString()).slice(-4000)
     })
-
     figlio.stdin!.on('error', () => {})
     figlio.stdin!.end(o.messaggio)
 

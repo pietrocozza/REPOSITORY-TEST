@@ -35,11 +35,12 @@ Le prossime fasi aggiungeranno, ognuna nella sua cartella del backend:
 
 ## Come Jarvis usa Claude (e perché non costa nulla in più)
 
-Per ogni messaggio il backend avvia Claude Code in modalità non interattiva:
+Il backend avvia Claude Code in modalità non interattiva:
 
 ```
-claude -p --output-format stream-json --tools WebSearch,WebFetch --setting-sources "" \
-       --strict-mcp-config --system-prompt-file … --session-id/--resume <conversazione>
+claude -p --input-format stream-json --output-format stream-json --tools WebSearch,WebFetch \
+       --setting-sources "" --strict-mcp-config --system-prompt-file … --effort low \
+       --session-id/--resume <conversazione>
 ```
 
 - **Abbonamento, non API a consumo.** Il backend toglie dall'ambiente le variabili che farebbero usare
@@ -50,6 +51,9 @@ claude -p --output-format stream-json --tools WebSearch,WebFetch --setting-sourc
   lettura di pagine. Niente terminale, niente modifica di file, niente impostazioni personali di Claude Code.
   Claude lavora in `data/agente/`, una cartella vuota e isolata.
 - **Il messaggio passa da stdin**, mai dalla riga di comando: il testo non può diventare un comando.
+- **Velocità.** Claude Code viene acceso all'avvio di Jarvis e resta acceso (`--input-format stream-json`):
+  i messaggi gli arrivano uno dopo l'altro senza riavviarlo. Se questa modalità non funziona, Jarvis passa
+  da solo a un avvio per messaggio. Il livello di ragionamento è `--effort low` (modificabile con `JARVIS_EFFORT`).
 - **Memoria della conversazione.** Claude Code salva la conversazione e il backend la riprende con `--resume`,
   anche dopo un riavvio. "Nuova conversazione" ne apre una pulita.
 
