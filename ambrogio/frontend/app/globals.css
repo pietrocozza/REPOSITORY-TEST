@@ -374,10 +374,35 @@ select {
   box-shadow: 0 0 0 6px color-mix(in srgb, var(--j-accent) 22%, transparent), 0 0 30px var(--j-accent);
 }
 .j-sentinella {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  border-radius: 999px;
   font: 9px monospace;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: #5d8d99;
+  transition: color 0.2s, background 0.2s;
+}
+.j-sentinella:hover {
+  color: #a9c4ce;
+  background: rgb(119 230 237 / 0.06) !important;
+}
+.j-sentinella i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid #5d8d99;
+}
+.j-sentinella[aria-pressed='true'] {
+  color: #8fc9d4;
+}
+.j-sentinella[aria-pressed='true'] i {
+  border-color: #77f1cc;
+  background: #77f1cc;
+  box-shadow: 0 0 8px #77f1cc;
+  animation: j-batte 2.4s ease-in-out infinite;
 }
 
 .j-pannello-testa {

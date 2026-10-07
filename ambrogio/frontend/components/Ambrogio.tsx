@@ -129,6 +129,25 @@ const EVENTI: Record<Stato, [string, string]> = {
 
 const SALUTO = 'Ambrogio, al tuo servizio. Da dove cominciamo?'
 
+// Quando lo chiami solo per nome, Ambrogio risponde e poi ascolta la richiesta
+const DOMANDE_ATTIVAZIONE = [
+  `Dimmi, ${NOME_UTENTE}.`,
+  'Sì? Cosa ti serve?',
+  'Ué, dimmi tutto.',
+  'Eccomi. Cosa posso fare per te?',
+  'Agli ordini, dimmi pure.',
+]
+const scegliFrase = (frasi: string[]) => frasi[Math.floor(Math.random() * frasi.length)]
+
+/** Il saluto quando si apre Ambrogio (poche varianti fisse: con Gemini restano salvate e partono subito) */
+function salutoIniziale(ascoltoAttivo: boolean) {
+  const ora = new Date().getHours()
+  const saluto = ora < 5 ? 'Buonanotte' : ora < 13 ? 'Buongiorno' : ora < 18 ? 'Buon pomeriggio' : 'Buonasera'
+  return `${saluto}, ${NOME_UTENTE}. Sono Ambrogio, il tuo maggiordomo personale. ${
+    ascoltoAttivo ? 'Quando ti serve, chiamami per nome.' : 'Quando ti serve, premi il microfono o scrivimi.'
+  }`
+}
+
 // Detta subito quando serve cercare online, così l'attesa non è un silenzio
 const FRASI_RICERCA = [
   'Certo, signore. Cerco subito.',
@@ -178,6 +197,8 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   const [senzaWebgl, setSenzaWebgl] = useState(false)
   const [strumento, setStrumento] = useState<string | null>(null)
   const [fraseAttesa, setFraseAttesa] = useState<string | null>(null)
+  /** frase detta da Ambrogio fuori dalla conversazione (saluto, «Dimmi»): si mostra al centro */
+  const [annuncio, setAnnuncio] = useState<string | null>(null)
 
   // Valori letti dentro callback asincrone: tenuti in ref per non leggere versioni vecchie
   const livello = useRef(0)
@@ -213,6 +234,8 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   const ascoltoGemini = useRef(false)
   const riavvii = useRef(0)
   const avvisoSentinella = useRef(false)
+  /** l'ultima frase "fuori conversazione" detta da Ambrogio (perché non si svegli sentendo il proprio nome) */
+  const dettoDaSe = useRef('')
 
   useEffect(() => {
     statoRef.current = stato
@@ -307,6 +330,36 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       qualita: qualitaVoce,
     })
   }, [motoreVoce, statoVoce, voceAmbrogio, qualitaVoce, mostraErrore])
+
+  // Appena si apre, Ambrogio saluta e si presenta (una volta per finestra, non a ogni ricarica).
+  // Aspetta di sapere quale voce usare, al massimo 3 secondi.
+  const salutato = useRef(false)
+  const [attesaSalutoFinita, setAttesaSalutoFinita] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setAttesaSalutoFinita(true), 3000)
+    return () => clearTimeout(t)
+  }, [])
+  useEffect(() => {
+    if (salutato.current || !impostazioniCaricate.current) return
+    if (usaBackend && !statoVoce && !attesaSalutoFinita) return
+    salutato.current = true
+    try {
+      if (sessionStorage.getItem('ambrogio-salutato')) return
+      sessionStorage.setItem('ambrogio-salutato', '1')
+    } catch {
+      // archivio del browser non disponibile: si saluta lo stesso
+    }
+    const frase = salutoIniziale(attivazioneRef.current)
+    dettoDaSe.current = frase
+    setTimeout(() => {
+      setAnnuncio(frase)
+      if (!vocaleRef.current) return
+      pronuncia(frase, {
+        onInizio: () => setStato((st) => (st === 'pronto' ? 'risposta' : st)),
+        onFine: () => setStato((st) => (st === 'risposta' ? 'pronto' : st)),
+      })
+    }, 0)
+  }, [usaBackend, statoVoce, attesaSalutoFinita])
 
   // Mentre Ambrogio lavora, il cronometro a sinistra avanza
   useEffect(() => {
@@ -550,7 +603,8 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     let sveglio = false
     // se Ambrogio pronuncia il proprio nome non deve "svegliarsi" da solo
     const sentitoDaSe = () =>
-      statoRef.current === 'risposta' && /ambrogio/i.test([...vociRef.current].reverse().find((v) => v.ruolo === 'assistant')?.testo ?? '')
+      statoRef.current === 'risposta' &&
+      /ambrogio/i.test(`${dettoDaSe.current} ${[...vociRef.current].reverse().find((v) => v.ruolo === 'assistant')?.testo ?? ''}`)
     const svegliati = () => {
       sveglio = true
       suonoAttivazione()
@@ -577,7 +631,21 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
         if (!sveglio) svegliati()
         sveglio = false
         setParziale('')
-        if (!comando) ascoltaComando(false) // solo «Ambrogio»: aspetta la domanda
+        if (!comando) {
+          // solo «Ambrogio»: risponde «Dimmi…» e poi ascolta la richiesta
+          spegniSentinella()
+          comandoInCorso.current = true
+          const turnoInizio = turno.current
+          const domanda = scegliFrase(DOMANDE_ATTIVAZIONE)
+          dettoDaSe.current = domanda
+          setAnnuncio(domanda)
+          setStato('risposta')
+          pronuncia(domanda, {
+            onFine: () => {
+              if (turno.current === turnoInizio && comandoInCorso.current) ascoltaComando(false)
+            },
+          })
+        }
         else if (eStop(comando)) {
           interrompiRef.current()
           suonoAttivazione(true)
@@ -600,7 +668,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
         setTimeout(() => sentinellaRef.current(), Math.min(15000, 300 * 2 ** riavvii.current))
       },
     })
-  }, [ascoltaComando, erroreMicrofono, mostraErrore])
+  }, [ascoltaComando, erroreMicrofono, mostraErrore, spegniSentinella])
 
   useEffect(() => {
     sentinellaRef.current = avviaSentinella
@@ -665,6 +733,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       setStato('elaborazione')
       setStrumento(null)
       setFraseAttesa(null)
+      setAnnuncio(null)
       const adesso = Date.now()
       inizioRef.current = adesso
       setInizioTurno(adesso)
@@ -891,6 +960,12 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     setParolaAttivazione(nuovo)
     attivazioneRef.current = nuovo
     riavvii.current = 0
+    const frase = nuovo ? 'Ascolto attivo: chiamami quando vuoi.' : 'Va bene, smetto di ascoltare.'
+    setAnnuncio(frase)
+    if (vocaleRef.current && statoRef.current === 'pronto') {
+      dettoDaSe.current = frase
+      pronuncia(frase)
+    }
     if (nuovo) avviaSentinella()
     else {
       spegniSentinella()
@@ -928,7 +1003,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
 
   const ultima = [...voci].reverse().find((v) => v.ruolo === 'assistant')
   const ultimaDomanda = [...voci].reverse().find((v) => v.ruolo === 'user')
-  let parlato = ultima?.testo || fraseAttesa || SALUTO
+  let parlato = annuncio || ultima?.testo || fraseAttesa || SALUTO
   if (stato === 'ascolto') parlato = parziale ? `«${parziale}»` : 'Ti ascolto.'
   else if (conferme.length) parlato = `Mi serve il tuo permesso: ${conferme[0].descrizione}.`
   else if (stato === 'lavoro') parlato = `${strumento ?? 'Uso uno strumento'}…`
@@ -1004,7 +1079,18 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
         >
           <Icona nome={inAttesa ? 'microfono' : 'stop'} />
         </button>
-        {parolaAttivazione && <span className="j-sentinella">di’ «Ambrogio»</span>}
+        {microfono && (
+          <button
+            type="button"
+            className="j-sentinella"
+            aria-pressed={parolaAttivazione}
+            onClick={cambiaAttivazione}
+            title={parolaAttivazione ? 'Ascolto attivo: clic per spegnerlo' : 'Ascolto spento: clic per accenderlo'}
+          >
+            <i />
+            {parolaAttivazione ? 'ascolto attivo · di’ «Ambrogio»' : 'ascolto spento'}
+          </button>
+        )}
       </div>
 
       {/* ───────── Menu a tendina ───────── */}
