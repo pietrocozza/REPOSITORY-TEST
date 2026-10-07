@@ -182,12 +182,16 @@ export type StatoVoce = {
   pagamento?: boolean
   /** il pulsante del microfono usa Gemini per capire cosa dici */
   trascrizione?: boolean
+  /** archivio delle frasi pronte (registrate una volta, poi gratis) */
+  preparazione?: { voce: string; totali: number; fatte: number; pronte: number; inCorso: boolean } | null
   problema?: string | null
   voci: { id: string; descrizione: string; clonata?: boolean }[]
   sospesaFinoA: string | null
   crediti?: { usati: number; limite: number; rinnovo: string | null } | null
 }
 export const caricaStatoVoce = () => leggi<StatoVoce>('/api/voce')
+/** chiede al backend di registrare in anticipo le frasi fisse con la voce scelta */
+export const preparaFrasi = (voce: string, frasi: string[]) => invia('/api/voce/prepara', 'POST', { voce, frasi })
 
 /** Trasforma in testo una frase registrata (Gemini, nel backend) */
 export async function trascrivi(audio: Blob): Promise<{ testo: string } | { errore: string }> {

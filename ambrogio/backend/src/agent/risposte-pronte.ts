@@ -64,6 +64,33 @@ function calcolo(t: string): string | null {
 
 type Regola = { frasi: RegExp; risposta: (c: Required<Contesto>) => string }
 
+// Le risposte fisse (sempre uguali): con la voce di Gemini si registrano una volta e poi non costano più
+const SALUTI = ['Buongiorno', 'Buon pomeriggio', 'Buonasera', 'Buonanotte']
+const VARIANTI = {
+  saluto: (saluto: string, nome: string) => [
+    `${saluto}, ${nome}. Sono qui, cosa posso fare per te?`,
+    `${saluto}, ${nome}. Ai tuoi ordini.`,
+    `Ué, ${nome}! Sun chì, dimmi pure.`,
+    `Eccomi, ${nome}. Andèm, cosa ti serve?`,
+  ],
+  grazie: (nome: string) => [`Dovere, ${nome}.`, 'È un piacere.', 'Sempre a disposizione.', 'Fa nagott, è il mio mestiere.'],
+  chiSei: (nome: string) => [`Sono Ambrogio, il tuo maggiordomo personale. Tengo a mente le tue cose, cerco quello che ti serve e sbrigo le faccende, ${nome}.`],
+  comeStai: () => ['Benissimo, grazie. Pronto a servirti.', 'In gran forma, come sempre. E tu?', 'Ué, si tira avanti! Tutto in ordine. Cosa posso fare per te?'],
+  buonanotte: (nome: string) => [`Buonanotte, ${nome}. Riposa bene.`, `Buonanotte, ${nome}. Qui ci penso io.`],
+}
+
+/** Tutte le risposte pronte che non cambiano (per prepararne la voce in anticipo) */
+export function frasiFisse(appellativo: string) {
+  return [
+    ...SALUTI.flatMap((s) => VARIANTI.saluto(s, appellativo)),
+    ...VARIANTI.grazie(appellativo),
+    ...VARIANTI.chiSei(appellativo),
+    ...VARIANTI.comeStai(),
+    ...VARIANTI.buonanotte(appellativo),
+    'Diviso zero non si può, nemmeno per un maggiordomo.',
+  ]
+}
+
 const REGOLE: Regola[] = [
   {
     frasi: /^(?:che ore sono|che ora è|che ora e|che ore son|l'ora|ora|sai che ore sono|che ore sono adesso|che ore sono ora)$/,
@@ -77,33 +104,25 @@ const REGOLE: Regola[] = [
     frasi: /^(?:ciao|salve|ehi|ehilà|eccomi|buongiorno|buon giorno|buon pomeriggio|buonasera|buona sera|ci sei|sei lì|sei li|sei sveglio|mi senti)$/,
     risposta: (c) => {
       const m = momento(c.adesso)
-      const saluto = m === 'mattina' ? 'Buongiorno' : m === 'pomeriggio' ? 'Buon pomeriggio' : m === 'sera' ? 'Buonasera' : 'Buonanotte'
-      return scegli(
-        [
-          `${saluto}, ${c.appellativo}. Sono qui, cosa posso fare per te?`,
-          `${saluto}, ${c.appellativo}. Ai tuoi ordini.`,
-          `Ué, ${c.appellativo}! Sun chì, dimmi pure.`,
-          `Eccomi, ${c.appellativo}. Andèm, cosa ti serve?`,
-        ],
-        c.caso,
-      )
+      const saluto = m === 'mattina' ? SALUTI[0] : m === 'pomeriggio' ? SALUTI[1] : m === 'sera' ? SALUTI[2] : SALUTI[3]
+      return scegli(VARIANTI.saluto(saluto, c.appellativo), c.caso)
     },
   },
   {
     frasi: /^(?:grazie|grazie mille|grazie tante|ti ringrazio|perfetto grazie|ok grazie|va bene grazie|ottimo grazie|grazie ambrogio)$/,
-    risposta: (c) => scegli([`Dovere, ${c.appellativo}.`, 'È un piacere.', 'Sempre a disposizione.', 'Fa nagott, è il mio mestiere.'], c.caso),
+    risposta: (c) => scegli(VARIANTI.grazie(c.appellativo), c.caso),
   },
   {
     frasi: /^(?:chi sei|chi sei tu|come ti chiami|qual è il tuo nome|presentati|tu chi sei)$/,
-    risposta: (c) => `Sono Ambrogio, il tuo maggiordomo personale. Tengo a mente le tue cose, cerco quello che ti serve e sbrigo le faccende, ${c.appellativo}.`,
+    risposta: (c) => VARIANTI.chiSei(c.appellativo)[0],
   },
   {
     frasi: /^(?:come stai|come va|tutto bene|come ti senti|come butta)$/,
-    risposta: (c) => scegli(['Benissimo, grazie. Pronto a servirti.', 'In gran forma, come sempre. E tu?', 'Ué, si tira avanti! Tutto in ordine. Cosa posso fare per te?'], c.caso),
+    risposta: (c) => scegli(VARIANTI.comeStai(), c.caso),
   },
   {
     frasi: /^(?:buonanotte|buona notte|notte|vado a dormire)$/,
-    risposta: (c) => scegli([`Buonanotte, ${c.appellativo}. Riposa bene.`, `Buonanotte, ${c.appellativo}. Qui ci penso io.`], c.caso),
+    risposta: (c) => scegli(VARIANTI.buonanotte(c.appellativo), c.caso),
   },
 ]
 

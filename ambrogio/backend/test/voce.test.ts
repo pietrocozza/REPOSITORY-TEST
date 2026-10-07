@@ -72,3 +72,25 @@ test('limite raggiunto: pausa senza altre richieste; senza chiave: errore chiaro
   assert.equal(senza.stato().disponibile, false)
   await assert.rejects(senza.sintetizza('Ciao.', 'Charon'), (e: ErroreVoce) => e.tipo === 'senza-chiave')
 })
+
+test('archivio delle frasi pronte: le registra una volta, poi gratis; solo con il pagamento', async () => {
+  const cartella = cache()
+  const gratis = new VoceGemini({ chiave: 'segreta', modello: 'gemini-3.1-flash-tts-preview', cartellaCache: cartella, url })
+  assert.equal(gratis.prepara(['Ué!'], 'Charon'), false, 'con la versione gratuita non si prepara nulla')
+
+  const v = new VoceGemini({ chiave: 'segreta', modello: 'gemini-3.1-flash-tts-preview', cartellaCache: cartella, url, pagamento: true })
+  await v.sintetizza('Ué!', 'Charon')
+  const prima = richieste.length
+  assert.equal(v.prepara(['Ué!', 'Ghe pensi mi.', 'Pirla!'], 'Charon', 0), true)
+  assert.equal(v.preparazione?.pronte, 1)
+  while (v.preparazione?.inCorso) await new Promise((r) => setTimeout(r, 10))
+  assert.equal(richieste.length, prima + 2, 'solo le due frasi mancanti')
+  assert.deepEqual({ ...v.preparazione, voce: undefined }, { voce: undefined, totali: 3, fatte: 2, pronte: 3, inCorso: false })
+
+  // la stessa frase con spazi o apostrofi diversi è già pronta
+  const dopo = richieste.length
+  await v.sintetizza('  Ghe   pensi mi. ', 'Charon')
+  assert.equal(richieste.length, dopo)
+  assert.ok(v.giaPronta('Pirla!', 'Charon'))
+  assert.ok(!v.giaPronta('Pirla!', 'Kore'), 'ogni voce ha il suo archivio')
+})

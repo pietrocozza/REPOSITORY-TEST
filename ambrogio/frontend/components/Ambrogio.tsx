@@ -5,6 +5,7 @@ import {
   caricaAggiornamenti,
   caricaAutorizzazioni,
   caricaStatoVoce,
+  preparaFrasi,
   trascrivi,
   caricaConversazione,
   chiediAlServer,
@@ -139,9 +140,11 @@ const DOMANDE_ATTIVAZIONE = [
 ]
 const scegliFrase = (frasi: string[]) => frasi[Math.floor(Math.random() * frasi.length)]
 
+const FRASI_ASCOLTO = { attivo: 'Ascolto attivo: chiamami quando vuoi.', spento: 'Va bene, smetto di ascoltare.' }
+const FRASE_PROVA = `Ué, ciao ${NOME_UTENTE}! Sono Ambrogio, il tuo maggiordomo. Ghe pensi mi.`
+
 /** Il saluto quando si apre Ambrogio (poche varianti fisse: con Gemini restano salvate e partono subito) */
-function salutoIniziale(ascoltoAttivo: boolean) {
-  const ora = new Date().getHours()
+function salutoIniziale(ascoltoAttivo: boolean, ora = new Date().getHours()) {
   const saluto = ora < 5 ? 'Buonanotte' : ora < 13 ? 'Buongiorno' : ora < 18 ? 'Buon pomeriggio' : 'Buonasera'
   return `${saluto}, ${NOME_UTENTE}. Sono Ambrogio, il tuo maggiordomo personale. ${
     ascoltoAttivo ? 'Quando ti serve, chiamami per nome.' : 'Quando ti serve, premi il microfono o scrivimi.'
@@ -330,6 +333,31 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       qualita: qualitaVoce,
     })
   }, [motoreVoce, statoVoce, voceAmbrogio, qualitaVoce, mostraErrore])
+
+  // Archivio delle frasi pronte: con Gemini a pagamento le frasi fisse si registrano una volta
+  // (in sottofondo, piano piano) e da lì in poi partono subito e non costano più nulla
+  useEffect(() => {
+    if (!voceAmbrogio || motoreVoce !== 'gemini' || statoVoce?.fornitore !== 'gemini' || !statoVoce.pagamento) return
+    const frasiInterfaccia = [
+      ...FRASI_RICERCA,
+      ...DOMANDE_ATTIVAZIONE,
+      FRASI_ASCOLTO.attivo,
+      FRASI_ASCOLTO.spento,
+      FRASE_PROVA,
+      ...[3, 9, 15, 20].flatMap((ora) => [salutoIniziale(true, ora), salutoIniziale(false, ora)]),
+    ]
+    preparaFrasi(voceAmbrogio, frasiInterfaccia)
+      .then(() => caricaStatoVoce())
+      .then((s) => s && setStatoVoce(s))
+  }, [voceAmbrogio, motoreVoce, statoVoce?.fornitore, statoVoce?.pagamento])
+
+  // mentre l'archivio si prepara, il conteggio nelle Impostazioni si aggiorna
+  const preparazioneInCorso = Boolean(statoVoce?.preparazione?.inCorso)
+  useEffect(() => {
+    if (!preparazioneInCorso) return
+    const t = setInterval(() => caricaStatoVoce().then((s) => s && setStatoVoce(s)), 5000)
+    return () => clearInterval(t)
+  }, [preparazioneInCorso])
 
   // Appena si apre, Ambrogio saluta e si presenta (una volta per finestra, non a ogni ricarica).
   // Aspetta di sapere quale voce usare, al massimo 3 secondi.
@@ -960,7 +988,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     setParolaAttivazione(nuovo)
     attivazioneRef.current = nuovo
     riavvii.current = 0
-    const frase = nuovo ? 'Ascolto attivo: chiamami quando vuoi.' : 'Va bene, smetto di ascoltare.'
+    const frase = nuovo ? FRASI_ASCOLTO.attivo : FRASI_ASCOLTO.spento
     setAnnuncio(frase)
     if (vocaleRef.current && statoRef.current === 'pronto') {
       dettoDaSe.current = frase
@@ -983,7 +1011,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     zittisci()
     pronuncia(
       motoreVoce === 'gemini' && statoVoce?.disponibile
-        ? `Ué, ciao ${NOME_UTENTE}! Sono Ambrogio, il tuo maggiordomo. Ghe pensi mi.`
+        ? FRASE_PROVA
         : `Ciao ${NOME_UTENTE}, questa è la mia voce.`,
     )
   }
@@ -1294,6 +1322,12 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
                       Prova
                     </button>
                   </div>
+                  {statoVoce.preparazione && statoVoce.preparazione.voce === voceAmbrogio && (
+                    <small className="j-nota">
+                      Frasi pronte in archivio (gratis): {statoVoce.preparazione.pronte} di {statoVoce.preparazione.totali}
+                      {statoVoce.preparazione.inCorso ? ' — le sto registrando…' : ''}
+                    </small>
+                  )}
                   {statoVoce.crediti && statoVoce.crediti.limite > 0 && (
                     <small className="j-nota">
                       Crediti usati questo mese: {statoVoce.crediti.usati.toLocaleString('it-IT')} di {statoVoce.crediti.limite.toLocaleString('it-IT')}

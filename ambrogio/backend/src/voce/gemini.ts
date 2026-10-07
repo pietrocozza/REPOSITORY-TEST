@@ -58,11 +58,48 @@ export class VoceGemini {
       voci: VOCI_GEMINI,
       sospesaFinoA: this.sospesaFinoA > Date.now() ? new Date(this.sospesaFinoA).toISOString() : null,
       richiesteOggi: this.richiesteOggi,
+      preparazione: this.preparazione,
     }
   }
 
+  /** frasi già registrate per questa voce (nessuna spesa) */
+  giaPronta(testo: string, voce: string) {
+    return fs.existsSync(this.fileCache(testo, voce))
+  }
+
+  /** archivio delle frasi pronte: quante sono, e la preparazione in corso */
+  preparazione: { voce: string; totali: number; fatte: number; pronte: number; inCorso: boolean } | null = null
+
+  /**
+   * Registra in anticipo le frasi fisse (saluti, risposte pronte, esclamazioni milanesi), una ogni
+   * secondo e mezzo per non superare i limiti al minuto. Solo con il pagamento a consumo:
+   * con la versione gratuita consumerebbe le poche richieste del giorno.
+   */
+  prepara(frasi: string[], voce: string, pausaMs = 1500) {
+    if (!this.disponibile || !this.opz.pagamento) return false
+    if (this.preparazione?.inCorso) return true
+    const mancanti = frasi.filter((f) => !this.giaPronta(f, voce))
+    this.preparazione = { voce, totali: frasi.length, fatte: 0, pronte: frasi.length - mancanti.length, inCorso: mancanti.length > 0 }
+    const stato = this.preparazione
+    void (async () => {
+      for (const frase of mancanti) {
+        if (this.sospesaFinoA > Date.now()) break
+        try {
+          await this.sintetizza(frase, voce)
+          stato.pronte++
+        } catch {
+          if (this.sospesaFinoA > Date.now()) break
+        }
+        stato.fatte++
+        await new Promise((r) => setTimeout(r, pausaMs))
+      }
+      stato.inCorso = false
+    })()
+    return true
+  }
+
   private fileCache(testo: string, voce: string) {
-    const h = createHash('sha256').update(`${voce}\n${STILE}\n${testo}`).digest('hex').slice(0, 32)
+    const h = createHash('sha256').update(`${voce}\n${STILE}\n${normalizza(testo)}`).digest('hex').slice(0, 32)
     return path.join(this.opz.cartellaCache, `${h}.wav`)
   }
 
@@ -126,6 +163,14 @@ export class VoceGemini {
     return wav(Buffer.from(audio.data, 'base64'), frequenza)
   }
 }
+
+/** Stesso testo = stessa registrazione, anche con spazi o apostrofi diversi */
+export const normalizza = (testo: string) =>
+  testo
+    .replace(/[’‘`]/g, "'")
+    .replace(/[“”«»]/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim()
 
 /** Aggiunge l'intestazione WAV all'audio grezzo di Gemini (PCM 16 bit, mono) */
 export function wav(pcm: Buffer, frequenza = 24000) {

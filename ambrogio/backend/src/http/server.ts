@@ -9,6 +9,7 @@ import { Aggiornamenti, shaValido } from '../codice/aggiornamenti.ts'
 import { ErroreVoce, VOCI_GEMINI, VoceGemini } from '../voce/gemini.ts'
 import { VoceElevenLabs } from '../voce/elevenlabs.ts'
 import { Trascrizione } from '../voce/trascrizione.ts'
+import { frasiDaPreparare } from '../voce/frasi-pronte.ts'
 import path from 'node:path'
 
 // Server HTTP locale (solo 127.0.0.1). Accetta richieste unicamente dall'interfaccia di Ambrogio:
@@ -137,6 +138,15 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
         if (eleven.disponibile) return inviaJson(res, 200, { ...(await eleven.stato()), trascrizione })
         return inviaJson(res, 200, { fornitore: gemini.disponibile ? 'gemini' : null, ...gemini.stato(), trascrizione })
       }
+      // archivio delle frasi pronte: le registra una volta con la voce scelta (solo Gemini a pagamento)
+      if (req.method === 'POST' && url.pathname === '/api/voce/prepara') {
+        const dati = await leggiJson(req)
+        const voceScelta = VOCI_GEMINI.find((v) => v.id === dati.voce)?.id ?? VOCI_GEMINI[0].id
+        const dallInterfaccia = Array.isArray(dati.frasi) ? dati.frasi.filter((f): f is string => typeof f === 'string').slice(0, 200) : []
+        const avviata = !eleven.disponibile && gemini.prepara(frasiDaPreparare(config.appellativo, dallInterfaccia), voceScelta)
+        return inviaJson(res, 200, { avviata, preparazione: gemini.preparazione })
+      }
+
       // quello che dici dopo aver premuto il microfono, trasformato in testo da Gemini
       if (req.method === 'POST' && url.pathname === '/api/trascrivi') {
         if (!eAudio) return inviaJson(res, 415, { errore: 'Serve un file audio.' })
