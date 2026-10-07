@@ -1,4 +1,5 @@
-import { config } from './config.ts'
+import { config, CARTELLA_AMBROGIO } from './config.ts'
+import { execFileSync } from 'node:child_process'
 import { Agente } from './agent/agente.ts'
 import { trovaClaude } from './agent/eseguibile.ts'
 import { diagnostica } from './diagnostica.ts'
@@ -41,7 +42,15 @@ const google = new AccessoGoogle({
 })
 servizi.gmail = new Gmail(google)
 const server = creaServer(config, agente, { mcp: creaServerMcp(gestore, chiaveMcp), google, gmail: servizi.gmail })
-db.registra('sistema', 'Ambrogio avviato')
+// la versione accesa (utile per capire se un aggiornamento è davvero partito)
+let versione = ''
+try {
+  versione = execFileSync('git', ['log', '-1', '--format=%h %cd', '--date=format:%d/%m %H:%M'], { cwd: CARTELLA_AMBROGIO, encoding: 'utf8', timeout: 5000 }).trim()
+} catch {
+  // git non disponibile
+}
+db.registra('sistema', `Ambrogio avviato${versione ? ` (versione ${versione})` : ''}`)
+console.log(`[ambrogio] versione ${versione || 'sconosciuta'}`)
 
 server.on('error', (err: NodeJS.ErrnoException) => {
   if (err.code === 'EADDRINUSE') console.error(`[ambrogio] La porta ${config.porta} è già occupata: forse Ambrogio è già acceso.`)

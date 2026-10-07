@@ -6,6 +6,7 @@ import { ErroreVoce } from './gemini.ts'
 
 // Il modello preferito; se Google lo ritira (errore 404) Ambrogio ne sceglie da solo un altro adatto
 const MODELLO = 'gemini-2.5-flash'
+const RISERVE = ['gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-3-flash', 'gemini-3-flash-preview', 'gemini-2.0-flash']
 const ISTRUZIONI = `Trascrivi esattamente quello che dice la persona in questo audio (di solito in italiano, a volte con parole in dialetto milanese).
 Rispondi SOLO con la trascrizione, senza virgolette, commenti o traduzioni. Se non si sente nessuna parola, rispondi con una riga vuota.`
 
@@ -66,10 +67,12 @@ export class Trascrizione {
       const nomi = ((elenco as { models?: { name: string; supportedGenerationMethods?: string[] }[] } | null)?.models ?? [])
         .filter((m) => !m.supportedGenerationMethods || m.supportedGenerationMethods.includes('generateContent'))
         .map((m) => m.name)
-      const altro = scegliModello(nomi)
-      if (altro && altro !== modello) {
+      // se l'elenco non arriva, si provano i nomi più comuni
+      const candidati = [scegliModello(nomi), ...RISERVE].filter((m): m is string => Boolean(m) && m !== modello)
+      for (const altro of [...new Set(candidati)]) {
+        res = await chiedi(altro, true)
         modello = altro
-        res = await chiedi(modello, true)
+        if (res.status !== 404) break
       }
     }
     if (res.status === 400) {
@@ -77,7 +80,7 @@ export class Trascrizione {
       if (/thinking/i.test(dettaglio)) res = await chiedi(modello, false)
     }
     if (res.ok) this.modelloScelto = modello
-    if (res.status === 404) throw new ErroreVoce('errore', 'Nessun modello di Gemini per capire l’audio è disponibile su questo account.')
+    if (res.status === 404) throw new ErroreVoce('errore', 'Nessun modello di Gemini per capire l’audio risulta disponibile con questa chiave (controlla in AI Studio che la chiave sia attiva).')
     if (res.status === 429) throw new ErroreVoce('limite', 'Gemini è occupato: riprova tra qualche secondo.')
     if (res.status === 400 || res.status === 401 || res.status === 403) {
       const dettaglio = await res.text().catch(() => '')
