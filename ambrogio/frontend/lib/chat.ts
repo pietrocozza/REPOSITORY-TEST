@@ -180,9 +180,22 @@ export type StatoVoce = {
   disponibile: boolean
   /** Gemini con pagamento a consumo: nessun limite giornaliero */
   pagamento?: boolean
+  /** il pulsante del microfono usa Gemini per capire cosa dici */
+  trascrizione?: boolean
   problema?: string | null
   voci: { id: string; descrizione: string; clonata?: boolean }[]
   sospesaFinoA: string | null
   crediti?: { usati: number; limite: number; rinnovo: string | null } | null
 }
 export const caricaStatoVoce = () => leggi<StatoVoce>('/api/voce')
+
+/** Trasforma in testo una frase registrata (Gemini, nel backend) */
+export async function trascrivi(audio: Blob): Promise<{ testo: string } | { errore: string }> {
+  try {
+    const res = await fetch('/api/trascrivi', { method: 'POST', headers: { 'Content-Type': audio.type || 'audio/webm' }, body: audio })
+    const dati = (await res.json().catch(() => ({}))) as { testo?: string; errore?: string }
+    return res.ok ? { testo: dati.testo ?? '' } : { errore: dati.errore ?? `Errore ${res.status}.` }
+  } catch {
+    return { errore: 'Il motore di Ambrogio non risponde.' }
+  }
+}

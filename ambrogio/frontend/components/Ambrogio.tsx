@@ -5,6 +5,7 @@ import {
   caricaAggiornamenti,
   caricaAutorizzazioni,
   caricaStatoVoce,
+  trascrivi,
   caricaConversazione,
   chiediAlServer,
   decidiAutorizzazione,
@@ -17,6 +18,7 @@ import {
   type StatoVoce,
 } from '@/lib/chat'
 import Conferma from '@/components/Conferma'
+import { registraFrase } from '@/lib/registra'
 import Codice, { CHIAVE_VISTO, piuRecente } from '@/components/Codice'
 import { SezioneMemoria, SezionePratiche, SezioneRegistro } from '@/components/Sezioni'
 import { disegnaHud } from '@/lib/hud'
@@ -207,7 +209,10 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   const sentinellaRef = useRef<() => void>(() => {})
   const fermaSentinella = useRef<(() => void) | null>(null)
   const comandoInCorso = useRef(false)
+  /** il pulsante del microfono usa Gemini (più preciso del browser), se c'è la chiave */
+  const ascoltoGemini = useRef(false)
   const riavvii = useRef(0)
+  const avvisoSentinella = useRef(false)
 
   useEffect(() => {
     statoRef.current = stato
@@ -285,6 +290,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     caricaStatoVoce().then((s) => {
       if (annullato) return
       setStatoVoce(s)
+      ascoltoGemini.current = Boolean(s?.trascrizione)
     })
     return () => {
       annullato = true
@@ -426,9 +432,12 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   // Il browser permette un solo ascolto alla volta: mentre si ascolta un comando la sentinella si ferma, poi riparte.
 
 
+  /** spegne l'ascolto continuo; restituisce vero se era acceso */
   const spegniSentinella = useCallback(() => {
+    const accesa = Boolean(fermaSentinella.current)
     fermaSentinella.current?.()
     fermaSentinella.current = null
+    return accesa
   }, [])
 
   /** chiude l'ascolto di un comando e lascia ripartire la sentinella */
@@ -451,39 +460,88 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     [mostraErrore],
   )
 
+  // Dopo il pulsante del microfono (o un «Ambrogio» detto da solo): ascolta UNA frase e la invia
   const ascoltaComando = useCallback(
     (conSuono: boolean) => {
-      spegniSentinella()
+      const sentinellaAccesa = spegniSentinella()
       fermaAscolto.current()
       comandoInCorso.current = true
       setParziale('')
       zittisci()
       setStato('ascolto')
       if (conSuono) suonoAttivazione()
-      let sentito = false
-      fermaAscolto.current = ascolta(false, {
-        onParziale: setParziale,
-        onFrase: (frase) => {
-          if (!frase) return
-          sentito = true
-          setParziale('')
-          // se ripete «Ambrogio» all'inizio, lo si toglie
-          const comando = dopoParolaAttivazione(frase) ?? frase
+      const turnoInizio = turno.current
+      const eseguiComando = (frase: string) => {
+        // se ripete «Ambrogio» all'inizio, lo si toglie
+        const comando = dopoParolaAttivazione(frase) ?? frase
+        if (!comando || eStop(comando)) interrompiRef.current()
+        else inviaRef.current(comando)
+      }
+
+      if (ascoltoGemini.current) {
+        // registra la frase (si ferma da solo quando smetti di parlare) e la fa trascrivere a Gemini
+        const registrazione = registraFrase({ onLivello: (l) => (livello.current = l) })
+        fermaAscolto.current = () => registrazione.annulla()
+        registrazione.promessa.then(async (audio) => {
+          if (turno.current !== turnoInizio || !comandoInCorso.current) return
           fermaComando()
-          if (!comando || eStop(comando)) interrompiRef.current()
-          else inviaRef.current(comando)
-        },
-        onErrore: erroreMicrofono,
-        onFine: () => {
+          if (!audio) {
+            setStato('pronto')
+            mostraErrore('Non ho sentito niente. Parla subito dopo il suono, vicino al microfono (e controlla che il microfono sia consentito).')
+            return
+          }
+          setStato('elaborazione')
+          setParziale('…')
+          const esito = await trascrivi(audio)
+          if (turno.current !== turnoInizio) return
           setParziale('')
-          if (!sentito && statoRef.current === 'ascolto') setStato('pronto')
-          fermaAscolto.current = () => {}
-          comandoInCorso.current = false
-          setTimeout(() => sentinellaRef.current(), 300)
+          if ('errore' in esito) {
+            setStato('pronto')
+            mostraErrore(esito.errore)
+          } else if (!esito.testo) {
+            setStato('pronto')
+            mostraErrore('Non ho capito bene: puoi ripetere?')
+          } else eseguiComando(esito.testo)
+        })
+        return
+      }
+
+      // riconoscimento del browser: se l'ascolto continuo era acceso, si aspetta che si chiuda del tutto
+      // (Edge non ne accetta due insieme e il secondo fallirebbe in silenzio)
+      let sentito = false
+      let annullato = false
+      fermaAscolto.current = () => {
+        annullato = true
+      }
+      setTimeout(
+        () => {
+          if (annullato) return
+          fermaAscolto.current = ascolta(false, {
+            onParziale: setParziale,
+            onFrase: (frase) => {
+              if (!frase) return
+              sentito = true
+              setParziale('')
+              fermaComando()
+              eseguiComando(frase)
+            },
+            onErrore: (codice) => {
+              if (codice === 'no-speech') mostraErrore('Non ho sentito niente. Parla subito dopo il suono, vicino al microfono.')
+              else if (codice !== 'aborted') erroreMicrofono(codice)
+            },
+            onFine: () => {
+              setParziale('')
+              if (!sentito && statoRef.current === 'ascolto') setStato('pronto')
+              fermaAscolto.current = () => {}
+              comandoInCorso.current = false
+              setTimeout(() => sentinellaRef.current(), 300)
+            },
+          })
         },
-      })
+        sentinellaAccesa ? 450 : 0,
+      )
     },
-    [spegniSentinella, fermaComando, erroreMicrofono],
+    [spegniSentinella, fermaComando, erroreMicrofono, mostraErrore],
   )
 
   const avviaSentinella = useCallback(() => {
@@ -526,8 +584,12 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
         } else inviaRef.current(comando)
       },
       onErrore: (codice) => {
-        // problemi di rete o silenzio: la sentinella riprova da sola senza disturbare
+        // silenzio: normale. Problemi di rete: la sentinella riprova da sola, ma lo dice una volta
         if (codice === 'not-allowed' || codice === 'service-not-allowed' || codice === 'audio-capture') erroreMicrofono(codice)
+        else if (codice === 'network' && !avvisoSentinella.current) {
+          avvisoSentinella.current = true
+          mostraErrore('L’ascolto di «Ambrogio» non riesce a collegarsi al riconoscimento vocale di Edge: riprovo da solo. Intanto usa il pulsante del microfono.')
+        }
       },
       onFine: () => {
         fermaSentinella.current = null
@@ -538,12 +600,17 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
         setTimeout(() => sentinellaRef.current(), Math.min(15000, 300 * 2 ** riavvii.current))
       },
     })
-  }, [ascoltaComando, erroreMicrofono])
+  }, [ascoltaComando, erroreMicrofono, mostraErrore])
 
   useEffect(() => {
     sentinellaRef.current = avviaSentinella
   }, [avviaSentinella])
-  useEffect(() => spegniSentinella, [spegniSentinella])
+  useEffect(
+    () => () => {
+      spegniSentinella()
+    },
+    [spegniSentinella],
+  )
 
   // ───────── Risposta ─────────
 

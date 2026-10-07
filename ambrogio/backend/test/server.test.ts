@@ -128,3 +128,12 @@ test('voce: senza chiave il backend lo dice (e l’interfaccia userà Edge)', as
     assert.equal(r.status, 409)
   }
 })
+
+test('trascrizione: accetta solo audio, e senza chiave lo dice', async () => {
+  const json = await fetch(`${base}/api/trascrivi`, { method: 'POST', headers: { Origin: 'http://localhost:3000', 'Content-Type': 'application/json' }, body: '{}' })
+  assert.equal(json.status, 415)
+  const audio = await fetch(`${base}/api/trascrivi`, { method: 'POST', headers: { Origin: 'http://localhost:3000', 'Content-Type': 'audio/webm' }, body: Buffer.from('x') })
+  assert.ok([200, 409, 502].includes(audio.status))
+  const estraneo = await fetch(`${base}/api/trascrivi`, { method: 'POST', headers: { Origin: 'https://sito-malevolo.example', 'Content-Type': 'audio/webm' }, body: Buffer.from('x') })
+  assert.equal(estraneo.status, 403)
+})

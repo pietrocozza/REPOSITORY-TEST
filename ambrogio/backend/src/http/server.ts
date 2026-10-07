@@ -8,12 +8,25 @@ import { CARTELLA_AMBROGIO } from '../config.ts'
 import { Aggiornamenti, shaValido } from '../codice/aggiornamenti.ts'
 import { ErroreVoce, VOCI_GEMINI, VoceGemini } from '../voce/gemini.ts'
 import { VoceElevenLabs } from '../voce/elevenlabs.ts'
+import { Trascrizione } from '../voce/trascrizione.ts'
 import path from 'node:path'
 
 // Server HTTP locale (solo 127.0.0.1). Accetta richieste unicamente dall'interfaccia di Ambrogio:
 // un sito web qualsiasi aperto nel browser non può comandare l'agente.
 
 const MAX_CORPO = 64 * 1024
+const MAX_AUDIO = 4 * 1024 * 1024
+
+async function leggiAudio(req: http.IncomingMessage) {
+  const pezzi: Buffer[] = []
+  let totale = 0
+  for await (const pezzo of req) {
+    totale += pezzo.length
+    if (totale > MAX_AUDIO) throw new Error('audio troppo lungo')
+    pezzi.push(pezzo)
+  }
+  return Buffer.concat(pezzi)
+}
 
 function inviaJson(res: http.ServerResponse, codice: number, dati: unknown) {
   res.writeHead(codice, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' })
@@ -38,13 +51,14 @@ async function leggiJson(req: http.IncomingMessage): Promise<Record<string, unkn
 
 type GestoreMcp = (req: http.IncomingMessage, res: http.ServerResponse, corpo: string) => Promise<unknown>
 
-type OpzioniServer = { mcp?: GestoreMcp; codice?: Aggiornamenti; voce?: VoceGemini; elevenlabs?: VoceElevenLabs }
+type OpzioniServer = { mcp?: GestoreMcp; codice?: Aggiornamenti; voce?: VoceGemini; elevenlabs?: VoceElevenLabs; trascrizione?: Trascrizione }
 
 export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServer = {}) {
   // la voce di Ambrogio: ElevenLabs se c'è la sua chiave, altrimenti Gemini, altrimenti (nell'interfaccia) Edge
   const cartellaVoce = path.join(config.cartellaDati, 'voce')
   const gemini = opzioni.voce ?? new VoceGemini({ ...config.gemini, cartellaCache: cartellaVoce })
   const eleven = opzioni.elevenlabs ?? new VoceElevenLabs({ ...config.elevenlabs, cartellaCache: cartellaVoce })
+  const orecchie = opzioni.trascrizione ?? new Trascrizione({ chiave: config.gemini.chiave, url: config.gemini.url })
   const codice = opzioni.codice ?? new Aggiornamenti(CARTELLA_AMBROGIO)
   return http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://locale')
@@ -52,8 +66,9 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
     // Protezione: le richieste dal browser portano l'intestazione Origin, che deve essere l'interfaccia di Ambrogio
     const origine = req.headers.origin
     if (origine && !config.originiConsentite.includes(origine)) return inviaJson(res, 403, { errore: 'Origine non autorizzata.' })
-    if (req.method === 'POST' && !String(req.headers['content-type'] ?? '').includes('application/json'))
-      return inviaJson(res, 415, { errore: 'Serve un corpo JSON.' })
+    const tipoCorpo = String(req.headers['content-type'] ?? '')
+    const eAudio = url.pathname === '/api/trascrivi' && tipoCorpo.startsWith('audio/')
+    if (req.method === 'POST' && !tipoCorpo.includes('application/json') && !eAudio) return inviaJson(res, 415, { errore: 'Serve un corpo JSON.' })
 
     try {
       // il server MCP usato da Claude Code per gli strumenti di Ambrogio (protetto da chiave)
@@ -118,9 +133,23 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
 
       // voce di Ambrogio: le chiavi restano qui nel backend
       if (req.method === 'GET' && url.pathname === '/api/voce') {
-        if (eleven.disponibile) return inviaJson(res, 200, await eleven.stato())
-        return inviaJson(res, 200, { fornitore: gemini.disponibile ? 'gemini' : null, ...gemini.stato() })
+        const trascrizione = orecchie.disponibile
+        if (eleven.disponibile) return inviaJson(res, 200, { ...(await eleven.stato()), trascrizione })
+        return inviaJson(res, 200, { fornitore: gemini.disponibile ? 'gemini' : null, ...gemini.stato(), trascrizione })
       }
+      // quello che dici dopo aver premuto il microfono, trasformato in testo da Gemini
+      if (req.method === 'POST' && url.pathname === '/api/trascrivi') {
+        if (!eAudio) return inviaJson(res, 415, { errore: 'Serve un file audio.' })
+        try {
+          const testo = await orecchie.trascrivi(await leggiAudio(req), tipoCorpo)
+          return inviaJson(res, 200, { testo })
+        } catch (err) {
+          const e = err instanceof ErroreVoce ? err : new ErroreVoce('errore', (err as Error).message)
+          agente.db.registra('errore', `Ascolto: ${e.message}`)
+          return inviaJson(res, e.tipo === 'senza-chiave' ? 409 : e.tipo === 'limite' ? 429 : 502, { errore: e.message })
+        }
+      }
+
       if (req.method === 'POST' && url.pathname === '/api/voce') {
         const dati = await leggiJson(req)
         const testo = typeof dati.testo === 'string' ? dati.testo.trim().slice(0, 3000) : ''
