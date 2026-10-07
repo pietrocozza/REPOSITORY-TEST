@@ -46,7 +46,13 @@ def indirizzo(testo):
 
 
 def nome_stato(stato):
-    return getattr(stato, "name", str(stato)).split(".")[-1]
+    """RegistrationState.Ok, RegistrationStateOk, CallState.StreamsRunning … -> Ok, StreamsRunning"""
+    nome = getattr(stato, "name", None) or str(stato)
+    nome = nome.split(".")[-1]
+    for prefisso in ("RegistrationState", "CallState", "GlobalState", "Reason"):
+        if nome.startswith(prefisso) and len(nome) > len(prefisso):
+            return nome[len(prefisso):]
+    return nome
 
 
 def crea_bip(percorso):
@@ -133,8 +139,25 @@ def main():
     registrazione = os.path.join(lavoro, "ascolto.wav")
     crea_bip(voce)
 
+    # Linphone vuole cartelle sue per configurazione e dati: senza, resta a metà avvio
+    casa = os.path.join(os.path.expanduser("~"), ".ambrogio-telefono", "linphone")
+    for cartella in (casa, os.path.join(os.path.expanduser("~"), ".local", "share", "linphone")):
+        os.makedirs(cartella, exist_ok=True)
+
     fabbrica = linphone.Factory.get()
-    core = fabbrica.create_core("", "", None)
+    for campo in ("data_dir", "config_dir", "download_dir", "cache_dir"):
+        try:
+            setattr(fabbrica, campo, casa)
+        except Exception:
+            pass
+    core = fabbrica.create_core(os.path.join(casa, "linphonerc"), "", None)
+    # certificati per il collegamento sicuro (TLS) con sip.linphone.org
+    for certificati in ("/etc/ssl/certs/ca-certificates.crt",):
+        if os.path.exists(certificati):
+            try:
+                core.root_ca = certificati
+            except Exception:
+                pass
     # niente scheda audio: si parla da un file e si ascolta su un file
     core.use_files = True
     core.play_file = voce
@@ -162,12 +185,6 @@ def main():
     parametri.nat_policy = nat
     account = core.create_account(parametri)
     core.add_auth_info(crea_credenziali(fabbrica, utente, password))
-    core.add_account(account)
-    core.default_account = account
-
-    core.start()
-    print(f"Linphone {linphone.Core.get_version()} — mi collego come {io} …")
-
     def aspetta(condizione, secondi):
         fine = time.time() + secondi
         while time.time() < fine:
@@ -177,6 +194,23 @@ def main():
             time.sleep(0.02)
         return False
 
+    core.start()
+    print(f"Linphone {linphone.Core.get_version()} — mi accendo …")
+    accensione = [None]
+
+    def acceso():
+        stato = nome_stato(core.global_state)
+        if stato != accensione[0]:
+            print(f"  Linphone: {stato}")
+            accensione[0] = stato
+        return stato == "On"
+
+    if not aspetta(acceso, 20):
+        esci("Linphone non riesce ad accendersi del tutto: copia tutte le righe e mandale a Claude.")
+
+    core.add_account(account)
+    core.default_account = account
+    print(f"Mi collego come {io} …")
     ultimo = [None]
 
     def registrato():
@@ -187,8 +221,11 @@ def main():
         return stato in ("Ok", "Failed")
 
     aspetta(registrato, 30)
-    if nome_stato(account.state) != "Ok":
-        esci("Non riesco a collegarmi a Linphone: controlla nome utente e password di Ambrogio nel file .env.")
+    finale = nome_stato(account.state)
+    if finale == "Failed":
+        esci("Linphone ha rifiutato il collegamento: controlla nome utente e password di Ambrogio nel file .env.")
+    if finale != "Ok":
+        esci(f"Non riesco a collegarmi a sip.linphone.org (stato: {finale}): copia tutte le righe e mandale a Claude.")
     print("Collegato!")
 
     print(f"Chiamo {destinatario} … rispondi dal telefono.")
