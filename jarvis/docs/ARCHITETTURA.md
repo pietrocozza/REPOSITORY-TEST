@@ -70,17 +70,39 @@ Il backend risponde a `POST /api/chat` con una riga JSON per evento:
 
 Stati: `IDLE`, `LISTENING`, `THINKING`, `SPEAKING`, `WORKING`, `WAITING_FOR_CONFIRMATION`, `SUCCESS`, `ERROR`.
 
-## Strumenti e permessi (fase 8)
+## Memoria, strumenti, permessi e registro
 
-Ogni capacità (`read_email`, `send_email`, `create_calendar_event`, …) sarà una funzione del backend esposta a
-Claude Code tramite un server MCP locale. Il controllo dei permessi sta **nel backend**, non nel modello:
+**Memoria (SQLite).** Tutto sta in `data/jarvis.sqlite` (SQLite è integrato in Node.js): conversazioni,
+memorie (preferenze, persone, contatti, regole, note), pratiche, richieste di autorizzazione, permessi
+"consenti sempre" e registro delle attività. All'inizio di ogni conversazione Claude riceve un riassunto
+di ciò che Jarvis ricorda.
 
-1. **Automatiche**: letture, ricerche, analisi, bozze.
-2. **Con conferma**: invio email, modifiche al calendario, messaggi, prezzi.
-3. **Sensibili**: pagamenti, acquisti, eliminazioni, contratti. Sempre conferma esplicita.
+**Strumenti.** Ogni capacità è una funzione del backend (`backend/src/strumenti/catalogo.ts`) con uno schema
+degli argomenti e un livello di permesso. Claude Code li usa attraverso un **server MCP** integrato nel backend
+(`/mcp`, protetto da una chiave segreta nuova a ogni avvio). Strumenti attuali:
 
-Quando serve una conferma, lo strumento non esegue nulla: registra la richiesta, l'interfaccia passa allo stato
-`WAITING_FOR_CONFIRMATION` e l'azione parte solo dopo il tuo sì. Ogni passo finisce nel log delle attività.
+| Strumento | Cosa fa | Livello |
+| --- | --- | --- |
+| `ricorda` | salva una preferenza, persona, contatto, regola o nota | 1 |
+| `cerca_memoria` | cerca nella memoria | 1 |
+| `dimentica` | cancella una memoria | 3 |
+| `apri_pratica` / `aggiorna_pratica` / `elenca_pratiche` | attività che durano nel tempo | 1 |
+
+**Gestore dei permessi** (`backend/src/permessi/gestore.ts`). Il controllo sta nel backend, non nel modello:
+
+1. **Automatiche**: letture, ricerche, analisi, bozze, appunti interni → eseguite subito.
+2. **Con conferma**: invii, modifiche al calendario, messaggi, prezzi → serve il tuo sì
+   (puoi concedere "consenti sempre", revocabile dalle Impostazioni).
+3. **Sensibili**: eliminazioni, pagamenti, acquisti, contratti → serve SEMPRE il tuo sì esplicito,
+   dopo aver spuntato "Ho capito: è un'azione definitiva". Nessun "consenti sempre".
+
+Durante l'attesa lo strumento non esegue nulla, la rete diventa gialla (`WAITING_FOR_CONFIRMATION`) e la
+richiesta compare sopra la barra per scrivere. Senza risposta entro 10 minuti la richiesta scade.
+Le richieste rimaste aperte quando Jarvis si spegne non valgono più alla riaccensione.
+
+**Registro.** Ogni passo finisce nel registro con l'orario (sezione Registro dell'interfaccia):
+richiesta ricevuta, strumento usato, richiesta di autorizzazione, autorizzazione ricevuta o negata,
+azione eseguita, errori.
 
 ## Spostare tutto su un mini PC
 

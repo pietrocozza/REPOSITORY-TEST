@@ -43,7 +43,8 @@ export const config = {
     /** Claude Code resta acceso tra un messaggio e l'altro (più veloce). JARVIS_MODALITA_VELOCE=0 per disattivarla. */
     modalitaVeloce: env('JARVIS_MODALITA_VELOCE', '1') !== '0',
     /** tempo massimo per una risposta, in secondi */
-    timeoutSecondi: Number(env('JARVIS_TIMEOUT', '300')),
+    // include l'eventuale attesa di una tua autorizzazione (fino a 10 minuti)
+    timeoutSecondi: Number(env('JARVIS_TIMEOUT', '900')),
     /**
      * Regola sui costi: Jarvis usa SOLO il tuo abbonamento Claude.
      * Se un giorno vorrai usare l'API a consumo dovrai scrivere JARVIS_CONSENTI_API_A_CONSUMO=1 nel file .env.

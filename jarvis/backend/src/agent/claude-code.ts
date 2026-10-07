@@ -26,6 +26,8 @@ export type Avvio = {
   consentiApiAConsumo: boolean
   /** chiamato appena Claude Code ha creato/aperto la sessione */
   onSessioneAperta?: () => void
+  /** strumenti di Jarvis (server MCP del backend): indirizzo, chiave segreta e nomi degli strumenti */
+  mcp?: { url: string; chiave: string; strumenti: string[] }
 }
 
 export type OpzioniTurno = Avvio & {
@@ -69,7 +71,12 @@ export function spiegaErrore(testo: string): string {
 
 export const sessioneMancante = (testo: string) => /no conversation found|session.{0,40}not found|could not find session/i.test(testo)
 
-export function costruisciArgomenti(o: Pick<Avvio, 'sessione' | 'strumenti' | 'modello' | 'effort'>, fileIstruzioni: string, persistente = false) {
+export function costruisciArgomenti(
+  o: Pick<Avvio, 'sessione' | 'strumenti' | 'modello' | 'effort' | 'mcp'>,
+  fileIstruzioni: string,
+  persistente = false,
+  fileMcp?: string,
+) {
   const args = [
     '-p',
     '--output-format', 'stream-json',
@@ -82,7 +89,10 @@ export function costruisciArgomenti(o: Pick<Avvio, 'sessione' | 'strumenti' | 'm
     '--system-prompt-file', fileIstruzioni,
   ]
   if (persistente) args.push('--input-format', 'stream-json')
-  if (o.strumenti.length) args.push('--allowedTools', ...o.strumenti)
+  if (fileMcp) args.push('--mcp-config', fileMcp)
+  // strumenti pre-approvati: gli integrati concessi e quelli di Jarvis (che hanno già il loro controllo dei permessi)
+  const consentiti = [...o.strumenti, ...(o.mcp?.strumenti ?? []).map((n) => `mcp__jarvis__${n}`)]
+  if (consentiti.length) args.push('--allowedTools', ...consentiti)
   args.push(...(o.sessione.avviata ? ['--resume', o.sessione.id] : ['--session-id', o.sessione.id]))
   if (o.modello) args.push('--model', o.modello)
   if (o.effort) args.push('--effort', o.effort)
@@ -95,10 +105,20 @@ function avviaClaude(o: Avvio, persistente: boolean): ChildProcess {
   const fileIstruzioni = path.join(o.cartellaLavoro, 'istruzioni-jarvis.txt')
   fs.writeFileSync(fileIstruzioni, o.istruzioni)
 
-  const env = { ...process.env }
-  if (!o.consentiApiAConsumo) for (const v of VARIABILI_A_CONSUMO) delete env[v]
+  // configurazione del server MCP di Jarvis (contiene la chiave segreta: sta in data/, fuori da git)
+  let fileMcp: string | undefined
+  if (o.mcp) {
+    fileMcp = path.join(o.cartellaLavoro, 'mcp-jarvis.json')
+    const config = { mcpServers: { jarvis: { type: 'http', url: o.mcp.url, headers: { Authorization: `Bearer ${o.mcp.chiave}` } } } }
+    fs.writeFileSync(fileMcp, JSON.stringify(config, null, 2))
+  }
 
-  let args = [...o.eseguibile.prefisso, ...costruisciArgomenti(o, fileIstruzioni, persistente)]
+  const env: NodeJS.ProcessEnv = { ...process.env }
+  if (!o.consentiApiAConsumo) for (const v of VARIABILI_A_CONSUMO) delete env[v]
+  // uno strumento può restare in attesa del tuo permesso anche per diversi minuti
+  env.MCP_TOOL_TIMEOUT ??= String(15 * 60 * 1000)
+
+  let args = [...o.eseguibile.prefisso, ...costruisciArgomenti(o, fileIstruzioni, persistente, fileMcp)]
   // solo nel caso estremo in cui serve il prompt dei comandi: ogni argomento tra virgolette
   if (o.eseguibile.shell) args = args.map((a) => `"${a.replace(/"/g, '')}"`)
 
@@ -150,6 +170,8 @@ function creaInterprete(onEvento: (e: EventoAgente) => void) {
     onEvento({ tipo: 'testo', testo })
   }
   const annunciaStrumento = (nome: string, id: string) => {
+    // gli strumenti di Jarvis si annunciano da soli (dal gestore dei permessi, con una descrizione migliore)
+    if (nome.startsWith('mcp__jarvis__')) return
     if (strumentiAnnunciati.has(id)) return
     strumentiAnnunciati.add(id)
     onEvento({ tipo: 'stato', stato: 'WORKING', strumento: nome, descrizione: descriviStrumento(nome) })

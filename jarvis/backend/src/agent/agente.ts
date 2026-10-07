@@ -5,11 +5,18 @@ import type { EventoAgente } from './eventi.ts'
 import { istruzioni, PERSONALITA, type IdPersonalita } from './istruzioni.ts'
 import { ArchivioImpostazioni } from '../impostazioni.ts'
 import { ArchivioSessione } from './sessione.ts'
+import path from 'node:path'
+import { Database } from '../database/db.ts'
+import { GestorePermessi } from '../permessi/gestore.ts'
+import { STRUMENTI } from '../strumenti/catalogo.ts'
+
+export type Servizi = { db?: Database; gestore?: GestorePermessi; mcp?: { url: string; chiave: string } }
 
 // L'agente: riceve un messaggio, lo passa a Claude Code e inoltra gli eventi all'interfaccia.
 // Un solo turno alla volta: un nuovo messaggio interrompe quello precedente.
 
-// Strumenti di sola lettura già sicuri (livello 1, automatici). Gli altri arriveranno con il gestore dei permessi.
+// Strumenti integrati di Claude Code concessi: solo lettura dal web (livello 1, automatici).
+// Tutti gli altri strumenti sono quelli di Jarvis, controllati dal gestore dei permessi.
 const STRUMENTI_INTEGRATI = ['WebSearch', 'WebFetch']
 
 // Claude Code acceso da più di un'ora viene riavviato quando è libero (così data e ora nelle istruzioni restano giuste)
@@ -24,13 +31,30 @@ export class Agente {
   private impostazioni: ArchivioImpostazioni
   /** le istruzioni sono cambiate: Claude Code va riavviato appena è libero */
   private daRiavviare = false
+  readonly db: Database
+  readonly gestore: GestorePermessi
+  private mcp?: { url: string; chiave: string }
 
-  constructor(config: Config, eseguibile: Eseguibile) {
+  constructor(config: Config, eseguibile: Eseguibile, servizi: Servizi = {}) {
     this.config = config
     this.eseguibile = eseguibile
+    this.db = servizi.db ?? new Database(path.join(config.cartellaDati, 'jarvis.sqlite'))
+    this.gestore = servizi.gestore ?? new GestorePermessi(this.db)
+    this.mcp = servizi.mcp
     this.sessioni = new ArchivioSessione(config.cartellaDati)
     this.impostazioni = new ArchivioImpostazioni(config.cartellaDati)
     this.processo = new ProcessoClaude(this.avvio())
+  }
+
+  /** Le cose più importanti che Jarvis ricorda, da dare a Claude all'inizio di ogni conversazione */
+  private sintesiMemoria() {
+    const righe = this.db.cercaMemorie('', undefined, 40).map((m) => `- (${m.tipo}) ${m.titolo}: ${m.contenuto}`)
+    let testo = ''
+    for (const r of righe) {
+      if (testo.length + r.length > 3500) break
+      testo += r + '\n'
+    }
+    return testo.trim()
   }
 
   get sessione() {
@@ -47,13 +71,19 @@ export class Agente {
       sessione: { ...this.sessioni.attuale },
       eseguibile: this.eseguibile,
       cartellaLavoro: this.config.cartellaLavoro,
-      istruzioni: istruzioni(this.config.appellativo, this.impostazioni.attuali.personalita),
+      istruzioni: istruzioni(this.config.appellativo, this.impostazioni.attuali.personalita, this.sintesiMemoria()),
       strumenti: STRUMENTI_INTEGRATI,
       modello: this.config.claude.modello || undefined,
       effort: this.config.claude.effort || undefined,
       consentiApiAConsumo: this.config.claude.consentiApiAConsumo,
       onSessioneAperta: () => this.sessioni.segnaAvviata(),
+      mcp: this.mcp ? { ...this.mcp, strumenti: STRUMENTI.map((s) => s.nome) } : undefined,
     }
+  }
+
+  /** i messaggi della conversazione attuale (per mostrarli dopo un riavvio) */
+  messaggi() {
+    return this.db.messaggi(this.sessioni.attuale.id)
   }
 
   get personalita() {
@@ -84,6 +114,7 @@ export class Agente {
   }
 
   interrompi() {
+    this.gestore.negaTutte()
     this.inCorso?.abort()
     this.inCorso = null
   }
@@ -131,10 +162,23 @@ export class Agente {
 
     const inizio = Date.now()
     const strumentiUsati: string[] = []
+    let risposta = ''
+    const sessioneTurno = this.sessioni.attuale.id
+    this.db.salvaMessaggio(sessioneTurno, 'user', messaggio)
+    this.db.registra('messaggio', `Richiesta: ${messaggio.length > 90 ? messaggio.slice(0, 90) + '…' : messaggio}`)
     const inoltra = (e: EventoAgente) => {
-      if (e.tipo === 'stato' && e.strumento) strumentiUsati.push(e.strumento)
+      if (e.tipo === 'stato' && e.stato === 'WORKING' && e.strumento) {
+        if (!strumentiUsati.includes(e.strumento)) strumentiUsati.push(e.strumento)
+        // gli strumenti integrati (ricerca web) li registra l'agente; quelli di Jarvis il gestore dei permessi
+        if (!e.strumento.startsWith('mcp__') && STRUMENTI.every((s) => s.nome !== e.strumento))
+          this.db.registra('azione', e.descrizione ?? e.strumento)
+      }
+      if (e.tipo === 'testo') risposta += e.testo
+      if (e.tipo === 'errore') this.db.registra('errore', e.messaggio)
       onEvento(e)
     }
+    // le richieste di permesso degli strumenti arrivano alla conversazione in corso
+    this.gestore.notifica = inoltra
     inoltra({ tipo: 'stato', stato: 'THINKING' })
 
     let esito: EsitoTurno = 'errore'
@@ -161,8 +205,13 @@ export class Agente {
       break
     }
 
-    if (this.inCorso === controller) this.inCorso = null
+    if (this.inCorso === controller) {
+      this.inCorso = null
+      this.gestore.notifica = () => {}
+    }
+    if (risposta.trim()) this.db.salvaMessaggio(sessioneTurno, 'assistant', risposta.trim())
     if (esito === 'ok') {
+      this.db.registra('messaggio', 'Risposta data')
       if (strumentiUsati.length) inoltra({ tipo: 'stato', stato: 'SUCCESS' })
       inoltra({ tipo: 'fine', sessione: this.sessioni.attuale.id, durataMs: Date.now() - inizio, strumentiUsati })
     } else if (esito === 'sessione-mancante') {

@@ -20,3 +20,7 @@ export type EventoAgente =
   | { tipo: 'fine'; sessione: string; durataMs: number; strumentiUsati: string[] }
   /** errore spiegato in italiano */
   | { tipo: 'errore'; messaggio: string }
+  /** Jarvis chiede il permesso per un'azione (livello 2 o 3) */
+  | { tipo: 'conferma'; id: number; strumento: string; descrizione: string; livello: 2 | 3 }
+  /** la richiesta di permesso è stata decisa (o è scaduta) */
+  | { tipo: 'conferma-chiusa'; id: number; esito: 'concessa' | 'negata' | 'scaduta' }

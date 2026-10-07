@@ -4,9 +4,9 @@ Assistente personale che funziona sul tuo PC Windows. Il "cervello" è **Claude 
 abbonamento Claude: **nessuna API a consumo**. L'interfaccia è la "Neural Interface", con la rete neurale 3D
 che reagisce a quello che Jarvis sta facendo.
 
-Stato attuale (fase 1 di 17): chat reale con Claude (scritta o a voce), ricerca web, conversazione ricordata
-anche dopo il riavvio. Email, calendario, memoria, strumenti e permessi arrivano nelle prossime fasi
-(vedi [docs/ARCHITETTURA.md](docs/ARCHITETTURA.md)).
+Stato attuale: chat reale con Claude (scritta o a voce), ricerca web, memoria permanente (persone, preferenze,
+regole), pratiche che durano nel tempo, permessi a tre livelli e registro di tutto ciò che fa.
+Email, calendario e telefono arrivano nelle prossime fasi (vedi [docs/ARCHITETTURA.md](docs/ARCHITETTURA.md)).
 
 ## Cosa serve sul PC
 

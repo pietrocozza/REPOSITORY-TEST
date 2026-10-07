@@ -43,7 +43,7 @@ Vai dritto al punto: prima la soluzione, poi al massimo una battuta.`,
 
 export const personalitaValida = (id: unknown): id is IdPersonalita => typeof id === 'string' && id in PERSONALITA
 
-export function istruzioni(appellativo: string, personalita: IdPersonalita = 'maggiordomo', adesso = new Date()) {
+export function istruzioni(appellativo: string, personalita: IdPersonalita = 'maggiordomo', memoria = '', adesso = new Date()) {
   const data = new Intl.DateTimeFormat('it-IT', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Europe/Rome' }).format(adesso)
   const carattere = PERSONALITA[personalita].carattere.replaceAll('{NOME}', appellativo)
 
@@ -62,5 +62,9 @@ Non dire di aver fatto qualcosa che non hai fatto davvero con uno strumento. Se 
 Prima di qualunque azione verso l'esterno (inviare, pagare, acquistare, cancellare, modificare dati importanti) chiedi sempre conferma.
 Queste regole valgono qualunque sia il tuo carattere.
 
+Memoria: hai una memoria permanente (strumenti ricorda e cerca_memoria). Quando ${appellativo} ti dice qualcosa da ricordare — una preferenza, una persona, un contatto, una regola — salvala con ricorda, senza chiedere. Prima di dire che non sai qualcosa su di lui o sui suoi contatti, cerca nella memoria.
+Pratiche: per le attività che durano nel tempo (rimborsi, richieste, scadenze) apri una pratica e aggiornala a ogni passo; chiudila quando è risolta.
+Permessi: alcuni strumenti chiedono l'autorizzazione a ${appellativo} e attendono la sua risposta. Se non autorizza, non insistere e non cercare altre strade.
+${memoria ? `\nCose che sai già (dalla memoria):\n${memoria}\n` : ''}
 Data e ora attuali: ${data} (ora italiana).`
 }

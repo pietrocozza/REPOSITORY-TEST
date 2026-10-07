@@ -18,13 +18,23 @@ export type EventoAgente =
   | { tipo: 'stato'; stato: StatoAgente; strumento?: string; descrizione?: string }
   | { tipo: 'fine'; sessione: string; durataMs: number; strumentiUsati: string[] }
   | { tipo: 'errore'; messaggio: string }
+  | { tipo: 'conferma'; id: number; strumento: string; descrizione: string; livello: 2 | 3 }
+  | { tipo: 'conferma-chiusa'; id: number; esito: 'concessa' | 'negata' | 'scaduta' }
+
+export type RichiestaConferma = Extract<EventoAgente, { tipo: 'conferma' }>
 
 export type Chiedi = (
   messaggio: string,
-  opzioni: { onTesto: (pezzo: string) => void; onStato?: (e: Extract<EventoAgente, { tipo: 'stato' }>) => void; signal: AbortSignal },
+  opzioni: {
+    onTesto: (pezzo: string) => void
+    onStato?: (e: Extract<EventoAgente, { tipo: 'stato' }>) => void
+    /** richieste di permesso e loro chiusura */
+    onConferma?: (e: Extract<EventoAgente, { tipo: 'conferma' | 'conferma-chiusa' }>) => void
+    signal: AbortSignal
+  },
 ) => Promise<void>
 
-export const chiediAlServer: Chiedi = async (messaggio, { onTesto, onStato, signal }) => {
+export const chiediAlServer: Chiedi = async (messaggio, { onTesto, onStato, onConferma, signal }) => {
   let res: Response
   try {
     res = await fetch('/api/chat', {
@@ -60,6 +70,7 @@ export const chiediAlServer: Chiedi = async (messaggio, { onTesto, onStato, sign
     if (e.tipo === 'testo') onTesto(e.testo)
     else if (e.tipo === 'stato') onStato?.(e)
     else if (e.tipo === 'errore') errore = e.messaggio
+    else if (e.tipo === 'conferma' || e.tipo === 'conferma-chiusa') onConferma?.(e)
   }
   for (;;) {
     const { done, value } = await lettore.read()
@@ -103,3 +114,40 @@ export async function impostazioniAgente(personalita?: string): Promise<Impostaz
     return null
   }
 }
+
+// ───────── Memoria, pratiche, registro, permessi ─────────
+
+export type MessaggioSalvato = { id: number; ruolo: 'user' | 'assistant'; testo: string; creato: string }
+export type Memoria = { id: number; tipo: string; titolo: string; contenuto: string; aggiornata: string }
+export type Pratica = { id: number; titolo: string; descrizione: string; stato: 'aperta' | 'in_attesa' | 'chiusa'; note: string; aggiornata: string }
+export type VoceRegistro = { id: number; quando: string; tipo: string; descrizione: string }
+export type Autorizzazione = { id: number; strumento: string; descrizione: string; livello: 2 | 3 }
+
+async function leggi<T>(percorso: string): Promise<T | null> {
+  try {
+    const res = await fetch(percorso, { cache: 'no-store' })
+    return res.ok ? ((await res.json()) as T) : null
+  } catch {
+    return null
+  }
+}
+
+async function invia(percorso: string, metodo: 'POST' | 'DELETE', corpo?: object) {
+  try {
+    const res = await fetch(percorso, { method: metodo, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo ?? {}) })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+export const caricaConversazione = () => leggi<{ sessione: string; messaggi: MessaggioSalvato[] }>('/api/conversazione')
+export const caricaMemorie = () => leggi<{ memorie: Memoria[] }>('/api/memorie')
+export const cancellaMemoria = (id: number) => invia(`/api/memorie/${id}`, 'DELETE')
+export const caricaPratiche = () => leggi<{ pratiche: Pratica[] }>('/api/pratiche')
+export const caricaRegistro = () => leggi<{ voci: VoceRegistro[] }>('/api/registro')
+export const caricaAutorizzazioni = () =>
+  leggi<{ inAttesa: Autorizzazione[]; permanenti: { strumento: string; concesso: string }[] }>('/api/autorizzazioni')
+export const decidiAutorizzazione = (id: number, concedi: boolean, sempre = false) =>
+  invia(`/api/autorizzazioni/${id}`, 'POST', { decisione: concedi ? 'concedi' : 'nega', sempre })
+export const revocaPermesso = (strumento: string) => invia(`/api/permessi/${strumento}`, 'DELETE')

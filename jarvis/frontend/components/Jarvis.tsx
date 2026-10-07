@@ -1,7 +1,20 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
-import { chiediAlServer, impostazioniAgente, leggiStatoBackend, nuovaConversazione, type Chiedi, type Personalita } from '@/lib/chat'
+import {
+  caricaAutorizzazioni,
+  caricaConversazione,
+  chiediAlServer,
+  decidiAutorizzazione,
+  impostazioniAgente,
+  leggiStatoBackend,
+  nuovaConversazione,
+  type Autorizzazione,
+  type Chiedi,
+  type Personalita,
+} from '@/lib/chat'
+import Conferma from '@/components/Conferma'
+import { SezioneMemoria, SezionePratiche, SezioneRegistro } from '@/components/Sezioni'
 import { disegnaHud } from '@/lib/hud'
 import { NucleoNeurale, PALETTES, type Modo } from '@/lib/nucleo-neurale'
 import type { Stato, Voce } from '@/lib/stato'
@@ -32,10 +45,10 @@ const MENU: { id: Sezione; nome: string; icona: NomeIcona; descrizione: string; 
   { id: 'oggi', nome: 'Oggi', icona: 'sole', descrizione: 'Il riepilogo della giornata: appuntamenti, promemoria, email importanti e scadenze.', pronto: false },
   { id: 'agenda', nome: 'Agenda', icona: 'calendario', descrizione: 'Appuntamenti e promemoria da Google Calendar, con avvisi prima degli impegni.', pronto: false },
   { id: 'email', nome: 'Email', icona: 'posta', descrizione: 'Gmail: riassunti, email importanti, bozze di risposta. L’invio solo con il tuo permesso.', pronto: false },
-  { id: 'pratiche', nome: 'Pratiche', icona: 'cartella', descrizione: 'Le attività lunghe che Jarvis segue nel tempo, per esempio una richiesta di rimborso.', pronto: false },
+  { id: 'pratiche', nome: 'Pratiche', icona: 'cartella', descrizione: 'Le attività lunghe che Jarvis segue nel tempo, per esempio una richiesta di rimborso.', pronto: true },
   { id: 'appartamenti', nome: 'Affitti', icona: 'casa', descrizione: 'Prenotazioni, occupazione, ricavi, buchi in calendario e prezzi suggeriti.', pronto: false },
   { id: 'documenti', nome: 'Documenti', icona: 'documento', descrizione: 'Cerca e legge file solo nelle cartelle che autorizzi: PDF, Excel, fatture.', pronto: false },
-  { id: 'registro', nome: 'Registro', icona: 'registro', descrizione: 'Tutto quello che Jarvis fa, minuto per minuto, con le autorizzazioni date.', pronto: false },
+  { id: 'registro', nome: 'Registro', icona: 'registro', descrizione: 'Tutto quello che Jarvis fa, minuto per minuto, con le autorizzazioni date.', pronto: true },
   { id: 'impostazioni', nome: 'Impostazioni', icona: 'ingranaggio', descrizione: 'Voce, tema, microfono', pronto: true },
 ]
 
@@ -105,6 +118,7 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
   const [voceInUso, setVoceInUso] = useState('—')
   const [pausa, setPausa] = useState(false)
   const [personalita, setPersonalita] = useState<string | null>(null)
+  const [conferme, setConferme] = useState<Autorizzazione[]>([])
   const [elencoPersonalita, setElencoPersonalita] = useState<Personalita[]>([])
   // statistiche della sessione, per i numeri a sinistra
   const [inizioTurno, setInizioTurno] = useState<number | null>(null)
@@ -219,6 +233,34 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
       annullato = true
     }
   }, [usaBackend, mostraErrore])
+
+  // Conversazione salvata (anche dopo un riavvio) e richieste di permesso in sospeso
+  useEffect(() => {
+    if (!usaBackend) return
+    let annullato = false
+    caricaConversazione().then((c) => {
+      if (annullato || !c) return
+      setVoci((attuali) =>
+        attuali.length ? attuali : c.messaggi.map((m) => ({ id: prossimoId++, ruolo: m.ruolo, testo: m.testo })),
+      )
+    })
+    const controllaPermessi = () =>
+      caricaAutorizzazioni().then((a) => {
+        if (!annullato && a) setConferme(a.inAttesa)
+      })
+    controllaPermessi()
+    const id = setInterval(controllaPermessi, 4000)
+    return () => {
+      annullato = true
+      clearInterval(id)
+    }
+  }, [usaBackend])
+
+  const decidi = async (richiesta: Autorizzazione, concedi: boolean, sempre: boolean) => {
+    setConferme((cs) => cs.filter((c) => c.id !== richiesta.id))
+    const ok = await decidiAutorizzazione(richiesta.id, concedi, sempre)
+    if (!ok) mostraErrore('Questa richiesta non è più valida (forse è scaduta).')
+  }
 
   // Personalità di Jarvis: la decide il backend
   useEffect(() => {
@@ -437,6 +479,14 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
             } else if (e.stato === 'WAITING_FOR_CONFIRMATION') setStato('conferma')
             else if (e.stato === 'THINKING') setStato((s) => (s === 'risposta' ? s : 'elaborazione'))
           },
+          onConferma: (e) => {
+            if (e.tipo === 'conferma') {
+              setConferme((cs) => (cs.some((c) => c.id === e.id) ? cs : [...cs, { id: e.id, strumento: e.strumento, descrizione: e.descrizione, livello: e.livello }]))
+              if (vocaleRef.current) pronuncia(`Mi serve il tuo permesso: ${e.descrizione}.`)
+            } else {
+              setConferme((cs) => cs.filter((c) => c.id !== e.id))
+            }
+          },
           onTesto: (pezzo) => {
             if (t !== turno.current) return
             if (primo) {
@@ -603,6 +653,7 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
   const ultimaDomanda = [...voci].reverse().find((v) => v.ruolo === 'user')
   let parlato = ultima?.testo || SALUTO
   if (stato === 'ascolto') parlato = parziale ? `«${parziale}»` : parolaAttivazione ? 'Ti ascolto. Di’ «Jarvis» e poi il comando.' : 'Ti ascolto.'
+  else if (conferme.length) parlato = `Mi serve il tuo permesso: ${conferme[0].descrizione}.`
   else if (stato === 'lavoro') parlato = `${strumento ?? 'Uso uno strumento'}…`
   else if (stato === 'elaborazione') parlato = ultimaDomanda ? `«${ultimaDomanda.testo}»` : 'Sto collegando le informazioni.'
   else if (stato === 'pronto' && parolaAttivazione && !ultima) parlato = 'Sono in ascolto. Di’ «Jarvis» e poi il comando.'
@@ -750,6 +801,9 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
             </>
           )}
 
+          {sezione === 'registro' && <SezioneRegistro />}
+          {sezione === 'pratiche' && <SezionePratiche />}
+
           {sezione === 'impostazioni' && (
             <div className="j-impostazioni">
               <h2>Impostazioni</h2>
@@ -840,6 +894,8 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
                 <span>Ferma l’animazione (risparmia batteria)</span>
                 <input id="pausa-animazione" type="checkbox" className="j-interruttore" checked={pausa} onChange={() => setPausa(!pausa)} />
               </label>
+
+              {usaBackend && <SezioneMemoria />}
             </div>
           )}
 
@@ -852,6 +908,10 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
             </div>
           )}
         </section>
+
+        {conferme.map((c) => (
+          <Conferma key={c.id} richiesta={c} onDecidi={(concedi, sempre) => decidi(c, concedi, sempre)} />
+        ))}
 
         <form
           className="j-console"
