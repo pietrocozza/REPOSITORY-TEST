@@ -30,7 +30,7 @@ powershell -ExecutionPolicy Bypass -File scripts\controlla-ambiente.ps1
 In **PowerShell**:
 
 ```powershell
-cd $HOME\Documents
+cd $HOME
 git clone https://github.com/pietrocozza/repository-test.git jarvis-progetto
 cd jarvis-progetto
 git checkout claude/vibrant-newton-5ifs9d
@@ -48,7 +48,7 @@ Jarvis ora si chiama **Ambrogio**, e anche la cartella è passata da `jarvis` ad
 Chiudi Jarvis, poi in **PowerShell**:
 
 ```powershell
-cd $HOME\Documents\jarvis-progetto
+cd $HOME\jarvis-progetto
 git pull
 cd ambrogio
 npm run trasloco
