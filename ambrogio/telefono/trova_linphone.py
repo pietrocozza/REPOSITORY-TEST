@@ -43,10 +43,18 @@ def versione(nome):
 
 
 ruote = [u for u in cerca(BASE) if "x86_64" in u and "linux" in u]
-adatte = [u for u in ruote if TAG in u] or [u for u in ruote if "py3-none" in u or "abi3" in u]
-if not adatte:
-    print(f"Nessun pacchetto Linphone per Python {TAG[2]}.{TAG[3:]} trovato. Pacchetti visti:", file=sys.stderr)
-    for u in ruote:
-        print("  " + u.rsplit("/", 1)[-1], file=sys.stderr)
+if not ruote:
+    print("Non trovo nessun pacchetto Linphone per Linux sul sito linphone.org.", file=sys.stderr)
     sys.exit(1)
-print(max(adatte, key=lambda u: versione(u.rsplit("/", 1)[-1])))
+
+
+def python_di(url):
+    """versione di Python per cui è fatto il pacchetto: cp312 -> (3, 12); (0, 0) se va bene per tutti"""
+    m = re.search(r"-cp3(\d+)-", url.rsplit("/", 1)[-1])
+    return (3, int(m.group(1))) if m else (0, 0)
+
+
+# il più recente; a parità, quello per il Python di questo Linux, poi per il Python più nuovo
+nome = lambda u: u.rsplit("/", 1)[-1]
+scelto = max(ruote, key=lambda u: (versione(nome(u)), TAG in u, python_di(u)))
+print(scelto)
