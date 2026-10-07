@@ -1,0 +1,3 @@
+# gli script per Linux (WSL) devono avere i fine riga di Linux anche se scaricati su Windows
+*.sh text eol=lf
+telefono/*.py text eol=lf

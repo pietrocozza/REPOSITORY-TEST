@@ -195,6 +195,30 @@ premi **Set up billing** (o **Imposta fatturazione**) accanto al progetto della 
 Poi nel file `.env` aggiungi la riga `AMBROGIO_GEMINI_A_PAGAMENTO=1` e riavvia Ambrogio: parlerà frase per frase, senza limite giornaliero.
 Consiglio: su Google Cloud imposta un **avviso di budget** (Fatturazione → Budget e avvisi), per esempio 5 €.
 
+## Telefonate con Linphone (gratis)
+
+Ambrogio telefona dal suo account Linphone al tuo Linphone sul telefono. Il pezzo ufficiale di Linphone per Python
+esiste solo per Linux, quindi gira in un piccolo Linux dentro Windows (WSL, gratis di Microsoft).
+Spazio: circa 1 GB da scaricare, 3 GB sul disco; serve un riavvio la prima volta.
+
+1. **PowerShell come amministratore** (tasto destro su Start → *Terminale (amministratore)*): `wsl --install -d Ubuntu`.
+   Poi riavvia il PC.
+2. Dopo il riavvio si apre la finestra **Ubuntu**: scegli un nome utente e una password (mentre scrivi la password
+   non si vede nulla, è normale). Tienila per te.
+3. Nel file `.env` (Blocco note) aggiungi:
+   ```
+   AMBROGIO_LINPHONE_UTENTE=ambrogio.ai
+   AMBROGIO_LINPHONE_PASSWORD=la password dell'account Linphone di Ambrogio
+   AMBROGIO_LINPHONE_CHIAMA=sip:pietrocozza@sip.linphone.org
+   ```
+4. Nella finestra **Ubuntu**:
+   ```bash
+   cd /mnt/c/Users/cozza/jarvis-progetto/ambrogio
+   bash telefono/installa.sh
+   bash telefono/prova.sh
+   ```
+   La prova fa squillare Linphone sul telefono: rispondi, senti tre bip, poi parla per qualche secondo.
+
 ## Impostazioni
 
 Copia `.env.example` in `.env` e modifica lì (il nome con cui ti chiama, il modello, il percorso di Claude Code).
