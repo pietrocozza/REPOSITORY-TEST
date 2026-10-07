@@ -30,6 +30,7 @@ import SezioneTelefono from '@/components/SezioneTelefono'
 import { MESSAGGIO_PERMESSO, registraFrase, spiegaRegistrazione } from '@/lib/registra'
 import Codice, { CHIAVE_VISTO, piuRecente } from '@/components/Codice'
 import PannelloCodice from '@/components/PannelloCodice'
+import SalaMacchine from '@/components/SalaMacchine'
 import InstallaApp from '@/components/InstallaApp'
 import { SezioneMemoria, SezionePratiche, SezioneRegistro } from '@/components/Sezioni'
 import { disegnaEtichette, disegnaHud } from '@/lib/hud'
@@ -207,6 +208,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   const [conferme, setConferme] = useState<Autorizzazione[]>([])
   const [codiceAperto, setCodiceAperto] = useState(false)
   const [codiceNuovo, setCodiceNuovo] = useState(false)
+  const [salaAperta, setSalaAperta] = useState(false)
   // la finestra del codice a sinistra: aperta di serie, si chiude con la X (e la scelta si ricorda)
   const [pannelloCodice, setPannelloCodice] = useState(false)
   const [menuAperto, setMenuAperto] = useState(false)
@@ -1226,6 +1228,20 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
             <button
               type="button"
               className="j-tasto-icona"
+              onClick={() => {
+                setSalaAperta(true)
+                setMenuAperto(false)
+              }}
+              title="Sala macchine: i grafici dal vivo di Ambrogio"
+              aria-label="Sala macchine"
+            >
+              <Icona nome="grafico" />
+            </button>
+          )}
+          {usaBackend && (
+            <button
+              type="button"
+              className="j-tasto-icona"
               data-nuovo={codiceNuovo || undefined}
               onClick={() => {
                 setCodiceAperto(true)
@@ -1595,6 +1611,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       )}
 
       {codiceAperto && <Codice onChiudi={() => setCodiceAperto(false)} />}
+      {salaAperta && <SalaMacchine onChiudi={() => setSalaAperta(false)} />}
       <InstallaApp />
 
       {errore && (

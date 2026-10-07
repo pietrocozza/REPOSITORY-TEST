@@ -195,7 +195,7 @@ export class Agente {
     if (pronta) {
       if (this.inCorso === controller) this.inCorso = null
       this.db.salvaMessaggio(sessioneTurno, 'assistant', pronta)
-      this.db.registra('messaggio', 'Risposta pronta (senza Claude)')
+      this.db.registra('messaggio', 'Risposta pronta (senza Claude)', { durataMs: Date.now() - inizio, pronta: true })
       onEvento({ tipo: 'testo', testo: pronta })
       onEvento({ tipo: 'fine', sessione: sessioneTurno, durataMs: Date.now() - inizio, strumentiUsati: [] })
       return 'ok' as const
@@ -245,7 +245,7 @@ export class Agente {
     }
     if (risposta.trim()) this.db.salvaMessaggio(sessioneTurno, 'assistant', risposta.trim())
     if (esito === 'ok') {
-      this.db.registra('messaggio', 'Risposta data')
+      this.db.registra('messaggio', 'Risposta data', { durataMs: Date.now() - inizio, strumenti: strumentiUsati, cervello: this.cervello })
       if (strumentiUsati.length) inoltra({ tipo: 'stato', stato: 'SUCCESS' })
       inoltra({ tipo: 'fine', sessione: this.sessioni.attuale.id, durataMs: Date.now() - inizio, strumentiUsati })
     } else if (esito === 'sessione-mancante') {

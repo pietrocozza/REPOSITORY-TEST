@@ -364,7 +364,7 @@ def main():
                     orecchio.risposto = True
                     evento("risposto")
                 if stato in ("End", "Released", "Error"):
-                    chiudi_chiamata(descrivi_errore(chiamata) if stato == "Error" else "riattaccato")
+                    chiudi_chiamata(f"{stato}: {descrivi_errore(chiamata)}")
                     continue
             if not codice_detto:
                 try:

@@ -17,6 +17,7 @@ const TRACCE = {
   muto: 'M4 9h3l5-4v14l-5-4H4zM16 9.5l5 5M21 9.5l-5 5',
   menu: 'M4 7h16M4 12h16M4 17h10',
   chiudi: 'M6 6l12 12M18 6 6 18',
+  grafico: 'M4 20h16M6 16v-4M10 16V6M14 16v-7M18 16V9',
   codice: 'M8.5 7 3.5 12l5 5M15.5 7l5 5-5 5M13.5 4.5l-3 15',
 } as const
 

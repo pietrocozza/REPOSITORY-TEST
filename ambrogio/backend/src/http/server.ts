@@ -15,6 +15,7 @@ import { frasiDaPreparare } from '../voce/frasi-pronte.ts'
 import { STILE_VOCE_PREDEFINITO, cervelloValido } from '../impostazioni.ts'
 import path from 'node:path'
 import fs from 'node:fs'
+import os from 'node:os'
 import { Telefono, Telefonata, type EsitoTelefonata } from '../telefono/telefono.ts'
 
 // Server HTTP locale (solo 127.0.0.1). Accetta richieste unicamente dall'interfaccia di Ambrogio:
@@ -109,6 +110,23 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
       // non importante
     }
   }
+  // uso del processore: differenza tra due letture
+  let cpuPrima = os.cpus().map((c) => c.times)
+  const usoCpu = () => {
+    const ora = os.cpus().map((c) => c.times)
+    let lavoro = 0
+    let totale = 0
+    ora.forEach((t, i) => {
+      const p = cpuPrima[i] ?? t
+      const somma = (x: typeof t) => x.user + x.nice + x.sys + x.idle + x.irq
+      totale += somma(t) - somma(p)
+      lavoro += somma(t) - somma(p) - (t.idle - p.idle)
+    })
+    cpuPrima = ora
+    return totale > 0 ? Math.round((lavoro / totale) * 100) : 0
+  }
+  const accesoDa = Date.now()
+
   let telefonataInCorso = false
   let ultimaTelefonata: (EsitoTelefonata & { quando: string }) | null = null
 
@@ -277,6 +295,33 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
           const riprovaTra = Math.max(0, Math.round((motore.sospesaFinoA - Date.now()) / 1000))
           return inviaJson(res, e.tipo === 'senza-chiave' ? 409 : e.tipo === 'limite' ? 429 : 502, { errore: e.message, tipo: e.tipo, riprovaTra })
         }
+      }
+
+      // ───────── Sala macchine: i numeri veri di Ambrogio ─────────
+      if (req.method === 'GET' && url.pathname === '/api/statistiche') {
+        let frasiArchivio = 0
+        try {
+          frasiArchivio = fs.readdirSync(cartellaVoce).filter((f) => f.endsWith('.wav')).length
+        } catch {
+          // archivio vuoto
+        }
+        return inviaJson(res, 200, {
+          ...agente.db.statistiche(),
+          cervello: agente.cervello,
+          personalita: agente.personalita,
+          voce: { disponibile: gemini.disponibile, pagamento: gemini.stato().pagamento, richiesteOggi: gemini.richiesteOggi, frasiArchivio },
+          telefono: { configurato: config.telefono.configurato, stato: telefono.stato, inCorso: telefonataInCorso, ultima: ultimaTelefonata?.esito ?? null },
+          email: opzioni.google ? opzioni.google.stato().collegato : false,
+          sistema: {
+            cpu: usoCpu(),
+            ramUsata: os.totalmem() - os.freemem(),
+            ramTotale: os.totalmem(),
+            memoriaAmbrogio: process.memoryUsage().rss,
+            accesoDaS: Math.round((Date.now() - accesoDa) / 1000),
+            processori: os.cpus().length,
+          },
+          ora: new Date().toISOString(),
+        })
       }
 
       // ───────── Telefono ─────────

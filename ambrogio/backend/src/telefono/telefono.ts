@@ -173,7 +173,11 @@ export class Telefonata {
     const id = this.numero
     this.d.telefono.invia({ cmd: 'parla', file: process.platform === 'win32' ? percorsoWsl(file) : file, id })
     const e = await this.d.telefono.attendi((e) => (e.evento === 'parlato' && e.id === id) || e.evento === 'fine', 120_000)
-    if (e.evento === 'fine') this.finita = true
+    if (e.evento === 'fine') {
+      this.finita = true
+      this.d.annota?.(`Telefonata chiusa mentre Ambrogio parlava (${String(e.motivo ?? '')})`)
+    }
+    if (e.evento === 'parlato' && e.errore) this.d.annota?.(`Telefono: non riesco a far sentire la voce (${String(e.errore)})`)
   }
 
   async esegui({ motivo, apertura, nome }: { motivo: string; apertura: string; nome: string }): Promise<EsitoTelefonata> {
@@ -185,7 +189,11 @@ export class Telefonata {
     }
     // ogni "fine" chiude la telefonata, qualunque cosa si stia facendo
     const smetti = telefono.ascolta((e) => {
-      if (e.evento === 'fine') this.finita = true
+      if (e.evento === 'fine') {
+        this.finita = true
+        this.d.annota?.(`Telefonata chiusa: ${String(e.motivo ?? '')}`)
+      }
+      if (e.evento === 'errore') this.d.annota?.(`Telefono: ${String(e.messaggio ?? '')}`)
     })
     try {
       telefono.invia({ cmd: 'chiama' })

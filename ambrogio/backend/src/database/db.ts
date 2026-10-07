@@ -254,6 +254,78 @@ export class Database {
       .run(adesso(), tipo, descrizione, dettagli === undefined ? null : JSON.stringify(dettagli))
   }
 
+  /** I numeri veri di Ambrogio per la Sala macchine (ultimi 30 giorni di registro) */
+  statistiche(ora = new Date()) {
+    const da = new Date(ora.getTime() - 30 * 86_400_000).toISOString()
+    const righe = this.db.prepare('SELECT quando, tipo, descrizione, dettagli FROM registro WHERE quando >= ? ORDER BY id').all(da) as {
+      quando: string
+      tipo: string
+      descrizione: string
+      dettagli: string | null
+    }[]
+    const conta = (sql: string, ...p: string[]) => (this.db.prepare(sql).get(...p) as { n: number }).n
+    const t = ora.getTime()
+    // attività delle ultime 24 ore, a mezz'ore (48 colonne)
+    const attivita = Array.from({ length: 48 }, () => 0)
+    // a che ora del giorno lavora (ultimi 30 giorni)
+    const perOra = Array.from({ length: 24 }, () => 0)
+    // ultimi 7 giorni: richieste, azioni, errori
+    const giorni = Array.from({ length: 7 }, (_, i) => {
+      const g = new Date(t - (6 - i) * 86_400_000)
+      return { giorno: g.toISOString().slice(0, 10), richieste: 0, azioni: 0, errori: 0 }
+    })
+    const tempi: number[] = []
+    const strumenti: Record<string, number> = {}
+    const tipi: Record<string, number> = {}
+    let pronte = 0
+    let conClaude = 0
+    for (const r of righe) {
+      const q = new Date(r.quando)
+      const fa = t - q.getTime()
+      tipi[r.tipo] = (tipi[r.tipo] ?? 0) + 1
+      perOra[q.getHours()]++
+      if (fa >= 0 && fa < 86_400_000) attivita[47 - Math.floor(fa / 1_800_000)]++
+      const g = giorni.find((x) => x.giorno === r.quando.slice(0, 10))
+      if (g) {
+        if (r.tipo === 'messaggio' && r.descrizione.startsWith('Richiesta')) g.richieste++
+        if (r.tipo === 'azione' || r.tipo === 'telefono') g.azioni++
+        if (r.tipo === 'errore') g.errori++
+      }
+      if (r.tipo === 'messaggio' && r.dettagli && r.descrizione.startsWith('Risposta')) {
+        try {
+          const d = JSON.parse(r.dettagli) as { durataMs?: number; strumenti?: string[]; pronta?: boolean }
+          if (typeof d.durataMs === 'number') tempi.push(d.durataMs)
+          if (d.pronta) pronte++
+          else conClaude++
+          for (const s of d.strumenti ?? []) {
+            const nome = s.replace(/^mcp__ambrogio__/, '')
+            strumenti[nome] = (strumenti[nome] ?? 0) + 1
+          }
+        } catch {
+          // dettagli illeggibili
+        }
+      }
+    }
+    return {
+      // gli ultimi eventi, per l'anello (il più vecchio prima)
+      eventi: righe.slice(-400).map((r) => ({ quando: r.quando, tipo: r.tipo })),
+      attivita,
+      perOra,
+      giorni,
+      tempi: tempi.slice(-60),
+      strumenti,
+      tipi,
+      risposte: { pronte, conClaude },
+      totali: {
+        messaggi: conta('SELECT COUNT(*) AS n FROM messaggi'),
+        memorie: conta('SELECT COUNT(*) AS n FROM memorie'),
+        praticheAperte: conta("SELECT COUNT(*) AS n FROM pratiche WHERE stato != 'chiusa'"),
+        concesse: conta("SELECT COUNT(*) AS n FROM autorizzazioni WHERE stato = 'concessa'"),
+        negate: conta("SELECT COUNT(*) AS n FROM autorizzazioni WHERE stato IN ('negata', 'scaduta')"),
+      },
+    }
+  }
+
   registro(limite = 200): VoceRegistro[] {
     return this.db.prepare('SELECT * FROM (SELECT * FROM registro ORDER BY id DESC LIMIT ?) ORDER BY id').all(limite) as VoceRegistro[]
   }

@@ -258,3 +258,26 @@ export async function provaTelefono(): Promise<string | null> {
     return 'Il motore di Ambrogio non risponde.'
   }
 }
+
+// ───────── Sala macchine: i numeri veri di Ambrogio ─────────
+
+export type Statistiche = {
+  eventi: { quando: string; tipo: string }[]
+  attivita: number[]
+  perOra: number[]
+  giorni: { giorno: string; richieste: number; azioni: number; errori: number }[]
+  tempi: number[]
+  strumenti: Record<string, number>
+  tipi: Record<string, number>
+  risposte: { pronte: number; conClaude: number }
+  totali: { messaggi: number; memorie: number; praticheAperte: number; concesse: number; negate: number }
+  cervello: string
+  personalita: string
+  voce: { disponibile: boolean; pagamento: boolean; richiesteOggi: number; frasiArchivio: number }
+  telefono: { configurato: boolean; stato: string; inCorso: boolean; ultima: string | null }
+  email: boolean
+  sistema: { cpu: number; ramUsata: number; ramTotale: number; memoriaAmbrogio: number; accesoDaS: number; processori: number }
+  ora: string
+}
+
+export const caricaStatistiche = () => leggi<Statistiche>('/api/statistiche')

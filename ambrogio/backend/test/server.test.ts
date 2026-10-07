@@ -162,3 +162,19 @@ test('cervello: Sonnet di serie, si può passare a rapido o bilanciato', async (
   assert.equal(sbagliato.status, 400)
   await imposta({ cervello: 'sonnet' })
 })
+
+test('sala macchine: i numeri veri (registro, tempi, computer)', async () => {
+  agente.db.registra('messaggio', 'Risposta data', { durataMs: 2300, strumenti: ['WebSearch', 'mcp__ambrogio__ricorda'] })
+  const s = (await (await fetch(`${base}/api/statistiche`)).json()) as {
+    attivita: number[]
+    perOra: number[]
+    tempi: number[]
+    strumenti: Record<string, number>
+    sistema: { ramTotale: number }
+  }
+  assert.equal(s.attivita.length, 48)
+  assert.equal(s.perOra.length, 24)
+  assert.ok(s.tempi.includes(2300))
+  assert.equal(s.strumenti.ricorda, 1)
+  assert.ok(s.sistema.ramTotale > 0)
+})
