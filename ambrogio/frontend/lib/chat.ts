@@ -262,7 +262,7 @@ export async function provaTelefono(): Promise<string | null> {
 // ───────── Sala macchine: i numeri veri di Ambrogio ─────────
 
 export type Statistiche = {
-  eventi: { quando: string; tipo: string }[]
+  eventi: { quando: string; tipo: string; descrizione: string }[]
   attivita: number[]
   perOra: number[]
   giorni: { giorno: string; richieste: number; azioni: number; errori: number }[]

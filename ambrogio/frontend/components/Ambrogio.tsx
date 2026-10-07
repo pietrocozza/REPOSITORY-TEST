@@ -30,7 +30,7 @@ import SezioneTelefono from '@/components/SezioneTelefono'
 import { MESSAGGIO_PERMESSO, registraFrase, spiegaRegistrazione } from '@/lib/registra'
 import Codice, { CHIAVE_VISTO, piuRecente } from '@/components/Codice'
 import PannelloCodice from '@/components/PannelloCodice'
-import SalaMacchine from '@/components/SalaMacchine'
+import SalaMacchine, { type StatoSala } from '@/components/SalaMacchine'
 import InstallaApp from '@/components/InstallaApp'
 import { SezioneMemoria, SezionePratiche, SezioneRegistro } from '@/components/Sezioni'
 import { disegnaEtichette, disegnaHud } from '@/lib/hud'
@@ -49,6 +49,7 @@ import {
   impostaVoce,
   impostaMotore,
   livelloVoce,
+  bandeVoce,
   nomeVoce,
   rispostaIntera,
   preparaVoce,
@@ -582,6 +583,15 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   }, [mostraErrore])
 
   const modo: Modo = errore && stato === 'pronto' ? 'error' : MODO[stato]
+  // la Sala macchine legge lo stato vero di Ambrogio a ogni fotogramma (senza far ridisegnare la pagina)
+  const statoSala = useRef<Pick<StatoSala, 'modo' | 'strumento' | 'errore'>>({ modo: 'idle', strumento: null, errore: null })
+  useEffect(() => {
+    statoSala.current = { modo, strumento: stato === 'lavoro' ? strumento : null, errore: modo === 'error' ? errore : null }
+  })
+  const leggiStatoSala = useCallback(
+    (): StatoSala => ({ ...statoSala.current, livelloIn: livello.current, livelloOut: livelloVoce(), bande: bandeVoce() }),
+    [],
+  )
   useEffect(() => {
     nucleo.current?.setState(modo)
   }, [modo])
@@ -1619,7 +1629,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       )}
 
       {codiceAperto && <Codice onChiudi={() => setCodiceAperto(false)} />}
-      {salaAperta && <SalaMacchine onChiudi={() => setSalaAperta(false)} />}
+      {salaAperta && <SalaMacchine onChiudi={() => setSalaAperta(false)} leggiStato={leggiStatoSala} />}
       <InstallaApp />
 
       {errore && (

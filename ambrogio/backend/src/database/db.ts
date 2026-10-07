@@ -308,7 +308,7 @@ export class Database {
     }
     return {
       // gli ultimi eventi, per l'anello (il più vecchio prima)
-      eventi: righe.slice(-400).map((r) => ({ quando: r.quando, tipo: r.tipo })),
+      eventi: righe.slice(-400).map((r) => ({ quando: r.quando, tipo: r.tipo, descrizione: r.descrizione.slice(0, 90) })),
       attivita,
       perOra,
       giorni,

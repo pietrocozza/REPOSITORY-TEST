@@ -26,7 +26,7 @@ export function adatta(tela: HTMLCanvasElement) {
     tela.width = l
     tela.height = a
   }
-  const ctx = tela.getContext('2d')!
+  const ctx = tela.getContext('2d') as CanvasRenderingContext2D
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   return { ctx, w: r.width, h: r.height }
 }

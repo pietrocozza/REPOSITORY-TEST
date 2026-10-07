@@ -283,6 +283,20 @@ export function livelloVoce() {
   return Math.min(1, Math.sqrt(somma / campioniVoce.length) * 5)
 }
 
+const frequenzeVoce = new Uint8Array(512)
+/** 8 bande di frequenza della voce di Ambrogio (0–1), per la corona del vortice; tutte 0 se non misurabile */
+export function bandeVoce(): number[] {
+  if (!attuale?.el || attuale.el.paused || !analisiVoce) return [0, 0, 0, 0, 0, 0, 0, 0]
+  analisiVoce.getByteFrequencyData(frequenzeVoce)
+  // bande logaritmiche fino a ~8 kHz (dove sta la voce)
+  const limiti = [2, 4, 8, 14, 24, 40, 64, 110, 180]
+  return limiti.slice(0, 8).map((da, i) => {
+    let somma = 0
+    for (let k = da; k < limiti[i + 1]; k++) somma += frequenzeVoce[k]
+    return Math.min(1, somma / (limiti[i + 1] - da) / 200)
+  })
+}
+
 type Battuta = { testo: string; eventi: EventiVoce; audio: Promise<Blob | null>; annullata: boolean; el?: HTMLAudioElement; finita?: boolean }
 const codaGemini: Battuta[] = []
 let attuale: Battuta | null = null
