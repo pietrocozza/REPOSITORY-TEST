@@ -11,7 +11,8 @@ import { ErroreVoce } from './gemini.ts'
 const SCRIPT = [
   'Add-Type -AssemblyName System.Speech',
   '$s = New-Object System.Speech.Synthesis.SpeechSynthesizer',
-  "$v = $s.GetInstalledVoices() | Where-Object { $_.Enabled -and $_.VoiceInfo.Culture.Name -like 'it-*' } | Select-Object -First 1",
+  // italiana, e se c'è maschile (Ambrogio è un maggiordomo)
+  "$v = $s.GetInstalledVoices() | Where-Object { $_.Enabled -and $_.VoiceInfo.Culture.Name -like 'it-*' } | Sort-Object { if ($_.VoiceInfo.Gender -eq 'Male') { 0 } else { 1 } } | Select-Object -First 1",
   'if ($v) { $s.SelectVoice($v.VoiceInfo.Name) }',
   '$f = New-Object System.Speech.AudioFormat.SpeechAudioFormatInfo(16000, [System.Speech.AudioFormat.AudioBitsPerSample]::Sixteen, [System.Speech.AudioFormat.AudioChannel]::Mono)',
   '$s.SetOutputToWaveFile($env:AMBROGIO_VOCE_FILE, $f)',

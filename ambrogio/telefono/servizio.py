@@ -100,6 +100,7 @@ class Orecchio:
         self.silenzio_ms = 0
         self.zitto_fino = 0.0
         self.numero = 0
+        self.misura = None  # (ora, dimensione) per capire il formato se manca l'intestazione
 
     def zitto_per(self, secondi):
         """mentre parla Ambrogio non si ascolta (si sentirebbe la sua eco)"""
@@ -113,7 +114,7 @@ class Orecchio:
                 return None
             self.f = open(self.percorso, "rb")
         if self.formato is None:
-            self.formato = leggi_intestazione(self.f)
+            self.formato = leggi_intestazione(self.f) or self.indovina_formato()
             if self.formato is None:
                 return None
             self.pos = self.formato[2]
@@ -132,6 +133,35 @@ class Orecchio:
             if frase:
                 return frase
         return None
+
+    def indovina_formato(self):
+        """Linphone scrive l'intestazione del WAV solo a fine chiamata: durante la chiamata il formato
+        si capisce da quanto cresce il file (byte al secondo = frequenza x canali x 2)."""
+        dimensione = os.path.getsize(self.percorso)
+        if dimensione <= 44:
+            return None
+        if self.misura is None:
+            self.misura = (time.time(), dimensione)
+            return None
+        t0, d0 = self.misura
+        trascorso = time.time() - t0
+        if trascorso < 1.5:
+            return None
+        al_secondo = (dimensione - d0) / trascorso
+        if al_secondo <= 0:
+            self.misura = (time.time(), dimensione)
+            return None
+        # prima si prova mono (il caso normale delle telefonate), poi stereo
+        frequenze = (8000, 16000, 24000, 32000, 44100, 48000)
+        frequenza = min(frequenze, key=lambda f: abs(f * 2 - al_secondo))
+        canali = 1
+        if abs(frequenza * 2 - al_secondo) > al_secondo * 0.08:
+            frequenza = min(frequenze, key=lambda f: abs(f * 4 - al_secondo))
+            canali = 2
+        evento("formato", frequenza=frequenza, canali=canali, byte_al_secondo=int(al_secondo))
+        # si parte dai dati nuovi (allineati al campione)
+        inizio = dimensione - ((dimensione - 44) % (2 * canali))
+        return frequenza, canali, inizio
 
     def frame(self, pezzo):
         campioni = array.array("h", pezzo)

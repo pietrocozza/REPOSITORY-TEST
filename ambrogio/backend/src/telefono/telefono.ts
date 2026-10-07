@@ -194,6 +194,7 @@ export class Telefonata {
         this.d.annota?.(`Telefonata chiusa: ${String(e.motivo ?? '')}`)
       }
       if (e.evento === 'errore') this.d.annota?.(`Telefono: ${String(e.messaggio ?? '')}`)
+      if (e.evento === 'formato') this.d.annota?.(`Telefono: ascolto la chiamata a ${String(e.frequenza)} Hz`)
     })
     try {
       telefono.invia({ cmd: 'chiama' })
