@@ -23,8 +23,11 @@ export const VOCI_GEMINI = [
 // sempre lo stesso modello, così la voce non cambia (si può indicarne un altro nel file .env)
 const MODELLO = 'gemini-2.5-flash-preview-tts'
 
-const STILE = `Leggi ad alta voce, in italiano, con la voce di Ambrogio: un maggiordomo milanese elegante, caldo e un po' ironico, con un accento milanese leggero ma riconoscibile.
-Le espressioni in dialetto milanese pronunciale come un vero milanese. Leggi solo il testo tra virgolette, senza aggiungere nulla.`
+// Uno stile solo, preciso, sempre uguale: così ogni frase ha lo stesso carattere e lo stesso accento
+const STILE = `Sei Ambrogio, un maggiordomo milanese sui cinquant'anni: allegro, cordiale e un po' furbo.
+Parla in italiano con un accento milanese marcato e costante dalla prima all'ultima parola: vocali chiuse (la "e" e la "o" chiuse alla milanese), cadenza meneghina, tono sorridente.
+Ritmo vivace ma chiaro. Le parole in dialetto milanese pronunciale da milanese doc.
+Leggi solo il testo tra virgolette, senza aggiungere nulla.`
 
 export class ErroreVoce extends Error {
   readonly tipo: 'senza-chiave' | 'limite' | 'errore'
@@ -135,6 +138,8 @@ export class VoceGemini {
         contents: [{ parts: [{ text: `${STILE}\n\n«${testo}»` }] }],
         generationConfig: {
           responseModalities: ['AUDIO'],
+          // meno variazioni da una frase all'altra
+          temperature: 0.4,
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voce } } },
         },
       }),

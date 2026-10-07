@@ -1058,6 +1058,40 @@ select {
   }
 }
 
+/* prova del microfono */
+.j-prova-mic {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.j-prova-mic button {
+  padding: 7px 14px;
+  border-radius: 11px;
+  background: var(--primario-tenue) !important;
+  color: var(--primario);
+  font-size: 13px;
+}
+.j-livello {
+  flex: 1;
+  height: 8px;
+  border-radius: 8px;
+  background: var(--carta-2);
+  overflow: hidden;
+}
+.j-livello i {
+  display: block;
+  height: 100%;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #3fb3c6, #77f1cc);
+  transition: width 0.06s linear;
+}
+.j-nota.j-ok {
+  color: var(--primario);
+}
+.j-nota.j-ko {
+  color: var(--errore);
+}
+
 /* ───────── Codice: gli aggiornamenti che "si scrivono" ─────────
    Sempre scuro, come il nucleo: stessi azzurri, stesso vetro, caratteri che scendono sul fondo. */
 

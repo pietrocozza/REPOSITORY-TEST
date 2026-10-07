@@ -19,7 +19,8 @@ import {
   type StatoVoce,
 } from '@/lib/chat'
 import Conferma from '@/components/Conferma'
-import { registraFrase } from '@/lib/registra'
+import ProvaMicrofono from '@/components/ProvaMicrofono'
+import { registraFrase, spiegaRegistrazione } from '@/lib/registra'
 import Codice, { CHIAVE_VISTO, piuRecente } from '@/components/Codice'
 import { SezioneMemoria, SezionePratiche, SezioneRegistro } from '@/components/Sezioni'
 import { disegnaHud } from '@/lib/hud'
@@ -146,7 +147,7 @@ const FRASE_PROVA = `Ué, ciao ${NOME_UTENTE}! Sono Ambrogio, il tuo maggiordomo
 /** Il saluto quando si apre Ambrogio (poche varianti fisse: con Gemini restano salvate e partono subito) */
 function salutoIniziale(ascoltoAttivo: boolean, ora = new Date().getHours()) {
   const saluto = ora < 5 ? 'Buonanotte' : ora < 13 ? 'Buongiorno' : ora < 18 ? 'Buon pomeriggio' : 'Buonasera'
-  return `${saluto}, ${NOME_UTENTE}. Sono Ambrogio, il tuo maggiordomo personale. ${
+  return `Ué, ${saluto.toLowerCase()} ${NOME_UTENTE}! Sono Ambrogio, il tuo maggiordomo personale. ${
     ascoltoAttivo ? 'Quando ti serve, chiamami per nome.' : 'Quando ti serve, premi il microfono o scrivimi.'
   }`
 }
@@ -250,7 +251,8 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   const mostraErrore = useCallback((msg: string) => {
     setErrore(msg)
     clearTimeout(timerErrore.current)
-    timerErrore.current = setTimeout(() => setErrore(null), 6000)
+    // i messaggi lunghi (con il rimedio) restano di più
+    timerErrore.current = setTimeout(() => setErrore(null), Math.max(6000, msg.length * 80))
   }, [])
 
   // Avvio: microfono, voci disponibili e impostazioni salvate
@@ -563,26 +565,28 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
         // registra la frase (si ferma da solo quando smetti di parlare) e la fa trascrivere a Gemini
         const registrazione = registraFrase({ onLivello: (l) => (livello.current = l) })
         fermaAscolto.current = () => registrazione.annulla()
-        registrazione.promessa.then(async (audio) => {
+        registrazione.promessa.then(async (esito) => {
           if (turno.current !== turnoInizio || !comandoInCorso.current) return
           fermaComando()
+          const audio = esito.audio
           if (!audio) {
             setStato('pronto')
-            mostraErrore('Non ho sentito niente. Parla subito dopo il suono, vicino al microfono (e controlla che il microfono sia consentito).')
+            const spiegazione = spiegaRegistrazione(esito)
+            if (spiegazione) mostraErrore(spiegazione)
             return
           }
           setStato('elaborazione')
           setParziale('…')
-          const esito = await trascrivi(audio)
+          const capito = await trascrivi(audio)
           if (turno.current !== turnoInizio) return
           setParziale('')
-          if ('errore' in esito) {
+          if ('errore' in capito) {
             setStato('pronto')
-            mostraErrore(esito.errore)
-          } else if (!esito.testo) {
+            mostraErrore(capito.errore)
+          } else if (!capito.testo) {
             setStato('pronto')
             mostraErrore('Non ho capito bene: puoi ripetere?')
-          } else eseguiComando(esito.testo)
+          } else eseguiComando(capito.testo)
         })
         return
       }
@@ -1387,6 +1391,8 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
                   onChange={(e) => cambiaVelocita(Number(e.target.value))}
                 />
               </div>
+
+              {usaBackend && <ProvaMicrofono conGemini={Boolean(statoVoce?.trascrizione)} />}
 
               <label className="j-riga" htmlFor="ascolto-continuo">
                 <span>
