@@ -78,15 +78,23 @@ export function ascolta(continuo: boolean, cb: Ascolto) {
 }
 
 // Come il riconoscimento vocale italiano scrive di solito "Ambrogio"
-const PAROLA_ATTIVAZIONE = /\b(?:ambrogio|ambrosio|ambroggio|ambrogi|ambrogia|embrogio|ambrocio|ambrogino)\b[\s,.:!?]*(.*)$/i
+const NOME = '(?:ambrogio|ambrosio|ambroggio|ambrogi|ambrogia|embrogio|ambrocio|ambrogino)'
+// «Uè» come lo scrive il riconoscimento vocale: uè, ue, ué, uei, we, wè, vè, ehi, hey…
+const UE = '(?:u[eèé]i?|w[eèé]|v[eèé]|ue+|eh?i|hey|ehy)'
+// per svegliarlo serve «Uè Ambrogio» (il solo nome non basta: così non si sveglia quando si parla di lui)
+const PAROLA_ATTIVAZIONE = new RegExp(`(?:^|[^a-zà-ú])${UE}[\\s,.!'’-]*${NOME}(?![a-zà-ú])[\\s,.:!?]*(.*)$`, 'i')
+const SOLO_NOME = new RegExp(`^\\s*(?:${UE}[\\s,.!'’-]*)?${NOME}(?![a-zà-ú])[\\s,.:!?]*`, 'i')
 
-/** Con la parola d'attivazione: "Ambrogio, che ore sono?" → "che ore sono?" ("" se ha detto solo "Ambrogio") */
+/** Con la parola d'attivazione: "Uè Ambrogio, che ore sono?" → "che ore sono?" ("" se ha detto solo "Uè Ambrogio") */
 export function dopoParolaAttivazione(frase: string): string | null {
   const m = frase.match(PAROLA_ATTIVAZIONE)
   return m ? m[1].trim() : null
 }
 
-/** "Ambrogio, basta" / "Ambrogio, stop": fermarsi senza fare altro */
+/** Dopo il microfono: se la frase comincia con «(Uè) Ambrogio», il nome si toglie */
+export const togliNome = (frase: string) => frase.replace(SOLO_NOME, '').trim()
+
+/** "Uè Ambrogio, basta" / "Uè Ambrogio, stop": fermarsi senza fare altro */
 export const eStop = (comando: string) =>
   /^(?:stop|basta|zitt[oa]|ferm[ao]|fermati|silenzio|annulla|lascia (?:stare|perdere)|niente|nulla)\b[\s.!]*$/i.test(comando)
 

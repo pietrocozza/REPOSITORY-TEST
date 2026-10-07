@@ -1142,13 +1142,13 @@ select {
 }
 
 /* ───────── Codice: gli aggiornamenti che "si scrivono" ─────────
-   Sempre scuro, come il nucleo: stessi azzurri, stesso vetro, caratteri che scendono sul fondo. */
+   Stile Matrix: fondo nero, pioggia di segni verdi e codice scritto in verde. */
 
 .j-codice {
-  --c-testo: #d3e8ef;
-  --c-tenue: #7f9ba6;
-  --c-linea: rgb(119 230 237 / 0.14);
-  --c-vetro: rgb(5 15 22 / 0.5);
+  --c-testo: #b8ffc6;
+  --c-tenue: #4fae63;
+  --c-linea: rgb(0 255 65 / 0.14);
+  --c-vetro: rgb(0 12 3 / 0.55);
   position: fixed;
   inset: 0;
   z-index: 50;
@@ -1158,7 +1158,7 @@ select {
   padding: 18px;
   padding-top: max(18px, env(safe-area-inset-top, 0px));
   padding-bottom: max(18px, env(safe-area-inset-bottom, 0px));
-  background: radial-gradient(ellipse at 50% 30%, #0a2535, #03090f 70%);
+  background: radial-gradient(ellipse at 50% 30%, #001a06, #000300 70%);
   color: var(--c-testo);
   color-scheme: dark;
   animation: j-compare 0.35s ease-out;
@@ -1180,7 +1180,7 @@ select {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image: linear-gradient(transparent 49.5%, #5ad3e506 50%, transparent 50.5%);
+  background-image: linear-gradient(transparent 49.5%, #00ff4108 50%, transparent 50.5%);
   background-size: 100% 5px;
 }
 .j-codice > :not(canvas) {
@@ -1201,11 +1201,11 @@ select {
   margin-top: 3px;
 }
 .j-codice .j-overline {
-  color: #77e6ed;
+  color: #00ff41;
 }
 .j-codice-avviso {
   font-size: 12px;
-  color: #efbf76;
+  color: #c6ff9e;
 }
 .j-codice-chiudi {
   margin-left: auto;
@@ -1219,7 +1219,7 @@ select {
   backdrop-filter: blur(8px);
 }
 .j-codice-chiudi:hover {
-  color: #fff;
+  color: #d8ffe0;
 }
 .j-codice-corpo {
   flex: 1;
@@ -1261,11 +1261,11 @@ select {
   transition: background 0.2s;
 }
 .j-codice-elenco button:hover {
-  background: rgb(119 230 237 / 0.06);
+  background: rgb(0 255 65 / 0.06);
 }
 .j-codice-elenco button[aria-current] {
-  background: rgb(119 230 237 / 0.1);
-  border-color: rgb(119 230 237 / 0.3) !important;
+  background: rgb(0 255 65 / 0.1);
+  border-color: rgb(0 255 65 / 0.3) !important;
 }
 .j-codice-elenco button b {
   font-weight: 500;
@@ -1284,8 +1284,8 @@ select {
   margin-right: 7px;
   vertical-align: 2px;
   border-radius: 50%;
-  background: #77e6ed;
-  box-shadow: 0 0 8px #77e6ed;
+  background: #00ff41;
+  box-shadow: 0 0 8px #00ff41;
 }
 .j-codice-vuoto {
   margin: 16px;
@@ -1313,20 +1313,20 @@ select {
   margin: 0 0 6px;
   font-size: 13px;
   line-height: 1.55;
-  color: #a9c4ce;
+  color: #8fe0a0;
   white-space: pre-line;
 }
 .j-codice-installa {
   padding: 8px 12px;
   border-radius: 12px;
-  background: rgb(119 230 237 / 0.08);
+  background: rgb(0 255 65 / 0.08);
   color: var(--c-testo) !important;
 }
 .j-codice-installa code {
   padding: 1px 6px;
   border-radius: 6px;
   background: rgb(0 0 0 / 0.35);
-  color: #77e6ed;
+  color: #00ff41;
 }
 .j-codice-schede {
   display: flex;
@@ -1349,12 +1349,12 @@ select {
   border: 1px solid transparent !important;
 }
 .j-codice-schede button[data-fatto] {
-  color: #a9c4ce;
+  color: #8fe0a0;
 }
 .j-codice-schede button[aria-selected='true'] {
-  color: #e2f4f8;
-  background: rgb(119 230 237 / 0.1);
-  border-color: rgb(119 230 237 / 0.3) !important;
+  color: #d8ffe0;
+  background: rgb(0 255 65 / 0.1);
+  border-color: rgb(0 255 65 / 0.3) !important;
 }
 .j-codice-schede em {
   display: flex;
@@ -1363,10 +1363,10 @@ select {
 }
 .j-codice-schede .piu,
 .j-cod-riga.aggiunta .j-cod-num {
-  color: #77e6ed;
+  color: #00ff41;
 }
 .j-codice-schede .meno {
-  color: #ff947f;
+  color: #3c9a52;
 }
 .j-codice-schede i {
   font-style: normal;
@@ -1380,7 +1380,7 @@ select {
   padding: 6px 0 40vh;
   font: 13px/1.6 ui-monospace, 'Cascadia Code', Consolas, monospace;
   scrollbar-width: thin;
-  scrollbar-color: rgb(119 230 237 / 0.25) transparent;
+  scrollbar-color: rgb(0 255 65 / 0.25) transparent;
 }
 .j-cod-file {
   position: sticky;
@@ -1392,7 +1392,7 @@ select {
   gap: 2px 12px;
   padding: 10px 20px;
   margin-bottom: 4px;
-  background: rgb(6 18 26 / 0.92);
+  background: rgb(0 14 4 / 0.92);
   border-bottom: 1px solid var(--c-linea);
   font-family: 'Aptos', 'Segoe UI', system-ui, sans-serif;
 }
@@ -1400,7 +1400,7 @@ select {
   min-width: 0;
   overflow-wrap: anywhere;
   font: 500 13px ui-monospace, Consolas, monospace;
-  color: #e2f4f8;
+  color: #d8ffe0;
 }
 .j-cod-file span {
   font-size: 12px;
@@ -1416,52 +1416,52 @@ select {
   width: 54px;
   padding-right: 14px;
   text-align: right;
-  color: #3f5f6b;
+  color: #1f6b32;
   user-select: none;
 }
 .j-cod-riga code {
   font: inherit;
   white-space: pre;
-  color: #b9d3dc;
+  color: #a6f5b6;
 }
 .j-cod-riga.uguale code {
   opacity: 0.55;
 }
 .j-cod-riga.aggiunta {
-  background: linear-gradient(90deg, rgb(119 230 237 / 0.1), rgb(119 230 237 / 0.02) 60%, transparent);
-  box-shadow: inset 2px 0 0 rgb(119 230 237 / 0.7);
+  background: linear-gradient(90deg, rgb(0 255 65 / 0.1), rgb(0 255 65 / 0.02) 60%, transparent);
+  box-shadow: inset 2px 0 0 rgb(0 255 65 / 0.7);
   animation: j-riga-nuova 1.4s ease-out;
 }
 @keyframes j-riga-nuova {
   from {
-    background-color: rgb(119 230 237 / 0.16);
+    background-color: rgb(0 255 65 / 0.16);
   }
 }
 .j-cod-riga.attiva {
-  background: rgb(119 230 237 / 0.16);
+  background: rgb(0 255 65 / 0.16);
 }
 .j-cod-riga.tolta {
-  background: rgb(255 148 127 / 0.06);
-  box-shadow: inset 2px 0 0 rgb(255 148 127 / 0.6);
+  background: rgb(60 154 82 / 0.06);
+  box-shadow: inset 2px 0 0 rgb(60 154 82 / 0.6);
 }
 .j-cod-riga.tolta .j-cod-num {
-  color: #ff947f;
+  color: #3c9a52;
 }
 .j-cod-riga.tolta code {
-  color: #ff947f;
+  color: #3c9a52;
   opacity: 0.55;
   text-decoration: line-through;
-  text-decoration-color: rgb(255 148 127 / 0.5);
+  text-decoration-color: rgb(60 154 82 / 0.5);
 }
 .j-cod-riga.tolta code span {
   color: inherit;
 }
 .j-cod-riga.salto {
-  color: #4f7380;
+  color: #2e7a40;
   margin: 6px 0;
 }
 .j-cod-riga.salto code {
-  color: #4f7380;
+  color: #2e7a40;
   font-style: italic;
 }
 .j-cod-cursore {
@@ -1470,8 +1470,8 @@ select {
   height: 1.15em;
   margin-left: 1px;
   vertical-align: -0.2em;
-  background: #77e6ed;
-  box-shadow: 0 0 10px #77e6ed;
+  background: #00ff41;
+  box-shadow: 0 0 10px #00ff41;
   animation: j-cursore 0.9s steps(2) infinite;
 }
 @keyframes j-cursore {
@@ -1486,39 +1486,39 @@ select {
 }
 /* colori del codice, presi dalla tavolozza del nucleo */
 .t-chiave {
-  color: #b5b4ff;
+  color: #7dff9a;
 }
 .t-testo {
-  color: #efbf76;
+  color: #c6ff9e;
 }
 .t-commento {
-  color: #5f8a96;
+  color: #2f8a44;
   font-style: italic;
 }
 .t-numero {
-  color: #ff9fb8;
+  color: #9dffb0;
 }
 .t-funzione {
-  color: #77e6ed;
+  color: #00ff41;
 }
 .t-tipo {
-  color: #7cc4ff;
+  color: #5cff8a;
 }
 .t-tag {
-  color: #77f1cc;
+  color: #3dffa0;
 }
 .t-proprieta {
-  color: #7cc4ff;
+  color: #5cff8a;
 }
 .t-parentesi {
-  color: #8fb6c2;
+  color: #6fcf85;
 }
 .t-segno {
-  color: #6f98a5;
+  color: #4fae63;
 }
 .t-nome,
 .t-semplice {
-  color: #d3e8ef;
+  color: #b8ffc6;
 }
 
 .j-codice-comandi {
@@ -1533,11 +1533,11 @@ select {
 .j-codice-comandi > button {
   padding: 7px 14px;
   border-radius: 11px;
-  background: rgb(119 230 237 / 0.1) !important;
-  color: #e2f4f8;
+  background: rgb(0 255 65 / 0.1) !important;
+  color: #d8ffe0;
 }
 .j-codice-comandi > button:hover:not(:disabled) {
-  background: rgb(119 230 237 / 0.18) !important;
+  background: rgb(0 255 65 / 0.18) !important;
 }
 .j-codice .j-segmenti {
   background: rgb(0 0 0 / 0.3);
@@ -1546,8 +1546,8 @@ select {
   color: var(--c-tenue);
 }
 .j-codice .j-segmenti button[aria-pressed='true'] {
-  background: rgb(119 230 237 / 0.16);
-  color: #e2f4f8;
+  background: rgb(0 255 65 / 0.16);
+  color: #d8ffe0;
   box-shadow: none;
 }
 .j-codice-barra {
@@ -1555,14 +1555,14 @@ select {
   height: 3px;
   min-width: 40px;
   border-radius: 3px;
-  background: rgb(119 230 237 / 0.12);
+  background: rgb(0 255 65 / 0.12);
   overflow: hidden;
 }
 .j-codice-barra i {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #3fb3c6, #77e6ed);
-  box-shadow: 0 0 10px #77e6ed;
+  background: linear-gradient(90deg, #00b32c, #00ff41);
+  box-shadow: 0 0 10px #00ff41;
 }
 .j-codice-conta {
   font: 11px monospace;

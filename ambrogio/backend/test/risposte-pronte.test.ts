@@ -9,6 +9,7 @@ const r = (frase: string) => rispostaPronta(frase, c)
 test('ora e data, anche con il nome e le cortesie davanti', () => {
   assert.equal(r('Ambrogio, che ore sono?'), 'Sono le 15 e 5.')
   assert.equal(r('scusa, che ora è'), 'Sono le 15 e 5.')
+  assert.equal(r('Uè Ambrogio, che ore sono?'), 'Sono le 15 e 5.')
   assert.equal(rispostaPronta('che ore sono', { ...c, adesso: new Date('2026-10-07T10:00:00Z') }), 'È mezzogiorno in punto.')
   assert.equal(rispostaPronta('che ore sono', { ...c, adesso: new Date('2026-10-07T23:20:00Z') }), "È l'una e 20.")
   assert.equal(r('che giorno è oggi?'), 'Oggi è mercoledì 7 ottobre 2026.')

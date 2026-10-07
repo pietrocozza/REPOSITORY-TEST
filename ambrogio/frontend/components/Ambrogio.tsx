@@ -31,6 +31,7 @@ import type { Stato, Voce } from '@/lib/stato'
 import {
   ascolta,
   dopoParolaAttivazione,
+  togliNome,
   eStop,
   estraiFrasi,
   impostaVoce,
@@ -70,7 +71,7 @@ const MENU: { id: Sezione; nome: string; icona: NomeIcona; descrizione: string; 
 
 // Impostazioni ricordate dal browser
 const CHIAVE_IMPOSTAZIONI = 'ambrogio-impostazioni'
-// attivazione = ascolto continuo con «Ambrogio» (come gli assistenti vocali di casa)
+// attivazione = ascolto continuo con «Uè Ambrogio» (come gli assistenti vocali di casa)
 // motore = chi parla: 'gemini' (Ambrogio con accento milanese, se c'è la chiave) oppure 'edge'
 type Impostazioni = {
   tema: Tema
@@ -151,7 +152,7 @@ const FRASE_PROVA = `Ué, ciao ${NOME_UTENTE}! Sono Ambrogio, il tuo maggiordomo
 function salutoIniziale(ascoltoAttivo: boolean, ora = new Date().getHours()) {
   const saluto = ora < 5 ? 'Buonanotte' : ora < 13 ? 'Buongiorno' : ora < 18 ? 'Buon pomeriggio' : 'Buonasera'
   return `Ué, ${saluto.toLowerCase()} ${NOME_UTENTE}! Sono Ambrogio, il tuo maggiordomo personale. ${
-    ascoltoAttivo ? 'Quando ti serve, chiamami per nome.' : 'Quando ti serve, premi il microfono o scrivimi.'
+    ascoltoAttivo ? 'Quando ti serve, dimmi: uè Ambrogio!' : 'Quando ti serve, premi il microfono o scrivimi.'
   }`
 }
 
@@ -544,9 +545,9 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
 
   // ───────── Ascolto ─────────
   // Due "orecchie":
-  //  - la sentinella: con l'ascolto continuo acceso è sempre in ascolto e reagisce solo ad «Ambrogio…»,
-  //    anche mentre Ambrogio parla o lavora (così «Ambrogio, basta» lo ferma), come gli assistenti vocali di casa;
-  //  - l'ascolto di un comando: dopo il pulsante del microfono o dopo un «Ambrogio» detto da solo.
+  //  - la sentinella: con l'ascolto continuo acceso è sempre in ascolto e reagisce solo a «Uè Ambrogio…»,
+  //    anche mentre Ambrogio parla o lavora (così «Uè Ambrogio, basta» lo ferma), come gli assistenti vocali di casa;
+  //  - l'ascolto di un comando: dopo il pulsante del microfono o dopo un «Uè Ambrogio» detto da solo.
   // Il browser permette un solo ascolto alla volta: mentre si ascolta un comando la sentinella si ferma, poi riparte.
 
 
@@ -578,7 +579,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     [mostraErrore],
   )
 
-  // Dopo il pulsante del microfono (o un «Ambrogio» detto da solo): ascolta UNA frase e la invia
+  // Dopo il pulsante del microfono (o un «Uè Ambrogio» detto da solo): ascolta UNA frase e la invia
   const ascoltaComando = useCallback(
     (conSuono: boolean) => {
       const sentinellaAccesa = spegniSentinella()
@@ -590,8 +591,8 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       if (conSuono) suonoAttivazione()
       const turnoInizio = turno.current
       const eseguiComando = (frase: string) => {
-        // se ripete «Ambrogio» all'inizio, lo si toglie
-        const comando = dopoParolaAttivazione(frase) ?? frase
+        // se ripete «(Uè) Ambrogio» all'inizio, lo si toglie
+        const comando = togliNome(frase)
         if (!comando || eStop(comando)) interrompiRef.current()
         else inviaRef.current(comando)
       }
@@ -702,7 +703,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
         sveglio = false
         setParziale('')
         if (!comando) {
-          // solo «Ambrogio»: risponde «Dimmi…» e poi ascolta la richiesta
+          // solo «Uè Ambrogio»: risponde «Dimmi…» e poi ascolta la richiesta
           spegniSentinella()
           comandoInCorso.current = true
           const turnoInizio = turno.current
@@ -726,7 +727,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
         if (codice === 'not-allowed' || codice === 'service-not-allowed' || codice === 'audio-capture') erroreMicrofono(codice)
         else if (codice === 'network' && !avvisoSentinella.current) {
           avvisoSentinella.current = true
-          mostraErrore('L’ascolto di «Ambrogio» non riesce a collegarsi al riconoscimento vocale di Edge: riprovo da solo. Intanto usa il pulsante del microfono.')
+          mostraErrore('L’ascolto di «Uè Ambrogio» non riesce a collegarsi al riconoscimento vocale di Edge: riprovo da solo. Intanto usa il pulsante del microfono.')
         }
       },
       onFine: () => {
@@ -1079,7 +1080,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   else if (stato === 'lavoro') parlato = `${strumento ?? 'Uso uno strumento'}…`
   else if (stato === 'elaborazione' && !ultima?.testo && fraseAttesa) parlato = fraseAttesa
   else if (stato === 'elaborazione') parlato = ultimaDomanda ? `«${ultimaDomanda.testo}»` : 'Sto collegando le informazioni.'
-  else if (stato === 'pronto' && parolaAttivazione && !ultima) parlato = 'Quando ti serve, chiamami: «Ambrogio…»'
+  else if (stato === 'pronto' && parolaAttivazione && !ultima) parlato = 'Quando ti serve, chiamami: «Uè Ambrogio…»'
 
   const [titoloEvento] = errore ? ['Attenzione'] : stato === 'lavoro' && strumento ? [strumento] : EVENTI[stato]
   const inAttesa = stato === 'pronto' || stato === 'successo'
@@ -1122,7 +1123,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
         </div>
       </main>
 
-      {/* ───────── Sotto la rete: solo il microfono e, se attivo, il promemoria «Ambrogio» ───────── */}
+      {/* ───────── Sotto la rete: solo il microfono e, se attivo, il promemoria «Uè Ambrogio» ───────── */}
       <div className="j-sotto">
         <button
           type="button"
@@ -1143,7 +1144,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
             title={parolaAttivazione ? 'Ascolto attivo: clic per spegnerlo' : 'Ascolto spento: clic per accenderlo'}
           >
             <i />
-            {parolaAttivazione ? 'ascolto attivo · di’ «Ambrogio»' : 'ascolto spento'}
+            {parolaAttivazione ? 'ascolto attivo · di’ «Uè Ambrogio»' : 'ascolto spento'}
           </button>
         )}
       </div>
@@ -1438,7 +1439,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
               <label className="j-riga" htmlFor="ascolto-continuo">
                 <span>
                   Attivazione con la voce
-                  <small>Come Alexa: di’ «Ambrogio, …» quando ti serve, anche mentre parla. «Ambrogio, basta» lo ferma.</small>
+                  <small>Come Alexa: di’ «Uè Ambrogio, …» quando ti serve, anche mentre parla. «Uè Ambrogio, basta» lo ferma.</small>
                 </span>
                 <input
                   id="ascolto-continuo"

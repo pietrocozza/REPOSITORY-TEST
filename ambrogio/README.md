@@ -86,16 +86,16 @@ Se Ambrogio è già acceso, il doppio clic riapre solo la finestra.
 Normalmente vedi solo Ambrogio: la rete neurale al centro, su fondo scuro, con sotto quello che dice e il microfono.
 Tutto il resto sta nel **Menu** in alto a destra, che scende a tendina solo quando ti serve.
 
-**Come Alexa.** Di' **«Ambrogio, …»** e la domanda, per esempio «Ambrogio, che tempo fa domani a Roma?».
-Quando ti sente fa un piccolo suono e la rete diventa verde. Puoi anche dire solo «Ambrogio», aspettare il suono
-e poi parlare. Funziona anche mentre sta parlando: «Ambrogio, basta» lo ferma.
+**Come Alexa.** Di' **«Uè Ambrogio, …»** e la domanda, per esempio «Uè Ambrogio, che tempo fa domani a Roma?».
+Quando ti sente fa un piccolo suono e la rete diventa verde. Puoi anche dire solo «Uè Ambrogio», aspettare il suono
+e poi parlare. Funziona anche mentre sta parlando: «Uè Ambrogio, basta» lo ferma.
 La prima volta la finestra di Ambrogio chiede il permesso per il microfono: rispondi **Consenti**.
 
 | Azione | Come |
 | --- | --- |
-| Parlare | «Ambrogio, …», oppure il microfono sotto la rete, oppure la **barra spaziatrice** |
+| Parlare | «Uè Ambrogio, …», oppure il microfono sotto la rete, oppure la **barra spaziatrice** |
 | Scrivere | inizia a scrivere con la tastiera: si apre la chat; poi Invio |
-| Interrompere | «Ambrogio, basta», il pulsante sotto la rete (diventa un quadrato) oppure **Esc** |
+| Interrompere | «Uè Ambrogio, basta», il pulsante sotto la rete (diventa un quadrato) oppure **Esc** |
 | Aprire/chiudere il menu | **Menu** in alto a destra; **Esc** lo chiude |
 | Voce on/off | icona dell'altoparlante nel menu |
 | Attivazione con la voce on/off, personalità, tema, voce, velocità | **Impostazioni** nel menu |

@@ -1,8 +1,9 @@
-// Caratteri che scendono sullo sfondo della sezione Codice, con i colori di Ambrogio
-// (azzurro del nucleo, con qualche lampo viola e ambra). Tre piani a velocità diverse danno profondità.
+// La "pioggia digitale" di Matrix sullo sfondo della sezione Codice: segni verdi strani che scendono
+// (katakana a mezza larghezza e simboli, come nel film: non lettere o numeri veri).
+// Tre piani a velocità diverse danno profondità.
 
-const CARATTERI = '01{}[]()<>=;:/*+-#$&|?!λΣΔπ∴⟨⟩abcdefABCDEF0123456789'
-const COLORI = ['119,230,237', '119,230,237', '119,230,237', '124,196,255', '181,180,255', '239,191,118']
+const CARATTERI = 'ｦｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝｰﾞﾟ¦╌∷⋮⌇⍿⎓⏁'
+const COLORI = ['0,255,65', '0,255,65', '0,230,60', '40,255,110', '0,200,50', '120,255,150']
 
 type Goccia = { x: number; y: number; velocita: number; piano: number; colore: string; testa: string; prossimoCambio: number }
 
@@ -40,7 +41,7 @@ export class Pioggia {
     this.gocce = Array.from({ length: n }, (_, i) => this.nuova((i + Math.random()) * (r.width / n), Math.random() * r.height))
     // fondo pieno subito, così la scia parte da scuro
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0)
-    this.ctx.fillStyle = '#03090f'
+    this.ctx.fillStyle = '#000300'
     this.ctx.fillRect(0, 0, this.larghezza, this.altezza)
   }
 
@@ -69,7 +70,7 @@ export class Pioggia {
     const ctx = this.ctx
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0)
     // velo scuro: i caratteri già scritti sfumano lasciando una scia
-    ctx.fillStyle = 'rgba(3, 9, 15, 0.085)'
+    ctx.fillStyle = 'rgba(0, 3, 0, 0.085)'
     ctx.fillRect(0, 0, this.larghezza, this.altezza)
 
     for (const g of this.gocce) {
@@ -79,7 +80,7 @@ export class Pioggia {
       if (Math.floor(g.y / passo) === prima) continue
       // ogni volta che la goccia scende di un carattere ne scrive uno nuovo
       g.testa = this.carattere()
-      ctx.font = `${passo - 2}px ui-monospace, Consolas, monospace`
+      ctx.font = `${passo - 2}px 'MS Gothic', 'Meiryo', 'Yu Gothic', ui-monospace, monospace`
       const alfa = [0.3, 0.5, 0.8][g.piano]
       ctx.shadowColor = `rgba(${g.colore}, ${alfa})`
       ctx.shadowBlur = g.piano === 2 ? 8 : 0
@@ -87,7 +88,7 @@ export class Pioggia {
       ctx.fillText(g.testa, g.x, g.y)
       // la testa è più chiara, come una scintilla
       if (g.piano > 0) {
-        ctx.fillStyle = `rgba(226, 244, 248, ${alfa * 0.8})`
+        ctx.fillStyle = `rgba(210, 255, 220, ${alfa * 0.85})`
         ctx.fillText(g.testa, g.x, g.y)
       }
       ctx.shadowBlur = 0

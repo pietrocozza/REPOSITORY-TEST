@@ -17,7 +17,7 @@ export function normalizza(frase: string) {
     .replace(/(?<!\d)[.,](?!\d)/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
-  const cortesie = /^(?:ambrogio|ehi ambrogio|ok ambrogio|scusa|scusami|per favore|per piacere|senti|dimmi|mi dici|mi sai dire|sai dirmi|puoi dirmi|ma)\s+/
+  const cortesie = /^(?:(?:u[eèé]i?|w[eèé]|ehi|ok) ambrogio|ambrogio|u[eèé]|scusa|scusami|per favore|per piacere|senti|dimmi|mi dici|mi sai dire|sai dirmi|puoi dirmi|ma)\s+/
   for (let i = 0; i < 4 && cortesie.test(t); i++) t = t.replace(cortesie, '')
   return t.replace(/\s+(?:ambrogio|per favore|per piacere|grazie)$/, '').trim()
 }

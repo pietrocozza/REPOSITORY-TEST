@@ -4,14 +4,34 @@ import { ErroreVoce } from './gemini.ts'
 // Più preciso del riconoscimento del browser e non si inceppa. Costa una frazione di centesimo a frase
 // (serve la stessa chiave della voce). L'audio non viene salvato da nessuna parte.
 
+// Il modello preferito; se Google lo ritira (errore 404) Ambrogio ne sceglie da solo un altro adatto
 const MODELLO = 'gemini-2.5-flash'
 const ISTRUZIONI = `Trascrivi esattamente quello che dice la persona in questo audio (di solito in italiano, a volte con parole in dialetto milanese).
 Rispondi SOLO con la trascrizione, senza virgolette, commenti o traduzioni. Se non si sente nessuna parola, rispondi con una riga vuota.`
 
 type Opzioni = { chiave: string; modello?: string; url?: string }
 
+/** Tra i modelli disponibili sceglie un "flash" recente che sa leggere l'audio (niente voce, immagini o live) */
+export function scegliModello(nomi: string[]) {
+  const adatti = nomi
+    .map((n) => n.replace(/^models\//, ''))
+    .filter((n) => /^gemini-/.test(n) && /flash/.test(n) && !/tts|image|live|audio|embedding|thinking|exp/.test(n))
+  const versione = (n: string) => Number(n.match(/gemini-(\d+(?:\.\d+)?)/)?.[1] ?? 0)
+  // prima i modelli stabili (senza "preview" e senza "lite"), poi la versione più nuova
+  return (
+    adatti.sort(
+      (a, b) =>
+        Number(/preview/.test(a)) - Number(/preview/.test(b)) ||
+        Number(/lite/.test(a)) - Number(/lite/.test(b)) ||
+        versione(b) - versione(a) ||
+        a.length - b.length,
+    )[0] ?? null
+  )
+}
+
 export class Trascrizione {
   private opz: Opzioni
+  private modelloScelto: string | null = null
 
   constructor(opz: Opzioni) {
     this.opz = opz
@@ -25,15 +45,39 @@ export class Trascrizione {
     if (!this.disponibile) throw new ErroreVoce('senza-chiave', 'Manca la chiave di Gemini nel file .env.')
     const mime = tipo.split(';')[0].trim() || 'audio/webm'
     const base = this.opz.url ?? 'https://generativelanguage.googleapis.com'
-    const res = await fetch(`${base}/v1beta/models/${this.opz.modello || MODELLO}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': this.opz.chiave },
-      signal: AbortSignal.timeout(30_000),
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: ISTRUZIONI }, { inlineData: { mimeType: mime, data: audio.toString('base64') } }] }],
-        generationConfig: { temperature: 0, thinkingConfig: { thinkingBudget: 0 } },
-      }),
-    })
+    const chiedi = (modello: string, conPensiero: boolean) =>
+      fetch(`${base}/v1beta/models/${modello}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': this.opz.chiave },
+        signal: AbortSignal.timeout(30_000),
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: ISTRUZIONI }, { inlineData: { mimeType: mime, data: audio.toString('base64') } }] }],
+          // niente "ragionamento": la trascrizione deve essere rapida (non tutti i modelli lo accettano)
+          generationConfig: { temperature: 0, ...(conPensiero ? { thinkingConfig: { thinkingBudget: 0 } } : {}) },
+        }),
+      })
+    let modello = this.opz.modello || this.modelloScelto || MODELLO
+    let res = await chiedi(modello, true)
+    if (res.status === 404 && !this.opz.modello) {
+      // il modello non esiste più: si chiede a Google quali ci sono e se ne sceglie uno adatto
+      const elenco = await fetch(`${base}/v1beta/models?pageSize=200`, { headers: { 'x-goog-api-key': this.opz.chiave }, signal: AbortSignal.timeout(15_000) })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null)
+      const nomi = ((elenco as { models?: { name: string; supportedGenerationMethods?: string[] }[] } | null)?.models ?? [])
+        .filter((m) => !m.supportedGenerationMethods || m.supportedGenerationMethods.includes('generateContent'))
+        .map((m) => m.name)
+      const altro = scegliModello(nomi)
+      if (altro && altro !== modello) {
+        modello = altro
+        res = await chiedi(modello, true)
+      }
+    }
+    if (res.status === 400) {
+      const dettaglio = await res.clone().text().catch(() => '')
+      if (/thinking/i.test(dettaglio)) res = await chiedi(modello, false)
+    }
+    if (res.ok) this.modelloScelto = modello
+    if (res.status === 404) throw new ErroreVoce('errore', 'Nessun modello di Gemini per capire l’audio è disponibile su questo account.')
     if (res.status === 429) throw new ErroreVoce('limite', 'Gemini è occupato: riprova tra qualche secondo.')
     if (res.status === 400 || res.status === 401 || res.status === 403) {
       const dettaglio = await res.text().catch(() => '')
