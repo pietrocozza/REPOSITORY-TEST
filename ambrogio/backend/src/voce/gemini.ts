@@ -20,8 +20,8 @@ export const VOCI_GEMINI = [
   { id: 'Sulafat', descrizione: 'femminile, calda' },
 ] as const
 
-// Il modello giusto può cambiare nel tempo: si prova il primo, se non esiste il successivo
-const MODELLI = ['gemini-2.5-flash-preview-tts', 'gemini-3.1-flash-tts-preview', 'gemini-2.5-pro-preview-tts']
+// sempre lo stesso modello, così la voce non cambia (si può indicarne un altro nel file .env)
+const MODELLO = 'gemini-2.5-flash-preview-tts'
 
 const STILE = `Leggi ad alta voce, in italiano, con la voce di Ambrogio: un maggiordomo milanese elegante, caldo e un po' ironico, con un accento milanese leggero ma riconoscibile.
 Le espressioni in dialetto milanese pronunciale come un vero milanese. Leggi solo il testo tra virgolette, senza aggiungere nulla.`
@@ -38,7 +38,6 @@ type Opzioni = { chiave: string; modello?: string; cartellaCache: string; url?: 
 
 export class VoceGemini {
   private opz: Opzioni
-  private modelloFunzionante: string | null = null
   /** dopo il limite giornaliero, Gemini resta in pausa fino a quest'ora */
   sospesaFinoA = 0
   richiesteOggi = 0
@@ -77,23 +76,14 @@ export class VoceGemini {
       this.giorno = new Date().toDateString()
       this.richiesteOggi = 0
     }
-    const modelli = this.opz.modello ? [this.opz.modello] : this.modelloFunzionante ? [this.modelloFunzionante] : MODELLI
-    let ultimo: ErroreVoce | null = null
-    for (const modello of modelli) {
-      try {
-        const wav = await this.chiedi(modello, testo, voce)
-        this.modelloFunzionante = modello
-        fs.mkdirSync(this.opz.cartellaCache, { recursive: true })
-        fs.writeFileSync(file, wav)
-        return wav
-      } catch (err) {
-        if (err instanceof ErroreVoce && err.message === 'modello-inesistente') continue
-        if (err instanceof ErroreVoce) ultimo = err
-        else ultimo = new ErroreVoce('errore', (err as Error).message)
-        break
-      }
+    try {
+      const wav = await this.chiedi(this.opz.modello || MODELLO, testo, voce)
+      fs.mkdirSync(this.opz.cartellaCache, { recursive: true })
+      fs.writeFileSync(file, wav)
+      return wav
+    } catch (err) {
+      throw err instanceof ErroreVoce ? err : new ErroreVoce('errore', (err as Error).message)
     }
-    throw ultimo ?? new ErroreVoce('errore', 'Nessun modello vocale di Gemini disponibile.')
   }
 
   private async chiedi(modello: string, testo: string, voce: string) {
@@ -111,11 +101,14 @@ export class VoceGemini {
         },
       }),
     })
-    if (res.status === 404) throw new ErroreVoce('errore', 'modello-inesistente')
+    if (res.status === 404) throw new ErroreVoce('errore', `Il modello vocale ${modello} non esiste più: indicane un altro nel file .env.`)
     if (res.status === 429) {
-      // limite al minuto o al giorno: pausa di un'ora (poi si riprova)
-      this.sospesaFinoA = Date.now() + 60 * 60 * 1000
-      throw new ErroreVoce('limite', 'Limite di Gemini raggiunto: per un po’ uso la voce di Edge.')
+      // limite al minuto (si riprova dopo i secondi indicati da Google) o al giorno (si riprova tra un'ora)
+      const corpo = await res.text().catch(() => '')
+      const giornaliero = /PerDay|per day/i.test(corpo)
+      const attesa = Number(corpo.match(/"retryDelay":\s*"(\d+)/)?.[1] ?? 60)
+      this.sospesaFinoA = Date.now() + (giornaliero ? 60 * 60 : attesa) * 1000
+      throw new ErroreVoce('limite', giornaliero ? 'Richieste gratuite di Gemini finite per oggi.' : `Troppe richieste a Gemini in poco tempo: riprovo tra ${attesa} secondi.`)
     }
     if (res.status === 400 || res.status === 401 || res.status === 403) {
       const dettaglio = await res.text().catch(() => '')

@@ -30,7 +30,7 @@ import {
   impostaVoce,
   impostaMotore,
   nomeVoce,
-  parlaGemini,
+  rispostaIntera,
   preparaVoce,
   pronuncia,
   riconoscimentoDisponibile,
@@ -73,6 +73,7 @@ type Impostazioni = {
   attivazione: boolean
   motore: MotoreVoce
   voceGemini: string
+  qualitaVoce: 'veloce' | 'massima'
 }
 const IMPOSTAZIONI_INIZIALI: Impostazioni = {
   tema: 'scuro',
@@ -82,6 +83,7 @@ const IMPOSTAZIONI_INIZIALI: Impostazioni = {
   attivazione: true,
   motore: 'gemini',
   voceGemini: 'Charon',
+  qualitaVoce: 'veloce',
 }
 
 const MESSAGGI_ERRORE_MIC: Record<string, string> = {
@@ -158,6 +160,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   const [motoreVoce, setMotoreVoce] = useState<MotoreVoce>(IMPOSTAZIONI_INIZIALI.motore)
   const [voceGemini, setVoceGemini] = useState(IMPOSTAZIONI_INIZIALI.voceGemini)
   const [statoVoce, setStatoVoce] = useState<StatoVoce | null>(null)
+  const [qualitaVoce, setQualitaVoce] = useState<'veloce' | 'massima'>(IMPOSTAZIONI_INIZIALI.qualitaVoce)
   const [pausa, setPausa] = useState(false)
   const [personalita, setPersonalita] = useState<string | null>(null)
   const [conferme, setConferme] = useState<Autorizzazione[]>([])
@@ -249,6 +252,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       impostaVoce(salvate.voce, salvate.velocita)
       setMotoreVoce(salvate.motore)
       setVoceGemini(salvate.voceGemini)
+      setQualitaVoce(salvate.qualitaVoce)
       preparaVoce(aggiornaVoci)
       aggiornaVoci()
       impostazioniCaricate.current = true
@@ -268,25 +272,35 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   useEffect(() => {
     if (!impostazioniCaricate.current) return
     try {
-      localStorage.setItem(CHIAVE_IMPOSTAZIONI, JSON.stringify({ tema, voce: voceScelta, velocita, vocale, attivazione: parolaAttivazione, motore: motoreVoce, voceGemini }))
+      localStorage.setItem(CHIAVE_IMPOSTAZIONI, JSON.stringify({ tema, voce: voceScelta, velocita, vocale, attivazione: parolaAttivazione, motore: motoreVoce, voceGemini, qualitaVoce }))
     } catch {
       // archivio del browser non disponibile: le impostazioni valgono solo per questa volta
     }
-  }, [tema, voceScelta, velocita, vocale, parolaAttivazione, motoreVoce, voceGemini])
+  }, [tema, voceScelta, velocita, vocale, parolaAttivazione, motoreVoce, voceGemini, qualitaVoce])
 
-  // Chi parla: Ambrogio con Gemini se c'è la chiave e l'hai scelto, altrimenti le voci di Edge
+  // Chi parla: la voce di Ambrogio (ElevenLabs o Gemini) se c'è la chiave e l'hai scelta, altrimenti le voci di Edge
   useEffect(() => {
     if (!usaBackend) return
     let annullato = false
     caricaStatoVoce().then((s) => {
       if (annullato) return
       setStatoVoce(s)
-      impostaMotore(motoreVoce === 'gemini' && s?.disponibile ? 'gemini' : 'edge', voceGemini, mostraErrore)
     })
     return () => {
       annullato = true
     }
-  }, [usaBackend, motoreVoce, voceGemini, mostraErrore])
+  }, [usaBackend, motoreVoce])
+  // la voce scelta, oppure (se non c'è più) la prima voce clonata del tuo account
+  const voceAmbrogio = statoVoce?.voci.some((v) => v.id === voceGemini)
+    ? voceGemini
+    : (statoVoce?.voci.find((v) => v.clonata) ?? statoVoce?.voci[0])?.id
+  useEffect(() => {
+    impostaMotore(motoreVoce === 'gemini' && statoVoce?.disponibile ? 'gemini' : 'edge', voceAmbrogio, mostraErrore, {
+      // Gemini gratuito: una sola richiesta per risposta. ElevenLabs: frase per frase, così parla prima
+      intera: statoVoce?.fornitore === 'gemini',
+      qualita: qualitaVoce,
+    })
+  }, [motoreVoce, statoVoce, voceAmbrogio, qualitaVoce, mostraErrore])
 
   // Mentre Ambrogio lavora, il cronometro a sinistra avanza
   useEffect(() => {
@@ -598,7 +612,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       let buffer = ''
       let primo = true
       // con Gemini la risposta si dice tutta insieme (una sola richiesta: le gratuite sono poche)
-      const tuttaInsieme = parlaGemini()
+      const tuttaInsieme = rispostaIntera()
       // frase di cortesia per le ricerche (una sola per domanda)
       let cortesiaDetta = false
       const cortesia = () => {
@@ -1089,11 +1103,15 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
                 <span>
                   Chi parla
                   <small>
-                    {statoVoce?.disponibile
-                      ? statoVoce.sospesaFinoA
-                        ? 'Gemini ha finito le richieste gratuite per ora: parla Edge, poi si riprova da solo.'
-                        : 'Ambrogio con accento milanese (Gemini, gratis con un limite di richieste al giorno).'
-                      : 'Per la voce milanese serve la chiave gratuita di Gemini nel file .env (vedi il README).'}
+                    {statoVoce?.problema
+                      ? `${statoVoce.problema} Controlla la chiave nel file .env.`
+                      : !statoVoce?.disponibile
+                        ? 'Per la voce di Ambrogio serve la chiave di ElevenLabs (o di Gemini) nel file .env: vedi il README.'
+                        : statoVoce.sospesaFinoA
+                          ? 'La voce di Ambrogio è in pausa (crediti o richieste finiti): per ora parla Edge, poi si riprova da solo.'
+                          : statoVoce.fornitore === 'elevenlabs'
+                            ? 'Ambrogio con la sua voce milanese (ElevenLabs).'
+                            : 'Ambrogio con accento milanese (Gemini, gratis con un limite di richieste al giorno).'}
                   </small>
                 </span>
                 <div className="j-segmenti" role="group" aria-label="Chi parla">
@@ -1110,15 +1128,38 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
                 <div className="j-riga j-riga-colonna">
                   <label htmlFor="voce-gemini">Voce di Ambrogio</label>
                   <div className="j-voce">
-                    <select id="voce-gemini" value={voceGemini} onChange={(e) => setVoceGemini(e.target.value)}>
+                    <select id="voce-gemini" value={voceAmbrogio ?? ''} onChange={(e) => setVoceGemini(e.target.value)}>
                       {statoVoce.voci.map((v) => (
                         <option key={v.id} value={v.id}>
-                          {v.id} – {v.descrizione}
+                          {statoVoce.fornitore === 'elevenlabs' ? `${v.descrizione}${v.clonata ? ' (la tua voce)' : ''}` : `${v.id} – ${v.descrizione}`}
                         </option>
                       ))}
                     </select>
                     <button type="button" onClick={provaVoce}>
                       Prova
+                    </button>
+                  </div>
+                  {statoVoce.crediti && statoVoce.crediti.limite > 0 && (
+                    <small className="j-nota">
+                      Crediti usati questo mese: {statoVoce.crediti.usati.toLocaleString('it-IT')} di {statoVoce.crediti.limite.toLocaleString('it-IT')}
+                      {statoVoce.crediti.rinnovo ? ` (si rinnovano il ${new Date(statoVoce.crediti.rinnovo).toLocaleDateString('it-IT')})` : ''}
+                    </small>
+                  )}
+                </div>
+              )}
+
+              {motoreVoce === 'gemini' && statoVoce?.fornitore === 'elevenlabs' && statoVoce.disponibile && (
+                <div className="j-riga j-riga-colonna">
+                  <span>
+                    Qualità della voce
+                    <small>Veloce: risponde subito e consuma metà crediti. Massima: accento più fedele, un attimo più lenta.</small>
+                  </span>
+                  <div className="j-segmenti" role="group" aria-label="Qualità della voce">
+                    <button type="button" aria-pressed={qualitaVoce === 'veloce'} onClick={() => setQualitaVoce('veloce')}>
+                      Veloce
+                    </button>
+                    <button type="button" aria-pressed={qualitaVoce === 'massima'} onClick={() => setQualitaVoce('massima')}>
+                      Massima
                     </button>
                   </div>
                 </div>

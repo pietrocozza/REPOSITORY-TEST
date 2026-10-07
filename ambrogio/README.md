@@ -109,6 +109,23 @@ In una fase successiva si potrà fare tutto sul PC, senza Internet.
 Le voci più naturali (gratuite) sono quelle "Natural" di **Microsoft Edge**: apri Ambrogio con Edge e scegli la voce
 in Impostazioni (quelle con la ★).
 
+## Voce di Ambrogio con ElevenLabs (milanese autentico)
+
+La voce migliore: una voce clonata da un vero milanese, sempre la stessa. Costa il piano **Starter** di ElevenLabs
+(circa 6 $ al mese, circa 30 minuti di parlato con la qualità "Massima" o il doppio con "Veloce").
+
+1. Vai su https://elevenlabs.io, crea l'account e attiva il piano **Starter**.
+2. **Clona la voce**: **Voices** → **Add a new voice** → **Instant Voice Clone**. Carica o registra 1–2 minuti
+   di una persona milanese che parla in modo naturale, con un po' di dialetto (tu stesso o un amico, **con il suo permesso**).
+   Spunta la conferma del consenso e chiama la voce **Ambrogio**.
+3. **Crea la chiave**: in basso a sinistra il tuo profilo → **API Keys** → **Create API Key**. Copiala (non mandarla a nessuno).
+4. In PowerShell: `notepad $HOME\jarvis-progetto\ambrogio\.env`, aggiungi la riga
+   `AMBROGIO_ELEVENLABS_CHIAVE=la-tua-chiave`, salva (Ctrl+S) e chiudi.
+5. Riavvia Ambrogio. In **Impostazioni → Chi parla** scegli **Ambrogio milanese**, poi la voce **Ambrogio (la tua voce)** e premi **Prova**.
+
+Le frasi già dette si salvano sul PC e non si pagano due volte. Nelle Impostazioni vedi i crediti usati del mese.
+Se i crediti finiscono, Ambrogio parla con la voce di Edge fino al rinnovo. I testi letti passano dai server di ElevenLabs.
+
 ## Voce milanese (Google Gemini, gratis)
 
 Ambrogio può parlare con accento milanese grazie a Google Gemini. Serve una "chiave" gratuita (senza carta di credito):

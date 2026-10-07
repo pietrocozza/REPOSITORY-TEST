@@ -212,26 +212,38 @@ function pronunciaEdge(pulito: string, eventi: EventiVoce) {
   window.speechSynthesis.speak(u)
 }
 
-// ───────── Voce di Ambrogio con Gemini (accento milanese) ─────────
-// L'audio lo prepara il backend (che tiene la chiave). Se Gemini non c'è, non risponde o ha finito
-// le richieste gratuite del giorno, si usa la voce di Edge senza interrompere il discorso.
+// ───────── Voce di Ambrogio (ElevenLabs o Gemini, accento milanese) ─────────
+// L'audio lo prepara il backend (che tiene la chiave). Se il servizio non c'è, non risponde o ha finito
+// le richieste/crediti, si usa la voce di Edge senza interrompere il discorso.
 
 export type MotoreVoce = 'edge' | 'gemini'
 let motore: MotoreVoce = 'edge'
 let voceGemini = 'Charon'
 let geminiInPausaFino = 0
 let avviso: ((messaggio: string) => void) | null = null
+let opzioniVoce: { intera: boolean; qualita: 'veloce' | 'massima' } = { intera: true, qualita: 'veloce' }
 
-/** Sceglie chi parla: le voci di Edge o Ambrogio con Gemini. */
-export function impostaMotore(nuovo: MotoreVoce, voce?: string, onAvviso?: (messaggio: string) => void) {
+/**
+ * Sceglie chi parla: le voci di Edge o la voce di Ambrogio (servizio esterno).
+ * intera = la risposta si dice tutta insieme (una sola richiesta: serve con Gemini gratuito).
+ */
+export function impostaMotore(
+  nuovo: MotoreVoce,
+  voce?: string,
+  onAvviso?: (messaggio: string) => void,
+  opzioni?: Partial<typeof opzioniVoce>,
+) {
   motore = nuovo
   if (voce) voceGemini = voce
   if (onAvviso) avviso = onAvviso
+  if (opzioni) opzioniVoce = { ...opzioniVoce, ...opzioni }
   geminiInPausaFino = 0
 }
 
-/** vero se la prossima frase la dirà Gemini */
+/** vero se la prossima frase la dirà la voce di Ambrogio */
 export const parlaGemini = () => motore === 'gemini' && Date.now() > geminiInPausaFino
+/** vero se la risposta va detta tutta insieme */
+export const rispostaIntera = () => parlaGemini() && opzioniVoce.intera
 
 type Battuta = { testo: string; eventi: EventiVoce; audio: Promise<Blob | null>; annullata: boolean; el?: HTMLAudioElement; finita?: boolean }
 const codaGemini: Battuta[] = []
@@ -242,12 +254,12 @@ async function scarica(testo: string): Promise<Blob | null> {
     const res = await fetch('/api/voce', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ testo, voce: voceGemini }),
+      body: JSON.stringify({ testo, voce: voceGemini, qualita: opzioniVoce.qualita }),
     })
     if (res.ok) return await res.blob()
-    const dati = (await res.json().catch(() => null)) as { errore?: string } | null
+    const dati = (await res.json().catch(() => null)) as { errore?: string; riprovaTra?: number } | null
     // limite raggiunto o chiave mancante: per un po' parla Edge, senza riprovare a ogni frase
-    geminiInPausaFino = Date.now() + (res.status === 429 ? 30 : 10) * 60 * 1000
+    geminiInPausaFino = Date.now() + (res.status === 429 ? Math.max(20, dati?.riprovaTra ?? 60) : 10 * 60) * 1000
     if (res.status === 429 || res.status === 409) avviso?.(dati?.errore ?? 'La voce di Gemini non è disponibile: uso quella di Edge.')
   } catch {
     geminiInPausaFino = Date.now() + 60 * 1000
@@ -287,8 +299,13 @@ async function prossima() {
     avanti()
   }
   el.onended = fine
-  el.onerror = fine
+  // audio rovinato o illeggibile: questa frase la dice Edge
+  el.onerror = () => {
+    URL.revokeObjectURL(indirizzo)
+    if (!b.annullata) pronunciaEdge(b.testo, { onInizio: b.eventi.onInizio, onParola: b.eventi.onParola, onFine: avanti })
+  }
   el.play().catch(() => {
+    if (el.error) return // ci pensa onerror
     // il browser non lascia suonare: questa frase la dice Edge
     URL.revokeObjectURL(indirizzo)
     pronunciaEdge(b.testo, { onInizio: b.eventi.onInizio, onParola: b.eventi.onParola, onFine: avanti })

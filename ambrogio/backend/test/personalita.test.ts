@@ -26,5 +26,7 @@ test('Ambrogio si presenta come maggiordomo e usa il milanese (tranne «Essenzia
   const testo = istruzioni('Pietro', 'maggiordomo')
   assert.match(testo, /Ti chiami Ambrogio e sei il maggiordomo personale di Pietro/)
   assert.match(testo, /dialetto milanese[\s\S]*Ghe pensi mi/)
+  assert.match(testo, /parolacce, ma SOLO in milanese[\s\S]*Pirla/)
   assert.doesNotMatch(istruzioni('Pietro', 'essenziale'), /dialetto milanese/)
+  assert.doesNotMatch(istruzioni('Pietro', 'essenziale'), /parolacce/)
 })

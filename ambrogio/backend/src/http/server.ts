@@ -7,6 +7,7 @@ import { personalitaValida } from '../agent/istruzioni.ts'
 import { CARTELLA_AMBROGIO } from '../config.ts'
 import { Aggiornamenti, shaValido } from '../codice/aggiornamenti.ts'
 import { ErroreVoce, VOCI_GEMINI, VoceGemini } from '../voce/gemini.ts'
+import { VoceElevenLabs } from '../voce/elevenlabs.ts'
 import path from 'node:path'
 
 // Server HTTP locale (solo 127.0.0.1). Accetta richieste unicamente dall'interfaccia di Ambrogio:
@@ -37,9 +38,13 @@ async function leggiJson(req: http.IncomingMessage): Promise<Record<string, unkn
 
 type GestoreMcp = (req: http.IncomingMessage, res: http.ServerResponse, corpo: string) => Promise<unknown>
 
-export function creaServer(config: Config, agente: Agente, opzioni: { mcp?: GestoreMcp; codice?: Aggiornamenti; voce?: VoceGemini } = {}) {
-  const voce =
-    opzioni.voce ?? new VoceGemini({ ...config.gemini, cartellaCache: path.join(config.cartellaDati, 'voce') })
+type OpzioniServer = { mcp?: GestoreMcp; codice?: Aggiornamenti; voce?: VoceGemini; elevenlabs?: VoceElevenLabs }
+
+export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServer = {}) {
+  // la voce di Ambrogio: ElevenLabs se c'è la sua chiave, altrimenti Gemini, altrimenti (nell'interfaccia) Edge
+  const cartellaVoce = path.join(config.cartellaDati, 'voce')
+  const gemini = opzioni.voce ?? new VoceGemini({ ...config.gemini, cartellaCache: cartellaVoce })
+  const eleven = opzioni.elevenlabs ?? new VoceElevenLabs({ ...config.elevenlabs, cartellaCache: cartellaVoce })
   const codice = opzioni.codice ?? new Aggiornamenti(CARTELLA_AMBROGIO)
   return http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://locale')
@@ -111,21 +116,33 @@ export function creaServer(config: Config, agente: Agente, opzioni: { mcp?: Gest
         }
       }
 
-      // voce con accento milanese (Gemini): la chiave resta qui nel backend
-      if (req.method === 'GET' && url.pathname === '/api/voce') return inviaJson(res, 200, voce.stato())
+      // voce di Ambrogio: le chiavi restano qui nel backend
+      if (req.method === 'GET' && url.pathname === '/api/voce') {
+        if (eleven.disponibile) return inviaJson(res, 200, await eleven.stato())
+        return inviaJson(res, 200, { fornitore: gemini.disponibile ? 'gemini' : null, ...gemini.stato() })
+      }
       if (req.method === 'POST' && url.pathname === '/api/voce') {
         const dati = await leggiJson(req)
         const testo = typeof dati.testo === 'string' ? dati.testo.trim().slice(0, 3000) : ''
-        const nome = VOCI_GEMINI.find((v) => v.id === dati.voce)?.id ?? VOCI_GEMINI[0].id
         if (!testo) return inviaJson(res, 400, { errore: 'Testo vuoto.' })
+        const motore = eleven.disponibile ? eleven : gemini
         try {
-          const audio = await voce.sintetizza(testo, nome)
-          res.writeHead(200, { 'Content-Type': 'audio/wav', 'Content-Length': audio.length, 'Cache-Control': 'no-store' })
+          let audio: Buffer
+          let tipo: string
+          if (motore === eleven) {
+            audio = await eleven.sintetizza(testo, String(dati.voce ?? ''), dati.qualita === 'massima' ? 'massima' : 'veloce')
+            tipo = 'audio/mpeg'
+          } else {
+            audio = await gemini.sintetizza(testo, VOCI_GEMINI.find((v) => v.id === dati.voce)?.id ?? VOCI_GEMINI[0].id)
+            tipo = 'audio/wav'
+          }
+          res.writeHead(200, { 'Content-Type': tipo, 'Content-Length': audio.length, 'Cache-Control': 'no-store' })
           return res.end(audio)
         } catch (err) {
           const e = err instanceof ErroreVoce ? err : new ErroreVoce('errore', (err as Error).message)
-          if (e.tipo === 'limite') agente.db.registra('voce', 'Limite giornaliero di Gemini raggiunto: voce di Edge per un po’')
-          return inviaJson(res, e.tipo === 'senza-chiave' ? 409 : e.tipo === 'limite' ? 429 : 502, { errore: e.message, tipo: e.tipo })
+          if (e.tipo === 'limite') agente.db.registra('voce', e.message)
+          const riprovaTra = Math.max(0, Math.round((motore.sospesaFinoA - Date.now()) / 1000))
+          return inviaJson(res, e.tipo === 'senza-chiave' ? 409 : e.tipo === 'limite' ? 429 : 502, { errore: e.message, tipo: e.tipo, riprovaTra })
         }
       }
 

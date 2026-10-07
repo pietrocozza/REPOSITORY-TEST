@@ -63,6 +63,15 @@ export const config = {
     url: env('AMBROGIO_GEMINI_URL') || undefined,
   },
 
+  /** voce di Ambrogio con ElevenLabs (a pagamento, piano scelto da te): se c'è la chiave ha la precedenza su Gemini */
+  elevenlabs: {
+    chiave: env('AMBROGIO_ELEVENLABS_CHIAVE'),
+    /** vuoto = lo sceglie la qualità indicata nelle Impostazioni */
+    modello: env('AMBROGIO_ELEVENLABS_MODELLO'),
+    /** solo per i test */
+    url: env('AMBROGIO_ELEVENLABS_URL') || undefined,
+  },
+
   /** come Ambrogio ti chiama */
   appellativo: env('AMBROGIO_APPELLATIVO', 'Pietro'),
 }

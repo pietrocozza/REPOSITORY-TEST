@@ -36,12 +36,12 @@ test('wav: intestazione corretta', () => {
   assert.equal(w.length, 144)
 })
 
-test('sintesi: modello che funziona, stile milanese, chiave nell’intestazione, poi dalla copia salvata', async () => {
-  const v = new VoceGemini({ chiave: 'segreta', cartellaCache: cache(), url })
+test('sintesi: stile milanese, chiave nell’intestazione, poi dalla copia salvata', async () => {
+  const v = new VoceGemini({ chiave: 'segreta', modello: 'gemini-3.1-flash-tts-preview', cartellaCache: cache(), url })
   const a = await v.sintetizza('Ué, ghe pensi mi!', 'Charon')
   assert.equal(a.toString('ascii', 0, 4), 'RIFF')
-  assert.deepEqual(richieste.map((r) => r.modello), ['gemini-2.5-flash-preview-tts', 'gemini-3.1-flash-tts-preview'])
   const r = richieste.at(-1)!
+  assert.equal(r.modello, 'gemini-3.1-flash-tts-preview')
   assert.equal(r.chiave, 'segreta')
   assert.equal(r.corpo.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, 'Charon')
   assert.match(r.corpo.contents[0].parts[0].text, /accento milanese[\s\S]*«Ué, ghe pensi mi!»/)
@@ -49,8 +49,13 @@ test('sintesi: modello che funziona, stile milanese, chiave nell’intestazione,
   const prima = richieste.length
   await v.sintetizza('Ué, ghe pensi mi!', 'Charon')
   assert.equal(richieste.length, prima, 'la stessa frase non si richiede due volte')
-  await v.sintetizza('Altra frase.', 'Charon')
-  assert.equal(richieste.at(-1)!.modello, 'gemini-3.1-flash-tts-preview', 'si ricorda il modello che funziona')
+})
+
+test('sempre lo stesso modello: se non esiste lo dice, non ne prova altri', async () => {
+  const v = new VoceGemini({ chiave: 'segreta', cartellaCache: cache(), url })
+  const prima = richieste.length
+  await assert.rejects(v.sintetizza('Ciao.', 'Charon'), (e: ErroreVoce) => e.tipo === 'errore' && /non esiste/.test(e.message))
+  assert.equal(richieste.length, prima + 1)
 })
 
 test('limite raggiunto: pausa senza altre richieste; senza chiave: errore chiaro', async () => {

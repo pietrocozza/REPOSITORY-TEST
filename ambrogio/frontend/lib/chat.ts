@@ -174,5 +174,13 @@ export const caricaModifiche = (sha: string) => leggi<{ sha: string; file: FileC
 
 // ───────── Voce di Ambrogio con Gemini ─────────
 
-export type StatoVoce = { disponibile: boolean; voci: { id: string; descrizione: string }[]; sospesaFinoA: string | null; richiesteOggi: number }
+export type StatoVoce = {
+  /** chi presta la voce ad Ambrogio: ElevenLabs, Gemini o nessuno (allora parla Edge) */
+  fornitore: 'elevenlabs' | 'gemini' | null
+  disponibile: boolean
+  problema?: string | null
+  voci: { id: string; descrizione: string; clonata?: boolean }[]
+  sospesaFinoA: string | null
+  crediti?: { usati: number; limite: number; rinnovo: string | null } | null
+}
 export const caricaStatoVoce = () => leggi<StatoVoce>('/api/voce')
