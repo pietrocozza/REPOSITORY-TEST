@@ -15,7 +15,7 @@ $link.TargetPath = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.e
 # La finestra di PowerShell parte ridotta a icona: è il "motore" di Ambrogio. Chiudendola, Ambrogio si spegne.
 $link.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Minimized -Command `"Set-Location -LiteralPath '$cartella'; npm start`""
 $link.WorkingDirectory = $cartella
-$link.IconLocation = Join-Path $PSScriptRoot 'ambrogio.ico'
+$link.IconLocation = Join-Path $PSScriptRoot 'ambrogio-rete.ico'
 $link.Description = 'Avvia Ambrogio'
 $link.Save()
 

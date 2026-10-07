@@ -28,6 +28,7 @@ import { MESSAGGIO_PERMESSO, registraFrase, spiegaRegistrazione } from '@/lib/re
 import Codice, { CHIAVE_VISTO, piuRecente } from '@/components/Codice'
 import { SezioneMemoria, SezionePratiche, SezioneRegistro } from '@/components/Sezioni'
 import { disegnaEtichette, disegnaHud } from '@/lib/hud'
+import { aggiornaIconaViva } from '@/lib/icona-viva'
 import { NucleoNeurale, PALETTES, type Modo } from '@/lib/nucleo-neurale'
 import type { Stato, Voce } from '@/lib/stato'
 import {
@@ -527,6 +528,8 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
             }
             ultimoHud = f.time
           }
+          // l'icona della finestra è una piccola copia della rete che si muove
+          if (!f.paused) aggiornaIconaViva(canvas, PALETTES[f.mode].css)
           if (livelloTesto.current) {
             livelloTesto.current.textContent = statoRef.current === 'ascolto' ? `${Math.round(livello.current * 100)}%` : `${Math.round(f.energy * 100)}%`
           }
