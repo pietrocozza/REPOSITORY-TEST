@@ -87,17 +87,18 @@ export function dopoParolaAttivazione(frase: string): string | null {
 
 let vocePreferita: SpeechSynthesisVoice | null = null
 
-// Preferisce una voce maschile italiana di buona qualità, se il sistema ne ha una
+// Preferisce una voce italiana femminile e naturale. Le migliori gratuite sono quelle "Natural" di Microsoft Edge
+// (es. "Microsoft Isabella Online (Natural)"); in Chrome c'è "Google italiano". Le voci di Windows classiche sono più robotiche.
 function scegliVoce() {
   const voci = window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith('it'))
   if (!voci.length) return null
   const punteggio = (v: SpeechSynthesisVoice) => {
     const n = v.name.toLowerCase()
     let p = 0
-    if (/luca|diego|cosimo|giorgio|roberto|paolo|neural|natural|online/.test(n)) p += 2
-    if (/elsa|alice|federica|paola|isabella|carla|female/.test(n)) p -= 1
-    if (/google/.test(n)) p += 1
-    if (v.localService) p += 0.5
+    if (/natural|neural|online/.test(n)) p += 5
+    if (/isabella|elsa|alice|federica|paola|carla|calimero|female|donna/.test(n)) p += 2
+    if (/google/.test(n)) p += 1.5
+    if (/luca|diego|cosimo|giorgio|roberto|paolo|benigno|rinaldi|male/.test(n)) p -= 2
     return p
   }
   return [...voci].sort((a, b) => punteggio(b) - punteggio(a))[0]
@@ -128,8 +129,8 @@ export function pronuncia(testo: string, eventi: { onInizio?: () => void; onParo
   const u = new SpeechSynthesisUtterance(pulito)
   u.lang = 'it-IT'
   if (vocePreferita) u.voice = vocePreferita
-  u.rate = 1.04
-  u.pitch = 0.9
+  u.rate = 1.02
+  u.pitch = 1
   u.onstart = () => eventi.onInizio?.()
   u.onboundary = () => eventi.onParola?.()
   const fine = () => {

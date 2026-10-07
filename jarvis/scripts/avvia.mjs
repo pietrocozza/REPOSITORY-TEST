@@ -28,7 +28,8 @@ if (!fs.existsSync(next)) {
 
 const processi = []
 function avvia(nome, args, cwd) {
-  const p = spawn(process.execPath, args, { cwd, env: process.env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true })
+  // NEXT_TELEMETRY_DISABLED: Next.js non invia statistiche d'uso anonime
+  const p = spawn(process.execPath, args, { cwd, env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" }, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true })
   const scrivi = (flusso) => (dati) => {
     for (const riga of dati.toString().split(/\r?\n/)) if (riga.trim()) flusso.write(`[${nome}] ${riga}\n`)
   }
