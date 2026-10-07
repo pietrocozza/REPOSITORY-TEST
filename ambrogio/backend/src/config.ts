@@ -87,6 +87,17 @@ export const config = {
     urlFinto: env('AMBROGIO_GOOGLE_URL_FINTO') || undefined,
   },
 
+  /**
+   * Telefono (Linphone, gratis): gira in Ubuntu dentro Windows (WSL). Account e password li legge da .env
+   * il servizio telefonico stesso; qui serve solo sapere se è configurato e in quale Ubuntu gira.
+   */
+  telefono: {
+    configurato: Boolean(env('AMBROGIO_LINPHONE_UTENTE')),
+    distro: env('AMBROGIO_WSL_DISTRO', 'Ubuntu-24.04'),
+    /** solo per i test: comando che sostituisce il servizio vero (es. "node finto-telefono.mjs") */
+    comando: env('AMBROGIO_TELEFONO_COMANDO'),
+  },
+
   /** come Ambrogio ti chiama */
   appellativo: env('AMBROGIO_APPELLATIVO', 'Pietro'),
 }

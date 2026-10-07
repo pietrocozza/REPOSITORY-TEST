@@ -234,3 +234,27 @@ export type EmailBreve = { id: string; thread: string; da: string; oggetto: stri
 export const statoGoogle = () => leggi<StatoGoogle>('/api/google')
 export const scollegaGoogle = () => invia('/api/google', 'DELETE')
 export const caricaEmail = () => leggi<{ email: EmailBreve[] }>('/api/email?quante=15')
+
+// ───────── Telefono (Linphone) ─────────
+
+export type StatoTelefono = {
+  configurato: boolean
+  stato: 'spento' | 'avvio' | 'pronto' | 'errore'
+  errore: string | null
+  inCorso: boolean
+  voce: boolean
+  ultima: { esito: 'conclusa' | 'nessuna-risposta' | 'errore'; motivo?: string; quando: string; conversazione: { chi: 'ambrogio' | 'pietro'; testo: string }[] } | null
+}
+
+export const statoTelefono = () => leggi<StatoTelefono>('/api/telefono')
+
+/** Ambrogio ti chiama per una telefonata di prova; restituisce un errore spiegato, o null se parte */
+export async function provaTelefono(): Promise<string | null> {
+  try {
+    const res = await fetch('/api/telefono/prova', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    if (res.ok) return null
+    return ((await res.json().catch(() => ({}))) as { errore?: string }).errore ?? 'Il telefono non risponde.'
+  } catch {
+    return 'Il motore di Ambrogio non risponde.'
+  }
+}

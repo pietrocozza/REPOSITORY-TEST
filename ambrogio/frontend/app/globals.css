@@ -1815,3 +1815,31 @@ select {
 .j-installa:hover {
   background: rgb(20 50 66 / 0.9);
 }
+
+/* Impostazioni → Telefono */
+.j-telefono > button {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgb(90 211 229 / 0.45);
+  background: rgb(10 30 42 / 0.6);
+  color: inherit;
+  cursor: pointer;
+}
+.j-telefono > button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.j-telefono-ultima {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.j-telefono-ultima p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.j-telefono-ultima p[data-chi='pietro'] {
+  opacity: 0.75;
+}

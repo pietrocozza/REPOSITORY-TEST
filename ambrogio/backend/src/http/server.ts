@@ -14,6 +14,8 @@ import type { Gmail } from '../integrazioni/gmail.ts'
 import { frasiDaPreparare } from '../voce/frasi-pronte.ts'
 import { STILE_VOCE_PREDEFINITO, cervelloValido } from '../impostazioni.ts'
 import path from 'node:path'
+import fs from 'node:fs'
+import { Telefono, Telefonata, type EsitoTelefonata } from '../telefono/telefono.ts'
 
 // Server HTTP locale (solo 127.0.0.1). Accetta richieste unicamente dall'interfaccia di Ambrogio:
 // un sito web qualsiasi aperto nel browser non può comandare l'agente.
@@ -63,6 +65,7 @@ type OpzioniServer = {
   trascrizione?: Trascrizione
   google?: AccessoGoogle
   gmail?: Gmail
+  telefono?: Telefono
 }
 
 /** Pagina mostrata dopo il «Consenti» di Google (si chiude da sola) */
@@ -82,6 +85,66 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
   const eleven = opzioni.elevenlabs ?? new VoceElevenLabs({ ...config.elevenlabs, cartellaCache: cartellaVoce })
   const orecchie = opzioni.trascrizione ?? new Trascrizione({ chiave: config.gemini.chiave, url: config.gemini.url })
   const codice = opzioni.codice ?? new Aggiornamenti(CARTELLA_AMBROGIO)
+
+  // ───────── Telefono (Linphone in Ubuntu) ─────────
+  const telefono =
+    opzioni.telefono ??
+    new Telefono({ cartellaAmbrogio: CARTELLA_AMBROGIO, distro: config.telefono.distro, comando: config.telefono.comando || undefined })
+  const cartellaTelefono = path.join(config.cartellaDati, 'telefono')
+  // al telefono Ambrogio usa la voce scelta nell'interfaccia (l'ultima usata), salvata qui
+  const fileVoceTelefono = path.join(cartellaTelefono, 'voce.txt')
+  let voceTelefono = ''
+  try {
+    voceTelefono = fs.readFileSync(fileVoceTelefono, 'utf8').trim()
+  } catch {
+    // mai scelta: la prima voce di Gemini
+  }
+  const ricordaVoce = (voce: string) => {
+    if (!voce || voce === voceTelefono) return
+    voceTelefono = voce
+    try {
+      fs.mkdirSync(cartellaTelefono, { recursive: true })
+      fs.writeFileSync(fileVoceTelefono, voce)
+    } catch {
+      // non importante
+    }
+  }
+  let telefonataInCorso = false
+  let ultimaTelefonata: (EsitoTelefonata & { quando: string }) | null = null
+
+  /** Ambrogio chiama Pietro e ci parla a botta e risposta */
+  async function telefona(motivo: string, apertura: string) {
+    telefonataInCorso = true
+    agente.db.registra('telefono', `Chiamo ${config.appellativo}: ${motivo}`)
+    const telefonata = new Telefonata({
+      telefono,
+      cartella: cartellaTelefono,
+      sintetizza: (testo) => gemini.sintetizza(testo, VOCI_GEMINI.find((v) => v.id === voceTelefono)?.id ?? VOCI_GEMINI[0].id),
+      trascrivi: (audio) => orecchie.trascrivi(audio, 'audio/wav'),
+      rispondi: async (richiesta) => {
+        let testo = ''
+        await agente.chat(richiesta, (e) => {
+          if (e.tipo === 'testo') testo += e.testo
+        })
+        return testo
+      },
+      annota: (testo) => agente.db.registra('telefono', testo),
+    })
+    try {
+      const esito = await telefonata.esegui({ motivo, apertura, nome: config.appellativo })
+      ultimaTelefonata = { ...esito, quando: new Date().toISOString() }
+      const riassunto =
+        esito.esito === 'conclusa'
+          ? `Telefonata finita (${esito.conversazione.length} battute)`
+          : esito.esito === 'nessuna-risposta'
+            ? `Telefonata: nessuna risposta (${esito.motivo ?? ''})`
+            : `Telefonata non riuscita: ${esito.motivo ?? ''}`
+      agente.db.registra(esito.esito === 'errore' ? 'errore' : 'telefono', riassunto, esito.conversazione)
+      return esito
+    } finally {
+      telefonataInCorso = false
+    }
+  }
   return http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://locale')
 
@@ -201,8 +264,10 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
             audio = await eleven.sintetizza(testo, String(dati.voce ?? ''), dati.qualita === 'massima' ? 'massima' : 'veloce')
             tipo = 'audio/mpeg'
           } else {
-            audio = await gemini.sintetizza(testo, VOCI_GEMINI.find((v) => v.id === dati.voce)?.id ?? VOCI_GEMINI[0].id)
+            const voce = VOCI_GEMINI.find((v) => v.id === dati.voce)?.id ?? VOCI_GEMINI[0].id
+            audio = await gemini.sintetizza(testo, voce)
             tipo = 'audio/wav'
+            if (VOCI_GEMINI.some((v) => v.id === dati.voce)) ricordaVoce(voce)
           }
           res.writeHead(200, { 'Content-Type': tipo, 'Content-Length': audio.length, 'Cache-Control': 'no-store' })
           return res.end(audio)
@@ -212,6 +277,28 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
           const riprovaTra = Math.max(0, Math.round((motore.sospesaFinoA - Date.now()) / 1000))
           return inviaJson(res, e.tipo === 'senza-chiave' ? 409 : e.tipo === 'limite' ? 429 : 502, { errore: e.message, tipo: e.tipo, riprovaTra })
         }
+      }
+
+      // ───────── Telefono ─────────
+      if (req.method === 'GET' && url.pathname === '/api/telefono') {
+        return inviaJson(res, 200, {
+          configurato: config.telefono.configurato,
+          stato: telefono.stato,
+          errore: telefono.errore || null,
+          inCorso: telefonataInCorso,
+          ultima: ultimaTelefonata,
+          voce: gemini.disponibile,
+        })
+      }
+      if (req.method === 'POST' && url.pathname === '/api/telefono/prova') {
+        if (!config.telefono.configurato) return inviaJson(res, 409, { errore: 'Telefono non configurato: mancano le righe di Linphone nel file .env.' })
+        if (!gemini.disponibile) return inviaJson(res, 409, { errore: 'Per parlare al telefono serve la chiave di Gemini nel file .env.' })
+        if (telefonataInCorso) return inviaJson(res, 409, { errore: 'C’è già una telefonata in corso.' })
+        void telefona(
+          'telefonata di prova del nuovo telefono. Chiedigli se ti sente bene, fai due chiacchiere di cortesia e, quando saluta, salutalo.',
+          `Ué ${config.appellativo}, sono Ambrogio! Questa è la prima telefonata vera: mi sente bene?`,
+        )
+        return inviaJson(res, 202, { ok: true })
       }
 
       // ───────── Gmail (accesso ufficiale di Google) ─────────

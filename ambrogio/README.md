@@ -218,6 +218,9 @@ Spazio: circa 1 GB da scaricare, 3 GB sul disco; serve un riavvio la prima volta
    bash telefono/prova.sh
    ```
    La prova fa squillare Linphone sul telefono: rispondi, senti tre bip, poi parla per qualche secondo.
+5. Telefonata vera: in Ambrogio, **Menu → Impostazioni → Telefono → «Chiamami adesso (prova)»**. Ambrogio accende da solo
+   il telefono in Ubuntu, ti chiama, parla con la sua voce, ascolta cosa rispondi e ti risponde; per finire basta salutarlo.
+   La conversazione resta scritta sotto il bottone e nel Registro.
 
 ## Impostazioni
 
