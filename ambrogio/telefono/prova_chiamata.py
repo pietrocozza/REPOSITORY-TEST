@@ -117,6 +117,32 @@ def crea_credenziali(fabbrica, utente, password):
     return credenziali
 
 
+def enum_linphone(linphone, tipo, nome):
+    """linphone.MediaEncryption.ZRTP o linphone.MediaEncryption.MediaEncryptionZRTP, come capita"""
+    classe = getattr(linphone, tipo, None)
+    for candidato in (nome, tipo + nome):
+        if classe is not None and hasattr(classe, candidato):
+            return getattr(classe, candidato)
+    return None
+
+
+def descrivi_errore(chiamata):
+    parti = []
+    try:
+        parti.append(nome_stato(chiamata.reason))
+    except Exception:
+        pass
+    try:
+        info = chiamata.error_info
+        frase = getattr(info, "phrase", "") or ""
+        codice = getattr(info, "protocol_code", "") or ""
+        if frase or codice:
+            parti.append(f"{codice} {frase}".strip())
+    except Exception:
+        pass
+    return " · ".join(parti) or "?"
+
+
 def esci(messaggio):
     print("\n" + messaggio)
     sys.exit(1)
@@ -228,27 +254,56 @@ def main():
         esci(f"Non riesco a collegarmi a sip.linphone.org (stato: {finale}): copia tutte le righe e mandale a Claude.")
     print("Collegato!")
 
-    print(f"Chiamo {destinatario} … rispondi dal telefono.")
-    chiamata = core.invite(destinatario)
-    if chiamata is None:
-        esci("La chiamata non parte (indirizzo da chiamare sbagliato?).")
-
-    ultimo_stato = [None]
-
-    def stato_chiamata():
-        s = nome_stato(chiamata.state)
-        if s != ultimo_stato[0]:
-            print(f"  chiamata: {s}")
-            ultimo_stato[0] = s
-        return s
-
+    # Il Linphone del telefono di solito vuole le chiamate cifrate (altrimenti risponde "NotAcceptable"):
+    # si prova prima con ZRTP (quella di Linphone), poi SRTP, poi senza cifratura.
     finita = ("End", "Released", "Error")
-    aspetta(lambda: stato_chiamata() in ("StreamsRunning",) + finita, 60)
-    if stato_chiamata() != "StreamsRunning":
-        motivo = nome_stato(chiamata.reason) if hasattr(chiamata, "reason") else "?"
+    chiamata = None
+    for cifratura in ("ZRTP", "SRTP", "None"):
+        valore = enum_linphone(linphone, "MediaEncryption", cifratura)
+        if valore is None and cifratura != "None":
+            nomi = [n for n in dir(getattr(linphone, "MediaEncryption", object)) if not n.startswith("_")]
+            print(f"  (cifratura {cifratura} non trovata; Linphone offre: {', '.join(nomi) or '?'})")
+            continue
+        try:
+            if cifratura != "None" and not core.is_media_encryption_supported(valore):
+                print(f"  (cifratura {cifratura} non disponibile qui)")
+                continue
+        except Exception:
+            pass
+        if valore is not None:
+            try:
+                core.media_encryption = valore
+                core.media_encryption_mandatory = False
+            except Exception as e:
+                print(f"  (non riesco a impostare la cifratura {cifratura}: {e})")
+                continue
+
+        print(f"Chiamo {destinatario} (cifratura {cifratura}) … rispondi dal telefono.")
+        chiamata = core.invite(destinatario)
+        if chiamata is None:
+            esci("La chiamata non parte (indirizzo da chiamare sbagliato?).")
+        ultimo_stato = [None]
+
+        def stato_chiamata(c=chiamata, u=ultimo_stato):
+            stato = nome_stato(c.state)
+            if stato != u[0]:
+                print(f"  chiamata: {stato}")
+                u[0] = stato
+            return stato
+
+        aspetta(lambda: stato_chiamata() in ("StreamsRunning",) + finita, 60)
+        if stato_chiamata() == "StreamsRunning":
+            break
+        motivo = descrivi_errore(chiamata)
+        aspetta(lambda: stato_chiamata() == "Released", 3)
+        if "NotAcceptable" in motivo:
+            print(f"  il telefono non accetta la cifratura {cifratura} ({motivo}): provo la prossima")
+            continue
         core.terminate_all_calls()
         aspetta(lambda: False, 2)
         esci(f"Nessuna risposta o chiamata rifiutata (motivo: {motivo}).")
+    else:
+        esci("Il telefono non ha accettato nessun tipo di chiamata: copia tutte le righe e mandale a Claude.")
 
     print(f"Hai risposto! Dovresti sentire tre bip. Poi parla pure: ti ascolto per {ASCOLTO_SECONDI} secondi …")
     aspetta(lambda: stato_chiamata() in finita, ASCOLTO_SECONDI + 3)
