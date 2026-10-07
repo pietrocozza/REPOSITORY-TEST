@@ -64,6 +64,7 @@ Si apre il browser su http://127.0.0.1:3000. Per spegnere Jarvis premi **Ctrl+C*
 | Parlare | pulsante del microfono oppure **barra spaziatrice** (consenti il microfono la prima volta) |
 | Interrompere | lo stesso pulsante (diventa un quadrato) oppure **Esc** |
 | Voce on/off | icona dell'altoparlante in alto a destra |
+| Personalità (Maggiordomo inglese, Imprenditore brillante, Milanese doc, Essenziale) | **Impostazioni** nel menu |
 | Tema chiaro/scuro, scelta della voce, velocità, ascolto continuo | **Impostazioni** nel menu |
 | Nuova conversazione | **Nuova**, sopra la chat |
 

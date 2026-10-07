@@ -3,6 +3,7 @@ import type { Config } from '../config.ts'
 import type { Agente } from '../agent/agente.ts'
 import type { EventoAgente } from '../agent/eventi.ts'
 import { diagnostica } from '../diagnostica.ts'
+import { personalitaValida } from '../agent/istruzioni.ts'
 
 // Server HTTP locale (solo 127.0.0.1). Accetta richieste unicamente dall'interfaccia di Jarvis:
 // un sito web qualsiasi aperto nel browser non può comandare l'agente.
@@ -65,6 +66,17 @@ export function creaServer(config: Config, agente: Agente) {
       if (req.method === 'POST' && url.pathname === '/api/chat/interrompi') {
         agente.interrompi()
         return inviaJson(res, 200, { ok: true })
+      }
+
+      if (url.pathname === '/api/impostazioni') {
+        if (req.method === 'POST') {
+          const dati = await leggiJson(req)
+          if (dati.personalita !== undefined) {
+            if (!personalitaValida(dati.personalita)) return inviaJson(res, 400, { errore: 'Personalità sconosciuta.' })
+            agente.impostaPersonalita(dati.personalita)
+          }
+        }
+        return inviaJson(res, 200, { personalita: agente.personalita, personalitaDisponibili: agente.elencoPersonalita() })
       }
 
       if (req.method === 'POST' && url.pathname === '/api/conversazione/nuova') {

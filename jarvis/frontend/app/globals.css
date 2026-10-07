@@ -553,6 +553,37 @@ select {
   color: var(--inchiostro);
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
 }
+.j-personalita {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.j-personalita button {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--carta-2);
+  border: 1px solid transparent;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s;
+}
+.j-personalita button b {
+  font-size: 13px;
+  font-weight: 600;
+}
+.j-personalita button small {
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+.j-personalita button[aria-checked='true'] {
+  background: var(--primario-tenue);
+  border-color: var(--primario);
+}
+.j-personalita button[aria-checked='true'] b {
+  color: var(--primario);
+}
 .j-voce {
   display: flex;
   gap: 8px;

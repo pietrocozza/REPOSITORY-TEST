@@ -75,3 +75,25 @@ test('se la modalità veloce non funziona, Jarvis risponde lo stesso con quella 
   assert.equal(eventi.at(-1)?.tipo, 'fine')
   a.spegni()
 })
+
+test('personalità: elenco, cambio, salvataggio e nuove istruzioni a Claude Code', async () => {
+  const leggi = async (corpo?: object) =>
+    (await (
+      await fetch(`${base}/api/impostazioni`, corpo ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) } : {})
+    ).json()) as { personalita: string; personalitaDisponibili: { id: string }[] }
+
+  const iniziale = await leggi()
+  assert.equal(iniziale.personalita, 'maggiordomo')
+  assert.equal(iniziale.personalitaDisponibili.length, 4)
+
+  const sbagliata = await fetch(`${base}/api/impostazioni`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"personalita":"pirata"}' })
+  assert.equal(sbagliata.status, 400)
+
+  assert.equal((await leggi({ personalita: 'imprenditore' })).personalita, 'imprenditore')
+  assert.equal(JSON.parse(fs.readFileSync(path.join(tmp, 'impostazioni.json'), 'utf8')).personalita, 'imprenditore')
+
+  process.env.FINTO_SCENARIO = 'ok'
+  await (await chat('ciao')).text()
+  const istruzioni = fs.readFileSync(path.join(tmp, 'agente', 'istruzioni-jarvis.txt'), 'utf8')
+  assert.ok(istruzioni.includes('mi consenta'), 'Claude Code deve ripartire con la nuova personalità')
+})

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
-import { chiediAlServer, leggiStatoBackend, nuovaConversazione, type Chiedi } from '@/lib/chat'
+import { chiediAlServer, impostazioniAgente, leggiStatoBackend, nuovaConversazione, type Chiedi, type Personalita } from '@/lib/chat'
 import { disegnaHud } from '@/lib/hud'
 import { NucleoNeurale, PALETTES, type Modo } from '@/lib/nucleo-neurale'
 import type { Stato, Voce } from '@/lib/stato'
@@ -104,6 +104,8 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
   const [elencoVoci, setElencoVoci] = useState<InfoVoce[]>([])
   const [voceInUso, setVoceInUso] = useState('—')
   const [pausa, setPausa] = useState(false)
+  const [personalita, setPersonalita] = useState<string | null>(null)
+  const [elencoPersonalita, setElencoPersonalita] = useState<Personalita[]>([])
   // statistiche della sessione, per i numeri a sinistra
   const [inizioTurno, setInizioTurno] = useState<number | null>(null)
   const [tempi, setTempi] = useState<number[]>([])
@@ -217,6 +219,27 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
       annullato = true
     }
   }, [usaBackend, mostraErrore])
+
+  // Personalità di Jarvis: la decide il backend
+  useEffect(() => {
+    if (!usaBackend) return
+    let annullato = false
+    impostazioniAgente().then((i) => {
+      if (annullato || !i) return
+      setPersonalita(i.personalita)
+      setElencoPersonalita(i.personalitaDisponibili)
+    })
+    return () => {
+      annullato = true
+    }
+  }, [usaBackend])
+
+  const scegliPersonalita = async (id: string) => {
+    setPersonalita(id)
+    const i = await impostazioniAgente(id)
+    if (i) setPersonalita(i.personalita)
+    else mostraErrore('Non riesco a cambiare personalità: il backend non risponde.')
+  }
 
   // ───────── La rete neurale 3D e l'HUD ─────────
 
@@ -730,6 +753,23 @@ export default function Jarvis({ chiedi = chiediAlServer }: { chiedi?: Chiedi })
           {sezione === 'impostazioni' && (
             <div className="j-impostazioni">
               <h2>Impostazioni</h2>
+
+              {elencoPersonalita.length > 0 && (
+                <div className="j-riga j-riga-colonna">
+                  <span>
+                    Personalità
+                    <small>Cambia il modo di parlare di Jarvis (la voce resta quella scelta sotto)</small>
+                  </span>
+                  <div className="j-personalita" role="radiogroup" aria-label="Personalità">
+                    {elencoPersonalita.map((p) => (
+                      <button key={p.id} type="button" role="radio" aria-checked={personalita === p.id} onClick={() => scegliPersonalita(p.id)}>
+                        <b>{p.nome}</b>
+                        <small>{p.descrizione}</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="j-riga">
                 <span>Tema</span>

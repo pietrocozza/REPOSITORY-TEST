@@ -87,3 +87,19 @@ export async function leggiStatoBackend(): Promise<StatoBackend | null> {
 export async function nuovaConversazione() {
   await fetch('/api/conversazione/nuova', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {})
 }
+
+/** Personalità di Jarvis (decide il modo di parlare; vive nel backend) */
+export type Personalita = { id: string; nome: string; descrizione: string }
+export type ImpostazioniAgente = { personalita: string; personalitaDisponibili: Personalita[] }
+
+export async function impostazioniAgente(personalita?: string): Promise<ImpostazioniAgente | null> {
+  try {
+    const res = await fetch(
+      '/api/impostazioni',
+      personalita ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ personalita }) } : { cache: 'no-store' },
+    )
+    return res.ok ? await res.json() : null
+  } catch {
+    return null
+  }
+}

@@ -2,7 +2,8 @@ import type { Config } from '../config.ts'
 import { eseguiTurno, ProcessoClaude, type Avvio, type EsitoTurno } from './claude-code.ts'
 import type { Eseguibile } from './eseguibile.ts'
 import type { EventoAgente } from './eventi.ts'
-import { istruzioni } from './istruzioni.ts'
+import { istruzioni, PERSONALITA, type IdPersonalita } from './istruzioni.ts'
+import { ArchivioImpostazioni } from '../impostazioni.ts'
 import { ArchivioSessione } from './sessione.ts'
 
 // L'agente: riceve un messaggio, lo passa a Claude Code e inoltra gli eventi all'interfaccia.
@@ -20,11 +21,15 @@ export class Agente {
   private sessioni: ArchivioSessione
   private processo: ProcessoClaude
   private inCorso: AbortController | null = null
+  private impostazioni: ArchivioImpostazioni
+  /** le istruzioni sono cambiate: Claude Code va riavviato appena è libero */
+  private daRiavviare = false
 
   constructor(config: Config, eseguibile: Eseguibile) {
     this.config = config
     this.eseguibile = eseguibile
     this.sessioni = new ArchivioSessione(config.cartellaDati)
+    this.impostazioni = new ArchivioImpostazioni(config.cartellaDati)
     this.processo = new ProcessoClaude(this.avvio())
   }
 
@@ -42,13 +47,35 @@ export class Agente {
       sessione: { ...this.sessioni.attuale },
       eseguibile: this.eseguibile,
       cartellaLavoro: this.config.cartellaLavoro,
-      istruzioni: istruzioni(this.config.appellativo),
+      istruzioni: istruzioni(this.config.appellativo, this.impostazioni.attuali.personalita),
       strumenti: STRUMENTI_INTEGRATI,
       modello: this.config.claude.modello || undefined,
       effort: this.config.claude.effort || undefined,
       consentiApiAConsumo: this.config.claude.consentiApiAConsumo,
       onSessioneAperta: () => this.sessioni.segnaAvviata(),
     }
+  }
+
+  get personalita() {
+    return this.impostazioni.attuali.personalita
+  }
+
+  elencoPersonalita() {
+    return Object.entries(PERSONALITA).map(([id, p]) => ({ id, nome: p.nome, descrizione: p.descrizione }))
+  }
+
+  /** Cambia il carattere di Jarvis. La conversazione continua: cambia solo il modo di parlare. */
+  impostaPersonalita(id: IdPersonalita) {
+    if (id === this.personalita) return
+    this.impostazioni.aggiorna({ personalita: id })
+    if (this.inCorso) this.daRiavviare = true
+    else this.riavvia()
+  }
+
+  private riavvia() {
+    this.daRiavviare = false
+    this.processo.spegni()
+    this.prepara()
   }
 
   /** Accende Claude Code in anticipo, così il primo messaggio è più rapido. */
@@ -142,7 +169,8 @@ export class Agente {
       inoltra({ tipo: 'errore', messaggio: 'Non riesco ad aprire la conversazione con Claude Code. Riprova.' })
     }
     // dopo un'interruzione Claude Code è stato chiuso: lo si riaccende subito per il prossimo messaggio
-    if (esito === 'interrotto') this.prepara()
+    if (this.daRiavviare) this.riavvia()
+    else if (esito === 'interrotto') this.prepara()
     return esito
   }
 }
