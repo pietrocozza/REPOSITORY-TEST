@@ -25,7 +25,7 @@ import ProvaMicrofono from '@/components/ProvaMicrofono'
 import { MESSAGGIO_PERMESSO, registraFrase, spiegaRegistrazione } from '@/lib/registra'
 import Codice, { CHIAVE_VISTO, piuRecente } from '@/components/Codice'
 import { SezioneMemoria, SezionePratiche, SezioneRegistro } from '@/components/Sezioni'
-import { disegnaHud } from '@/lib/hud'
+import { disegnaEtichette, disegnaHud } from '@/lib/hud'
 import { NucleoNeurale, PALETTES, type Modo } from '@/lib/nucleo-neurale'
 import type { Stato, Voce } from '@/lib/stato'
 import {
@@ -35,6 +35,7 @@ import {
   estraiFrasi,
   impostaVoce,
   impostaMotore,
+  livelloVoce,
   nomeVoce,
   rispostaIntera,
   preparaVoce,
@@ -503,11 +504,16 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     try {
       core = new NucleoNeurale(canvas, {
         onFrame: (f) => {
-          // mentre ascolta, la rete segue il volume reale del microfono
+          // mentre ascolta la rete segue il microfono; mentre parla segue il volume della sua voce
+          const voce = livelloVoce()
           if (statoRef.current === 'ascolto') core.setAudioLevel(livello.current)
+          else if (voce >= 0) core.setAudioLevel(voce)
           else core.clearAudio()
           if (f.time - ultimoHud > 0.03 || f.paused || ultimoHud < 0) {
-            if (telaHud.current) disegnaHud(telaHud.current, null, f, core.fit, null)
+            if (telaHud.current) {
+              disegnaHud(telaHud.current, null, f, core.fit, null)
+              disegnaEtichette(telaHud.current, f)
+            }
             ultimoHud = f.time
           }
           if (livelloTesto.current) {
@@ -1046,11 +1052,10 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
 
   const provaVoce = () => {
     zittisci()
-    pronuncia(
-      motoreVoce === 'gemini' && statoVoce?.disponibile
-        ? FRASE_PROVA
-        : `Ciao ${NOME_UTENTE}, questa è la mia voce.`,
-    )
+    pronuncia(motoreVoce === 'gemini' && statoVoce?.disponibile ? FRASE_PROVA : `Ciao ${NOME_UTENTE}, questa è la mia voce.`, {
+      onInizio: () => setStato((st) => (st === 'pronto' ? 'risposta' : st)),
+      onFine: () => setStato((st) => (st === 'risposta' ? 'pronto' : st)),
+    })
   }
 
   const scegliVoce = (nome: string | null) => {
@@ -1103,21 +1108,6 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
           {senzaWebgl && (
             <div className="j-fallback">Il rendering 3D richiede WebGL. Apri la pagina in un browser con accelerazione grafica attiva.</div>
           )}
-          <div className="j-callout j-callout-a">
-            <span>01</span>
-            <b>LINGUAGGIO</b>
-            <i />
-          </div>
-          <div className="j-callout j-callout-b">
-            <span>02</span>
-            <b>MEMORIA</b>
-            <i />
-          </div>
-          <div className="j-callout j-callout-c">
-            <span>03</span>
-            <b>AZIONI</b>
-            <i />
-          </div>
           <div className="j-stage-caption">
             <span className="j-reticle">+</span>
             <span>TRASCINA PER ESPLORARE</span>

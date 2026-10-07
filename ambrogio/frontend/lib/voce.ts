@@ -245,6 +245,36 @@ export const parlaGemini = () => motore === 'gemini' && Date.now() > geminiInPau
 /** vero se la risposta va detta tutta insieme */
 export const rispostaIntera = () => parlaGemini() && opzioniVoce.intera
 
+// Volume della voce mentre parla: la rete si allarga e si stringe a ritmo (come una sfera musicale)
+let ctxVoce: AudioContext | null = null
+let analisiVoce: AnalyserNode | null = null
+const campioniVoce = new Float32Array(1024)
+
+function collegaAnalisi(el: HTMLAudioElement) {
+  try {
+    ctxVoce ??= new AudioContext()
+    if (ctxVoce.state === 'suspended') ctxVoce.resume().catch(() => {})
+    if (!analisiVoce) {
+      analisiVoce = ctxVoce.createAnalyser()
+      analisiVoce.fftSize = 1024
+      analisiVoce.smoothingTimeConstant = 0.5
+      analisiVoce.connect(ctxVoce.destination)
+    }
+    ctxVoce.createMediaElementSource(el).connect(analisiVoce)
+  } catch {
+    // senza analisi l'audio suona lo stesso (direttamente); la rete usa l'animazione automatica
+  }
+}
+
+/** volume della voce di Ambrogio adesso (0–1), oppure -1 se non lo si può misurare (voce di Edge) */
+export function livelloVoce() {
+  if (!attuale?.el || attuale.el.paused || !analisiVoce) return -1
+  analisiVoce.getFloatTimeDomainData(campioniVoce)
+  let somma = 0
+  for (const c of campioniVoce) somma += c * c
+  return Math.min(1, Math.sqrt(somma / campioniVoce.length) * 5)
+}
+
 type Battuta = { testo: string; eventi: EventiVoce; audio: Promise<Blob | null>; annullata: boolean; el?: HTMLAudioElement; finita?: boolean }
 const codaGemini: Battuta[] = []
 let attuale: Battuta | null = null
@@ -291,6 +321,7 @@ async function prossima() {
   const indirizzo = URL.createObjectURL(audio)
   const el = new Audio(indirizzo)
   b.el = el
+  collegaAnalisi(el)
   el.playbackRate = Math.min(1.25, Math.max(0.85, velocita))
   el.onplay = () => b.eventi.onInizio?.()
   el.ontimeupdate = () => b.eventi.onParola?.()

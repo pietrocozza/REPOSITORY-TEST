@@ -76,7 +76,7 @@ const VERTEX = /* glsl */ `
   // Stessa curva usata per costruire le connessioni: gli impulsi ci corrono sopra
   vec3 curvePoint(vec3 a, vec3 b, float t) {
     vec3 x = cross(a, b) + vec3(0.001);
-    float k = sin(t * PI) * distance(a, b) * 0.12 / length(x);
+    float k = sin(t * PI) * distance(a, b) * 0.05 / length(x);
     return mix(a, b, t) + x * k;
   }
 
@@ -84,7 +84,8 @@ const VERTEX = /* glsl */ `
     float r = length(p);
     float breath = sin(uTime * 0.64 + r * 1.7) * 0.016;
     float wave = sin(r * 7.0 - uTime * 2.9) * uEnergy * 0.028;
-    p *= 1.0 + breath + uEnergy * 0.16 + wave;
+    // con la voce la rete si allarga e si stringe a ritmo, come una sfera musicale
+    p *= 1.0 + breath + uEnergy * 0.24 + wave;
     vec3 organic = vec3(
       sin(p.y * 3.1 + uTime * 0.31),
       cos(p.z * 3.5 - uTime * 0.25),
@@ -270,50 +271,63 @@ function random(seed: number) {
   }
 }
 
+/**
+ * Le zone del cervello di Ambrogio: ogni zona è una capacità, con un neurone centrale (con il nome)
+ * e i suoi neuroni intorno. Le zone non ancora collegate sono "addormentate" (più spente):
+ * si accenderanno man mano che aggiungiamo Gmail, Calendario, Telegram…
+ */
+export const ZONE = [
+  { nome: 'Linguaggio', attiva: true },
+  { nome: 'Memoria', attiva: true },
+  { nome: 'Azioni', attiva: true },
+  { nome: 'Voce', attiva: true },
+  { nome: 'Ricerca web', attiva: true },
+  { nome: 'Pratiche', attiva: true },
+  { nome: 'Email', attiva: false },
+  { nome: 'Calendario', attiva: false },
+  { nome: 'Telegram', attiva: false },
+  { nome: 'Affitti', attiva: false },
+  { nome: 'Documenti', attiva: false },
+  { nome: 'Browser', attiva: false },
+] as const
+
 function createNetwork() {
   const r = random(87421)
   const nodes: Nodo[] = []
   const groups: Vec3[] = []
+  /** indice del neurone centrale di ogni zona */
+  const hubs: number[] = []
+  const membri: number[][] = []
   const normal = () => Math.sqrt(-2 * Math.log(Math.max(0.00001, r()))) * Math.cos(2 * Math.PI * r())
+  const G = ZONE.length
 
-  // 14 gruppi di neuroni distribuiti su una sfera
-  for (let g = 0; g < 14; g++) {
-    const phi = Math.acos(1 - (2 * (g + 0.5)) / 14)
+  // una zona per capacità, distribuite su una sfera
+  for (let g = 0; g < G; g++) {
+    const phi = Math.acos(1 - (2 * (g + 0.5)) / G)
     const theta = g * 2.399963
-    const center: Vec3 = [Math.sin(phi) * Math.cos(theta) * 0.89, Math.cos(phi) * 0.88, Math.sin(phi) * Math.sin(theta) * 0.75]
+    const center: Vec3 = [Math.sin(phi) * Math.cos(theta) * 0.86, Math.cos(phi) * 0.84, Math.sin(phi) * Math.sin(theta) * 0.74]
     groups.push(center)
-    for (let n = 0; n < 66; n++) {
-      nodes.push([center[0] + normal() * 0.14, center[1] + normal() * 0.13, center[2] + normal() * 0.14, g / 14, 0.8 + r() * 0.4])
+    const luce = ZONE[g].attiva ? 1 : 0.42
+    hubs.push(nodes.length)
+    nodes.push([center[0], center[1], center[2], g / G, 1.25 * luce])
+    const zona: number[] = []
+    for (let n = 0; n < 62; n++) {
+      zona.push(nodes.length)
+      nodes.push([center[0] + normal() * 0.13, center[1] + normal() * 0.12, center[2] + normal() * 0.13, g / G, (0.75 + r() * 0.45) * luce])
     }
+    membri.push(zona)
   }
 
-  // neuroni sparsi
-  for (let i = 0; i < 290; i++) {
+  // pochi neuroni sparsi tra le zone
+  for (let i = 0; i < 110; i++) {
     const a = r() * Math.PI * 2
     const y = r() * 2 - 1
-    const rr = Math.pow(r(), 0.6) * 1.05
+    const rr = Math.pow(r(), 0.6) * 1.0
     const q = Math.sqrt(1 - y * y)
-    nodes.push([Math.cos(a) * q * rr, y * rr, Math.sin(a) * q * rr, r(), 0.6 + r() * 0.5])
+    nodes.push([Math.cos(a) * q * rr, y * rr, Math.sin(a) * q * rr, r(), 0.45 + r() * 0.4])
   }
 
-  // filamenti che escono dai gruppi
-  for (let g = 0; g < 14; g++) {
-    const c = groups[g]
-    const side = [normal() * 0.13, normal() * 0.13, normal() * 0.13]
-    for (let n = 0; n < 18; n++) {
-      const t = n / 18
-      const amp = 1 + t * 0.52
-      nodes.push([
-        c[0] * amp + Math.sin(t * 7) * side[0],
-        c[1] * amp + Math.sin(t * 5) * side[1],
-        c[2] * amp + Math.cos(t * 6) * side[2],
-        g / 14,
-        0.5 + r() * 0.8,
-      ])
-    }
-  }
-
-  // connessioni: i vicini più prossimi, qualche collegamento lungo
+  // connessioni
   const edges: [number, number][] = []
   const seen = new Set<string>()
   const add = (a: number, b: number) => {
@@ -323,19 +337,28 @@ function createNetwork() {
       edges.push([a, b])
     }
   }
-  for (let i = 0; i < nodes.length; i++) {
-    const a = nodes[i]
-    const candidates: [number, number][] = []
-    for (let j = 0; j < nodes.length; j++) {
-      if (i === j) continue
-      const b = nodes[j]
-      candidates.push([j, (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2])
+  const vicini = (i: number, tra: number[], quanti: number) =>
+    tra
+      .filter((j) => j !== i)
+      .map((j) => [j, (nodes[i][0] - nodes[j][0]) ** 2 + (nodes[i][1] - nodes[j][1]) ** 2 + (nodes[i][2] - nodes[j][2]) ** 2] as const)
+      .sort((x, y) => x[1] - y[1])
+      .slice(0, quanti)
+      .map(([j]) => j)
+  membri.forEach((zona, g) => {
+    for (const i of zona) {
+      // a stella verso il neurone centrale (come una mappa di idee), e qualche vicino
+      if (r() < 0.55) add(i, hubs[g])
+      for (const j of vicini(i, zona, 2)) add(i, j)
     }
-    candidates.sort((x, y) => x[1] - y[1])
-    for (let k = 0; k < 4; k++) add(i, candidates[k][0])
-    if (i % 3 === 0) add(i, candidates[8 + Math.floor(r() * 18)][0])
-    if (i % 16 === 0) add(i, Math.floor(r() * nodes.length))
-  }
+  })
+  // i neuroni centrali si parlano: il Linguaggio con tutti, le altre zone con le vicine
+  for (let g = 1; g < G; g++) add(hubs[0], hubs[g])
+  for (let g = 1; g < G; g++) for (const h of vicini(hubs[g], hubs.slice(1), 3)) add(hubs[g], h)
+  // ponti tra zone: qualche neurone collegato alla zona accanto
+  const tutti = nodes.map((_, i) => i)
+  for (let i = 0; i < nodes.length; i += 7) add(i, vicini(i, tutti, 14)[8 + Math.floor(r() * 6)])
+  // i neuroni sparsi si agganciano al più vicino
+  for (let i = G * 63; i < nodes.length; i++) for (const j of vicini(i, tutti, 2)) add(i, j)
 
   // ogni vertice: posizione (3), destinazione (3), dati (4: dimensione o t, fase, gruppo, opacità)
   const points: number[] = []
@@ -348,12 +371,13 @@ function createNetwork() {
     arr.push(a[0], a[1], a[2], b[0], b[1], b[2], size, phase, group, alpha)
   }
 
+  const centrali = new Set(hubs)
   nodes.forEach((a, i) => {
-    const soma = i % 37 === 0
-    push(points, a, a, soma ? 17 : 5.5 + r() * 4.5, r(), a[3], a[4])
+    const soma = centrali.has(i)
+    push(points, a, a, soma ? 19 : 5 + r() * 4, r(), a[3], a[4])
 
     // dendriti: rami che partono dai neuroni principali (e più corti da alcuni altri)
-    const rami = soma ? 7 : i % 9 === 0 ? 3 : 0
+    const rami = soma ? 8 : i % 11 === 0 ? 3 : 0
     const lunghezza = soma ? 0.16 : 0.07
     for (let k = 0; k < rami; k++) {
       const ramo = (da: Vec3, dir: Vec3, len: number, luce: number, livello: number) => {
@@ -380,7 +404,7 @@ function createNetwork() {
     }
   })
 
-  groups.forEach((a, i) => push(halos, a, a, 145, 0, i / 14, 0.035))
+  groups.forEach((a, i) => push(halos, a, a, 140, 0, i / G, ZONE[i].attiva ? 0.04 : 0.014))
 
   edges.forEach(([i, j], k) => {
     const a = nodes[i]
@@ -388,7 +412,10 @@ function createNetwork() {
     const length = Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
     const segments = length > 0.35 ? 10 : 4
     const phase = r()
-    const alpha = (length > 0.5 ? 0.15 : 0.36) * (0.6 + r() * 0.6)
+    const traCentrali = centrali.has(i) && centrali.has(j)
+    // le connessioni delle zone addormentate sono più deboli
+    const luce = Math.min(a[4], b[4], 1)
+    const alpha = (traCentrali ? 0.42 : length > 0.5 ? 0.14 : 0.34) * (0.6 + r() * 0.6) * (0.5 + luce * 0.5)
     // ogni segmento conosce i due neuroni e la sua posizione t lungo la curva:
     // la forma viene calcolata nello shader, così segue i neuroni che si muovono
     for (let s = 0; s < segments; s++) {
@@ -403,13 +430,18 @@ function createNetwork() {
     push(dust, p, p, 1 + r() * 2, r(), r(), r() * 0.5 + 0.1)
   }
 
-  return { nodes, edges, points, lines, pulses, dust, halos, dendrites }
+  return { nodes, edges, points, lines, pulses, dust, halos, dendrites, hubs }
 }
 
 type Target = { texture: WebGLTexture; framebuffer: WebGLFramebuffer; w: number; h: number }
 type NomeBuffer = 'points' | 'lines' | 'pulses' | 'dust' | 'halos' | 'dendrites'
 
-export type Fotogramma = { time: number; energy: number; mode: Modo; flow: number; paused: boolean }
+/** dove si trova sullo schermo il neurone centrale di una zona (in pixel della tela) */
+export type Etichetta = { nome: string; attiva: boolean; x: number; y: number; profondita: number }
+
+export type Fotogramma = { time: number; energy: number; mode: Modo; flow: number; paused: boolean; etichette: Etichetta[] }
+
+const fract = (x: number) => x - Math.floor(x)
 
 export class NucleoNeurale {
   canvas: HTMLCanvasElement
@@ -671,11 +703,48 @@ export class NucleoNeurale {
     this.zoom += (this.zoomTarget - this.zoom) * alpha
 
     this.render()
-    this.onFrame?.({ time: t, energy: this.energy, mode: this.mode, flow: this.flow, paused: this.paused || this.reduced })
+    this.onFrame?.({ time: t, energy: this.energy, mode: this.mode, flow: this.flow, paused: this.paused || this.reduced, etichette: this.etichette() })
 
     this.dirty =
       (this.paused || this.reduced) &&
       Math.abs(this.colorA[0] - palette.a[0]) + Math.abs(this.colorA[1] - palette.a[1]) + Math.abs(this.colorA[2] - palette.a[2]) > 0.005
+  }
+
+  /** Stessi calcoli dello shader (movimento, respiro, rotazione, prospettiva) per i neuroni centrali */
+  private etichette(): Etichetta[] {
+    const t = this.time
+    const e = this.energy
+    return this.network.hubs.map((indice, g) => {
+      const [x0, y0, z0] = this.network.nodes[indice]
+      // drift
+      const s = fract(Math.sin(x0 * 12.9898 + y0 * 78.233 + z0 * 37.719) * 43758.5453)
+      const s2 = fract(s * 7.13)
+      const s3 = fract(s * 13.7)
+      const k = 0.034 + e * 0.05
+      let x = x0 + k * (Math.sin(t * (0.23 + s * 0.35) + s * 31) + 0.4 * Math.sin(t * (0.71 + s2 * 0.3) + s3 * 9))
+      let y = y0 + k * (Math.sin(t * (0.19 + s2 * 0.35) + s2 * 17) + 0.4 * Math.cos(t * (0.63 + s3 * 0.3) + s * 5))
+      let z = z0 + k * (Math.cos(t * (0.21 + s3 * 0.35) + s3 * 5) + 0.4 * Math.sin(t * (0.67 + s * 0.3) + s2 * 3))
+      // deform
+      const raggio = Math.hypot(x, y, z)
+      const scala = 1 + Math.sin(t * 0.64 + raggio * 1.7) * 0.016 + e * 0.24 + Math.sin(raggio * 7 - t * 2.9) * e * 0.028
+      x *= scala
+      y *= scala
+      z *= scala
+      const o = 0.018 + e * 0.03
+      ;[x, y, z] = [x + Math.sin(y * 3.1 + t * 0.31) * o, y + Math.cos(z * 3.5 - t * 0.25) * o, z + Math.sin(x * 2.7 + t * 0.23) * o]
+      // rotate
+      const cy = Math.cos(this.yaw)
+      const sy = Math.sin(this.yaw)
+      const cx = Math.cos(this.pitch)
+      const sx = Math.sin(this.pitch)
+      ;[x, z] = [x * cy + z * sy, -x * sy + z * cy]
+      ;[y, z] = [y * cx - z * sx, y * sx + z * cx]
+      // prospettiva (come gl_Position)
+      const f = (2.55 * this.fit) / (4.5 / this.zoom - z)
+      const px = (x * f) / (this.width / this.height)
+      const py = y * f + 0.1
+      return { nome: ZONE[g].nome, attiva: ZONE[g].attiva, x: ((px + 1) / 2) * this.width, y: ((1 - py) / 2) * this.height, profondita: z }
+    })
   }
 
   private render() {

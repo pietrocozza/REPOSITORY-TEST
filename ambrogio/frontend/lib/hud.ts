@@ -126,3 +126,39 @@ export function disegnaHud(
   }
   wctx.globalAlpha = 1
 }
+
+/** I nomi delle zone accanto ai loro neuroni centrali (le zone non ancora collegate sono più spente) */
+export function disegnaEtichette(hud: HTMLCanvasElement, frame: Fotogramma) {
+  const ctx = hud.getContext('2d')
+  if (!ctx || !frame.etichette?.length) return
+  const dpr = Math.min(window.devicePixelRatio || 1, 2)
+  ctx.save()
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  ctx.font = '9px ui-monospace, Consolas, monospace'
+  ctx.textBaseline = 'middle'
+  const colore = PALETTES[frame.mode].css
+  for (const e of frame.etichette) {
+    // davanti più nitide, dietro più tenui
+    const vicinanza = Math.min(1, Math.max(0, (e.profondita + 1.1) / 2.2))
+    const luce = (e.attiva ? 0.35 + vicinanza * 0.6 : 0.16 + vicinanza * 0.22)
+    const testo = e.nome.toUpperCase().split('').join('\u200a')
+    const lx = e.x + 16
+    const ly = e.y - 10
+    ctx.globalAlpha = luce
+    ctx.strokeStyle = e.attiva ? colore : '#5d7c87'
+    ctx.lineWidth = 0.7
+    ctx.beginPath()
+    ctx.arc(e.x, e.y, 5.5, 0, Math.PI * 2)
+    ctx.moveTo(e.x + 4, e.y - 3)
+    ctx.lineTo(lx - 3, ly)
+    ctx.lineTo(lx + ctx.measureText(testo).width + 4, ly)
+    ctx.stroke()
+    ctx.fillStyle = e.attiva ? '#d3e8ef' : '#7f9ba6'
+    ctx.fillText(testo, lx, ly - 6)
+    if (!e.attiva) {
+      ctx.fillStyle = '#5d7c87'
+      ctx.fillText('in arrivo', lx, ly + 6)
+    }
+  }
+  ctx.restore()
+}
