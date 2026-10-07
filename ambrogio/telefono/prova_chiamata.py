@@ -17,7 +17,7 @@ import time
 import wave
 
 DOMINIO = "sip.linphone.org"
-ASCOLTO_SECONDI = 8
+ASCOLTO_SECONDI = 25
 CARTELLA = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -176,7 +176,16 @@ def main():
             setattr(fabbrica, campo, casa)
         except Exception:
             pass
-    core = fabbrica.create_core(os.path.join(casa, "linphonerc"), "", None)
+    # configurazione nuova a ogni avvio (altrimenti l'account delle prove precedenti risulta più volte)
+    configurazione = os.path.join(casa, "linphonerc")
+    if os.path.exists(configurazione):
+        os.remove(configurazione)
+    core = fabbrica.create_core(configurazione, "", None)
+    # memoria della cifratura ZRTP: verificato una volta il codice, il telefono non lo chiede più
+    try:
+        core.zrtp_secrets_file = os.path.join(casa, "zrtp-segreti.db")
+    except Exception:
+        pass
     # certificati per il collegamento sicuro (TLS) con sip.linphone.org
     for certificati in ("/etc/ssl/certs/ca-certificates.crt",):
         if os.path.exists(certificati):
@@ -319,7 +328,29 @@ def main():
         esci("Il telefono non ha accettato nessun tipo di chiamata: copia tutte le righe e mandale a Claude.")
 
     print(f"Hai risposto! Dovresti sentire tre bip. Poi parla pure: ti ascolto per {ASCOLTO_SECONDI} secondi …")
-    aspetta(lambda: stato_chiamata() in finita, ASCOLTO_SECONDI + 3)
+    codice_mostrato = [False]
+
+    def mostra_codice():
+        """codice di sicurezza della cifratura: il telefono lo chiede la prima volta"""
+        if codice_mostrato[0]:
+            return False
+        try:
+            codice = chiamata.authentication_token
+        except Exception:
+            codice = None
+        if codice:
+            codice_mostrato[0] = True
+            print()
+            print(f"  CODICE DI SICUREZZA: {codice.upper()}")
+            print("  Se il telefono chiede il codice, scegli l'opzione con queste lettere (o con metà di esse).")
+            print()
+            try:
+                chiamata.authentication_token_verified = True
+            except Exception:
+                pass
+        return False
+
+    aspetta(lambda: mostra_codice() or stato_chiamata() in finita, ASCOLTO_SECONDI + 3)
     if stato_chiamata() not in finita:
         chiamata.terminate()
     aspetta(lambda: stato_chiamata() in ("Released",), 5)
