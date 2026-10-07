@@ -8,12 +8,18 @@ export PATH="$HOME/.local/bin:$PATH"
 
 echo
 echo "== 1/4  Programmi di base (se chiede la password di Ubuntu: mentre la scrivi non si vede nulla, è normale)"
-sudo apt-get update -y
-sudo apt-get install -y python3 curl ca-certificates
-# librerie che il pezzo di Linphone può chiedere (i nomi cambiano tra le versioni di Ubuntu: si prova con tutti)
+# niente domande durante l'installazione (altrimenti resterebbe ferma ad aspettare una risposta)
+APT="sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q"
+$APT update
+$APT install python3 curl ca-certificates
+# librerie che il pezzo di Linphone può chiedere: si installano quelle che esistono in questa versione di Ubuntu
+# (alcune sono grandi: qualche minuto di download)
+DISPONIBILI=""
 for p in libasound2t64 libasound2 libpulse0 libv4l-0t64 libv4l-0 libgl1 libegl1 libglew2.2 libxext6 libxinerama1 libxrandr2 libsqlite3-0 libxml2 libturbojpeg; do
-  sudo apt-get install -y "$p" >/dev/null 2>&1 || true
+  if apt-cache show "$p" >/dev/null 2>&1; then DISPONIBILI="$DISPONIBILI $p"; fi
 done
+echo "Librerie:$DISPONIBILI"
+$APT install $DISPONIBILI || echo "(alcune librerie non si sono installate: si prova lo stesso)"
 
 echo
 echo "== 2/4  Cerco il pezzo ufficiale di Linphone sul sito linphone.org"
