@@ -28,8 +28,12 @@ function esiste(file: string) {
 
 function daFile(file: string): Eseguibile {
   if (WINDOWS && /\.(cmd|bat)$/i.test(file)) {
-    // Installazione via npm: meglio avviare direttamente node + cli.js, senza passare dal prompt dei comandi
-    const cli = path.join(path.dirname(file), 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js')
+    // Installazione via npm: claude.cmd è solo un collegamento. Meglio avviare direttamente il programma vero,
+    // senza passare dal prompt dei comandi (versioni recenti: bin/claude.exe; versioni vecchie: cli.js)
+    const pacchetto = path.join(path.dirname(file), 'node_modules', '@anthropic-ai', 'claude-code')
+    const exe = path.join(pacchetto, 'bin', 'claude.exe')
+    if (esiste(exe)) return { comando: exe, prefisso: [], shell: false, descrizione: exe }
+    const cli = path.join(pacchetto, 'cli.js')
     if (esiste(cli)) return { comando: process.execPath, prefisso: [cli], shell: false, descrizione: cli }
     return { comando: file, prefisso: [], shell: true, descrizione: file }
   }
