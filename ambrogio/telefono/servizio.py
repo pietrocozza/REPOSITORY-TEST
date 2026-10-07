@@ -69,6 +69,8 @@ def leggi_intestazione(f):
         return None
     frequenza = int.from_bytes(testa[24:28], "little")
     canali = int.from_bytes(testa[22:24], "little") or 1
+    if not 4000 <= frequenza <= 192000 or canali > 8:
+        return None  # intestazione non ancora scritta del tutto: si riprova dopo
     pos = 12
     while pos + 8 <= len(testa):
         nome = testa[pos:pos + 4]
@@ -386,7 +388,13 @@ def main():
                 evento("parlato", id=parlando[0])
                 parlando = None
             if orecchio and getattr(orecchio, "risposto", False):
-                frase = orecchio.leggi()
+                try:
+                    frase = orecchio.leggi()
+                except Exception as e:  # un problema nell'ascolto non deve far cadere la chiamata
+                    frase = None
+                    if not getattr(orecchio, "segnalato", False):
+                        orecchio.segnalato = True
+                        evento("errore", messaggio=f"ascolto: {type(e).__name__}: {e}")
                 if frase:
                     evento("frase", file=frase)
         time.sleep(0.01)
