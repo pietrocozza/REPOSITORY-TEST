@@ -357,11 +357,22 @@ def main():
     core.stop()
 
     forza = volume(registrazione)
+    # copia della registrazione da ascoltare su Windows: cartella ambrogio\data\telefono-prova.wav
+    copia = None
+    try:
+        import shutil
+        os.makedirs(os.path.join(CARTELLA, "data"), exist_ok=True)
+        copia = os.path.join(CARTELLA, "data", "telefono-prova.wav")
+        shutil.copyfile(registrazione, copia)
+    except Exception:
+        copia = None
     print()
+    if copia:
+        print("Quello che Ambrogio ha sentito è nel file:  ambrogio\\data\\telefono-prova.wav  (aprilo con doppio clic)")
     if forza is None:
         print("La chiamata funziona, ma non trovo la registrazione: mandami queste righe.")
     elif forza > 150:
-        print(f"PERFETTO: ti ho sentito (volume {forza}). La voce passa nei due sensi.")
+        print(f"Ho registrato dei suoni (volume {forza}): ascolta il file per sentire se c'è la tua voce.")
     else:
         print(f"La chiamata funziona ma ho registrato solo silenzio (volume {forza}). Dimmi se tu hai sentito i bip.")
 
