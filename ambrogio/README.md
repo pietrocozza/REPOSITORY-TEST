@@ -114,11 +114,11 @@ in Impostazioni (quelle con la ★).
 Ambrogio può parlare con accento milanese grazie a Google Gemini. Serve una "chiave" gratuita (senza carta di credito):
 
 1. Apri https://aistudio.google.com e accedi con il tuo account Google.
-2. Premi **Get API key** → **Create API key**, poi **copia** la chiave (una lunga riga che inizia con `AIza…`).
+2. Premi **Get API key** → **Create API key**, poi **copia** la chiave (una lunga riga di lettere e numeri, per esempio `AQ.…` o `AIza…`). Non mandarla a nessuno.
 3. In **PowerShell** scrivi `notepad $HOME\jarvis-progetto\ambrogio\.env` e premi Invio
    (se chiede di creare il file, rispondi **Sì**).
 4. Aggiungi una riga così, incollando la tua chiave dopo l'uguale, poi salva (Ctrl+S) e chiudi:
-   `AMBROGIO_GEMINI_CHIAVE=AIza...`
+   `AMBROGIO_GEMINI_CHIAVE=la-tua-chiave`
 5. Riavvia Ambrogio. In **Impostazioni → Chi parla** scegli **Ambrogio milanese** e prova le voci.
 
 La versione gratuita ha poche richieste al giorno. Ambrogio le risparmia: dice ogni risposta con una sola
