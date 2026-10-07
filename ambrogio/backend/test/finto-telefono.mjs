@@ -27,7 +27,8 @@ readline.createInterface({ input: process.stdin }).on('line', (riga) => {
     parlati++
     setTimeout(() => {
       ev('parlato', { id: c.id })
-      if (parlati <= 2) setTimeout(() => ev('frase', { file: frase }), 20)
+      // parla dopo l'apertura (1) e dopo la prima risposta (3: la 2 è la parolina d'attesa)
+      if (parlati === 1 || parlati === 3) setTimeout(() => ev('frase', { file: frase }), 20)
     }, 20)
   }
   if (c.cmd === 'riattacca') setTimeout(() => ev('fine', { motivo: 'riattaccato' }), 20)

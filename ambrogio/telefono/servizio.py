@@ -37,7 +37,7 @@ from prova_chiamata import (  # noqa: E402  (le stesse funzioni della chiamata d
 
 FRAME_MS = 20
 INIZIO_FRAME = 4  # 80 ms sopra la soglia: sta parlando
-FINE_SILENZIO_MS = 900  # tanto silenzio: ha finito la frase
+FINE_SILENZIO_MS = 650  # tanto silenzio: ha finito la frase
 PREROLL_MS = 300  # si tiene anche un pezzetto prima dell'inizio
 MIN_PARLATO_MS = 350
 MAX_FRASE_S = 25

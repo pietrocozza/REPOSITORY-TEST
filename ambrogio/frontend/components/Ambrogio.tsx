@@ -43,6 +43,9 @@ import {
   togliNome,
   eStop,
   estraiFrasi,
+  senzaSuoni,
+  suona,
+  suoniNelTesto,
   impostaVoce,
   impostaMotore,
   livelloVoce,
@@ -917,6 +920,11 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
         })
         if (t !== turno.current) return
         if (vocaleRef.current && buffer.trim()) parla(buffer, t)
+        // risposte non lette ad alta voce: la musica richiesta si fa sentire lo stesso
+        if (!vocaleRef.current) {
+          const testoFinale = vociRef.current.find((v) => v.id === idRisposta)?.testo ?? ''
+          for (const nome of suoniNelTesto(testoFinale)) suona(nome)
+        }
         flussoFinito.current = true
         if (frasiInCoda.current === 0) concludi(t)
       } catch (err) {
@@ -1118,7 +1126,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
 
   const ultima = [...voci].reverse().find((v) => v.ruolo === 'assistant')
   const ultimaDomanda = [...voci].reverse().find((v) => v.ruolo === 'user')
-  let parlato = annuncio || ultima?.testo || fraseAttesa || SALUTO
+  let parlato = annuncio || (ultima?.testo ? senzaSuoni(ultima.testo) : '') || fraseAttesa || SALUTO
   if (stato === 'ascolto') parlato = parziale ? `«${parziale}»` : 'Ti ascolto.'
   else if (conferme.length) parlato = `Mi serve il tuo permesso: ${conferme[0].descrizione}.`
   else if (stato === 'lavoro') parlato = `${strumento ?? 'Uso uno strumento'}…`
@@ -1319,7 +1327,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
                 {voci.length === 0 && <p className="j-vuoto">Scrivi qui sotto o premi il microfono per parlare.</p>}
                 {voci.map((v) => (
                   <p key={v.id} className={`j-msg ${v.ruolo}${v.errore ? ' errore' : ''}`}>
-                    {v.testo || '…'}
+                    {senzaSuoni(v.testo) || '…'}
                   </p>
                 ))}
                 {parziale && <p className="j-msg user fantasma">{parziale}</p>}

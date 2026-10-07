@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import readline from 'node:readline'
+import { dividiSuoni } from '../voce/suoni.ts'
 
 // Il telefono di Ambrogio. Il servizio vero (Linphone) gira in Ubuntu dentro Windows (telefono/servizio.py):
 // qui lo si accende, gli si mandano comandi (una riga JSON) e si ascoltano i suoi eventi (righe "@@AMBROGIO {…}").
@@ -143,7 +144,13 @@ export type Dipendenze = {
   rispondi: (richiesta: string) => Promise<string>
   cartella: string
   annota?: (testo: string) => void
+  /** il WAV di un suono o di una melodia ([SUONO: nome]) */
+  suono?: (nome: string) => Buffer | null
+  elencoSuoni?: () => string[]
 }
+
+// Mentre Ambrogio pensa la risposta, subito una parolina (dalle frasi già registrate: istantanea) come al telefono vero
+const ATTESA = ['Mmh.', 'Allora.', 'Vediamo.', 'Dunque.', 'Sì sì.', 'Certo.']
 
 export type EsitoTelefonata = { esito: 'conclusa' | 'nessuna-risposta' | 'errore'; motivo?: string; conversazione: Battuta[] }
 
@@ -163,10 +170,25 @@ export class Telefonata {
     this.d = d
   }
 
-  private async parla(testo: string) {
+  /** dice un testo (anche con [SUONO: …] dentro): il pezzo dopo si prepara mentre suona quello prima */
+  private async parla(testo: string, scritto = true) {
     if (this.finita) return
-    this.conversazione.push({ chi: 'ambrogio', testo })
-    const audio = await this.d.sintetizza(testo)
+    // il testo resta intero (ogni pezzo in più è una richiesta in più a Gemini, che ne concede poche al minuto)
+    const pezzi = dividiSuoni(testo)
+    const pulito = pezzi.map((p) => ('testo' in p ? p.testo : `♪ ${p.suono}`)).join(' ')
+    if (scritto && pulito) this.conversazione.push({ chi: 'ambrogio', testo: pulito })
+    const prepara = (p: (typeof pezzi)[number]) =>
+      'suono' in p ? Promise.resolve(this.d.suono?.(p.suono) ?? null) : this.d.sintetizza(p.testo)
+    let prossimo = pezzi.length ? prepara(pezzi[0]) : null
+    for (let i = 0; i < pezzi.length && !this.finita; i++) {
+      const audio = await prossimo
+      prossimo = i + 1 < pezzi.length ? prepara(pezzi[i + 1]) : null
+      if (audio) await this.suona(audio)
+    }
+  }
+
+  private async suona(audio: Buffer) {
+    if (this.finita) return
     fs.mkdirSync(this.d.cartella, { recursive: true })
     const file = path.join(this.d.cartella, `ambrogio-${Date.now()}-${++this.numero}.wav`)
     fs.writeFileSync(file, audio)
@@ -221,12 +243,15 @@ export class Telefonata {
         }
         silenzi = 0
         let detto = ''
+        // la parolina d'attesa parte subito, mentre si trascrive e si pensa
+        const attesa = this.parla(ATTESA[turni % ATTESA.length], false)
         try {
           detto = (await this.d.trascrivi(fs.readFileSync(percorsoWindows(String(e.file))))).trim()
         } catch (err) {
           this.d.annota?.(`Telefonata: non ho capito (${(err as Error).message})`)
         }
         if (!detto) {
+          await attesa
           await this.parla('Scusi, non ho capito bene: può ripetere?')
           continue
         }
@@ -235,10 +260,12 @@ export class Telefonata {
           ? `[TELEFONATA] Sei al telefono con ${nome}: l'hai chiamato tu. Motivo della chiamata: ${motivo}\n` +
             `Gli hai detto: «${apertura}». Lui risponde: «${detto}».\n` +
             `Rispondi come in una telefonata vera: una o due frasi brevi, niente elenchi, simboli o emoji. ` +
-            `Quando la conversazione è finita, saluta e scrivi in fondo [RIATTACCA].`
+            `Quando la conversazione è finita, saluta e scrivi in fondo [RIATTACCA].` +
+            (this.d.elencoSuoni ? ` Al telefono puoi far sentire musica con [SUONO: nome] (${this.d.elencoSuoni().join(', ')}).` : '')
           : `[TELEFONATA] ${nome} al telefono dice: «${detto}». (Frasi brevi; [RIATTACCA] in fondo quando avete finito.)`
         primo = false
         const testo = await this.d.rispondi(richiesta)
+        await attesa
         const chiudi = RIATTACCA.test(testo)
         const pulito = testo.replace(RIATTACCA, '').replace(/[*_#`>]/g, '').trim()
         if (pulito) await this.parla(pulito)

@@ -3,6 +3,7 @@ import { eseguiTurno, ProcessoClaude, type Avvio, type EsitoTurno } from './clau
 import type { Eseguibile } from './eseguibile.ts'
 import type { EventoAgente } from './eventi.ts'
 import { istruzioni, PERSONALITA, type IdPersonalita } from './istruzioni.ts'
+import { elencoSuoni } from '../voce/suoni.ts'
 import { ArchivioImpostazioni, MODELLI_CERVELLO, type Cervello } from '../impostazioni.ts'
 import { ArchivioSessione } from './sessione.ts'
 import path from 'node:path'
@@ -72,7 +73,7 @@ export class Agente {
       sessione: { ...this.sessioni.attuale },
       eseguibile: this.eseguibile,
       cartellaLavoro: this.config.cartellaLavoro,
-      istruzioni: istruzioni(this.config.appellativo, this.impostazioni.attuali.personalita, this.sintesiMemoria()),
+      istruzioni: istruzioni(this.config.appellativo, this.impostazioni.attuali.personalita, this.sintesiMemoria(), new Date(), elencoSuoni(this.config.cartellaDati)),
       strumenti: STRUMENTI_INTEGRATI,
       // il modello scritto nel file .env vince; altrimenti decide l'impostazione «cervello»
       modello: this.config.claude.modello || MODELLI_CERVELLO[this.impostazioni.attuali.cervello],

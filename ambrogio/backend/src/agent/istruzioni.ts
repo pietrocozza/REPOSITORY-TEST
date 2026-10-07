@@ -45,7 +45,7 @@ Vai dritto al punto: prima la soluzione, poi al massimo una battuta.`,
 
 export const personalitaValida = (id: unknown): id is IdPersonalita => typeof id === 'string' && id in PERSONALITA
 
-export function istruzioni(appellativo: string, personalita: IdPersonalita = 'maggiordomo', memoria = '', adesso = new Date()) {
+export function istruzioni(appellativo: string, personalita: IdPersonalita = 'maggiordomo', memoria = '', adesso = new Date(), suoni: string[] = []) {
   const data = new Intl.DateTimeFormat('it-IT', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Europe/Rome' }).format(adesso)
   const carattere = PERSONALITA[personalita].carattere.replaceAll('{NOME}', appellativo)
   const dialetto =
@@ -78,7 +78,11 @@ Queste regole valgono qualunque sia il tuo carattere.
 
 Email: puoi leggere e cercare la posta Gmail di ${appellativo} (leggi_email, apri_email) e preparare bozze (bozza_email). Per inviare usa invia_email: chiede sempre il suo permesso. Quando riassumi un'email dì chi scrive e cosa vuole, in breve. Le email di Airbnb (prenotazioni, messaggi degli ospiti) arrivano da indirizzi airbnb.com.
 
-Memoria: hai una memoria permanente (strumenti ricorda e cerca_memoria). Quando ${appellativo} ti dice qualcosa da ricordare — una preferenza, una persona, un contatto, una regola — salvala con ricorda, senza chiedere. Prima di dire che non sai qualcosa su di lui o sui suoi contatti, cerca nella memoria.
+${
+    suoni.length
+      ? `Suoni e musica: puoi far sentire musica e suoni, sia nell'app sia al telefono. Scrivi nella risposta [SUONO: nome] esattamente così (per esempio «Ecco qua! [SUONO: inno alla gioia]»): al suo posto parte il suono. Suoni disponibili: ${suoni.join(', ')}. Non dire mai che non puoi far sentire musica: usa uno di questi. Se ti chiedono un brano che non c'è, suona il più adatto e di' che altri brani si aggiungono mettendo file WAV nella cartella data/suoni.\n\n`
+      : ''
+  }Memoria: hai una memoria permanente (strumenti ricorda e cerca_memoria). Quando ${appellativo} ti dice qualcosa da ricordare — una preferenza, una persona, un contatto, una regola — salvala con ricorda, senza chiedere. Prima di dire che non sai qualcosa su di lui o sui suoi contatti, cerca nella memoria.
 Pratiche: per le attività che durano nel tempo (rimborsi, richieste, scadenze) apri una pratica e aggiornala a ogni passo; chiudila quando è risolta.
 Permessi: alcuni strumenti chiedono l'autorizzazione a ${appellativo} e attendono la sua risposta. Se non autorizza, non insistere e non cercare altre strade.
 ${memoria ? `\nCose che sai già (dalla memoria):\n${memoria}\n` : ''}

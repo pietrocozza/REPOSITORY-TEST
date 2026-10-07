@@ -351,15 +351,55 @@ async function prossima() {
   })
 }
 
+// ───────── Suoni e musica: nelle risposte Ambrogio scrive [SUONO: nome] ─────────
+export const ETICHETTA_SUONO = /\[\s*SUONO\s*:\s*([^\]]+?)\s*\]/gi
+/** il testo da mostrare, senza le richieste di suono (anche a metà mentre arrivano) */
+export const senzaSuoni = (testo: string) => testo.replace(ETICHETTA_SUONO, '♪').replace(/\[\s*SUONO[^\]]*$/i, '')
+export const suoniNelTesto = (testo: string) => [...testo.matchAll(ETICHETTA_SUONO)].map((m) => m[1])
+
+async function scaricaSuono(nome: string): Promise<Blob | null> {
+  try {
+    const res = await fetch(`/api/suoni/${encodeURIComponent(nome)}`)
+    return res.ok ? await res.blob() : null
+  } catch {
+    return null
+  }
+}
+
+/** fa sentire un suono in coda alla voce (anche quando le risposte non vengono lette ad alta voce) */
+export function suona(nome: string, eventi: EventiVoce = {}) {
+  if (typeof window === 'undefined') return eventi.onFine?.()
+  codaGemini.push({ testo: '', eventi, audio: scaricaSuono(nome), annullata: false })
+  if (!attuale) prossima()
+}
+
 export function pronuncia(testo: string, eventi: EventiVoce = {}) {
+  // dentro il testo ci possono essere suoni: si dicono e si suonano nell'ordine
+  const parti = testo.split(/(\[\s*SUONO\s*:[^\]]+\])/i).filter((p) => p.trim())
+  if (parti.length > 1 || ETICHETTA_SUONO.test(testo)) {
+    ETICHETTA_SUONO.lastIndex = 0
+    parti.forEach((p, i) => {
+      const ultimo = i === parti.length - 1
+      const ev = ultimo ? eventi : { onInizio: i === 0 ? eventi.onInizio : undefined, onParola: eventi.onParola }
+      const nome = /\[\s*SUONO\s*:\s*([^\]]+?)\s*\]/i.exec(p)?.[1]
+      if (nome) suona(nome, ev)
+      else pronunciaInCoda(p, ev)
+    })
+    return
+  }
+  pronunciaInCoda(testo, eventi)
+}
+
+function pronunciaInCoda(testo: string, eventi: EventiVoce) {
   const pulito = pulisci(testo)
   if (!pulito || typeof window === 'undefined') {
     eventi.onFine?.()
     return
   }
-  if (!parlaGemini()) return pronunciaEdge(pulito, eventi)
+  // con Edge la frase passa comunque dalla coda se c'è un suono in corso o in attesa (così l'ordine resta giusto)
+  if (!parlaGemini() && !attuale && !codaGemini.length) return pronunciaEdge(pulito, eventi)
   // l'audio si prepara subito, anche mentre la frase prima sta ancora suonando
-  codaGemini.push({ testo: pulito, eventi, audio: scarica(pulito), annullata: false })
+  codaGemini.push({ testo: pulito, eventi, audio: parlaGemini() ? scarica(pulito) : Promise.resolve(null), annullata: false })
   if (!attuale) prossima()
 }
 

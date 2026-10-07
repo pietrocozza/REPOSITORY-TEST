@@ -10,6 +10,7 @@ import { ErroreVoce, VOCI_GEMINI, VoceGemini } from '../voce/gemini.ts'
 import { VoceElevenLabs } from '../voce/elevenlabs.ts'
 import { Trascrizione } from '../voce/trascrizione.ts'
 import { sintetizzaWindows } from '../voce/windows.ts'
+import { elencoSuoni, suono } from '../voce/suoni.ts'
 import { AccessoGoogle, ErroreGoogle } from '../integrazioni/google.ts'
 import type { Gmail } from '../integrazioni/gmail.ts'
 import { frasiDaPreparare } from '../voce/frasi-pronte.ts'
@@ -163,6 +164,8 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
       cartella: cartellaTelefono,
       sintetizza: (testo) => vocePerTelefono(testo),
       trascrivi: (audio) => orecchie.trascrivi(audio, 'audio/wav'),
+      suono: (nome) => suono(nome, config.cartellaDati),
+      elencoSuoni: () => elencoSuoni(config.cartellaDati),
       rispondi: async (richiesta) => {
         let testo = ''
         await agente.chat(richiesta, (e) => {
@@ -319,6 +322,17 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
           const riprovaTra = Math.max(0, Math.round((motore.sospesaFinoA - Date.now()) / 1000))
           return inviaJson(res, e.tipo === 'senza-chiave' ? 409 : e.tipo === 'limite' ? 429 : 502, { errore: e.message, tipo: e.tipo, riprovaTra })
         }
+      }
+
+      // ───────── Suoni e musica che Ambrogio può far sentire ─────────
+      if (req.method === 'GET' && url.pathname === '/api/suoni') {
+        return inviaJson(res, 200, { suoni: elencoSuoni(config.cartellaDati) })
+      }
+      if (req.method === 'GET' && url.pathname.startsWith('/api/suoni/')) {
+        const audio = suono(decodeURIComponent(url.pathname.slice('/api/suoni/'.length)), config.cartellaDati)
+        if (!audio) return inviaJson(res, 404, { errore: 'Suono non trovato.' })
+        res.writeHead(200, { 'Content-Type': 'audio/wav', 'Content-Length': audio.length, 'Cache-Control': 'no-store' })
+        return res.end(audio)
       }
 
       // ───────── Sala macchine: i numeri veri di Ambrogio ─────────
