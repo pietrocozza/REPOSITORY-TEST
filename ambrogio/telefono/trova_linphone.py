@@ -54,7 +54,9 @@ def python_di(url):
     return (3, int(m.group(1))) if m else (0, 0)
 
 
-# il più recente; a parità, quello per il Python di questo Linux, poi per il Python più nuovo
+# prima le versioni stabili (niente alfa/beta come 5.6.0a7), poi la più recente; a parità, quella per il Python
+# di questo Linux, poi per il Python più nuovo
 nome = lambda u: u.rsplit("/", 1)[-1]
-scelto = max(ruote, key=lambda u: (versione(nome(u)), TAG in u, python_di(u)))
+stabile = lambda u: re.match(r"linphone-\d+(?:\.\d+)*-", nome(u)) is not None
+scelto = max(ruote, key=lambda u: (stabile(u), versione(nome(u)), TAG in u, python_di(u)))
 print(scelto)

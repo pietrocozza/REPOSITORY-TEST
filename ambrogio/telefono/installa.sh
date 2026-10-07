@@ -12,14 +12,18 @@ echo "== 1/4  Programmi di base (se chiede la password di Ubuntu: mentre la scri
 APT="sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q"
 $APT update
 $APT install python3 curl ca-certificates
-# librerie che il pezzo di Linphone può chiedere: si installano quelle che esistono in questa versione di Ubuntu
-# (alcune sono grandi: qualche minuto di download)
-DISPONIBILI=""
-for p in libasound2t64 libasound2 libpulse0 libv4l-0t64 libv4l-0 libgl1 libegl1 libglew2.2 libxext6 libxinerama1 libxrandr2 libsqlite3-0 libxml2 libturbojpeg; do
-  if apt-cache show "$p" >/dev/null 2>&1; then DISPONIBILI="$DISPONIBILI $p"; fi
+# librerie che il pezzo di Linphone può chiedere (fatto per Ubuntu 24.04): si installano quelle che esistono qui
+for p in libasound2t64 libpulse0 libv4l-0t64 libgl1 libegl1 libglew2.2 libxext6 libxinerama1 libxrandr2 \
+         libsqlite3-0 libxml2 libturbojpeg libturbojpeg0 libmysqlclient21 libpython3.12t64 libsrtp2-1 libopus0 libspeex1 libspeexdsp1; do
+  if apt-cache policy "$p" 2>/dev/null | grep -q 'Candidate: [0-9]'; then
+    $APT install "$p" >/dev/null 2>&1 && echo "  ok  $p" || echo "  --  $p (non installata)"
+  fi
 done
-echo "Librerie:$DISPONIBILI"
-$APT install $DISPONIBILI || echo "(alcune librerie non si sono installate: si prova lo stesso)"
+if ! grep -q 'VERSION_ID="24.04"' /etc/os-release 2>/dev/null; then
+  echo
+  echo "ATTENZIONE: questo è $(. /etc/os-release; echo "$PRETTY_NAME"). Linphone è fatto per Ubuntu 24.04:"
+  echo "se più sotto manca qualche libreria, installa Ubuntu 24.04 (in PowerShell: wsl --install -d Ubuntu-24.04)."
+fi
 
 echo
 echo "== 2/4  Cerco il pezzo ufficiale di Linphone sul sito linphone.org"
@@ -63,6 +67,12 @@ fi
 # prova.sh e Ambrogio la ritrovano qui
 echo "$LIBDIR" > "$AMBIENTE/cartella-libpython"
 export LD_LIBRARY_PATH="$LIBDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+MANCANTI="$(find "$AMBIENTE/lib" -path '*linphone*' -name '*.so*' -exec ldd {} \; 2>/dev/null | grep 'not found' | awk '{print $1}' | sort -u)"
+if [ -n "$MANCANTI" ]; then
+  echo "Librerie che mancano a Linphone:"
+  echo "$MANCANTI" | sed 's/^/  /'
+fi
 
 if "$AMBIENTE/bin/python" -c "import linphone; print('Linphone pronto, versione', linphone.Core.get_version())"; then
   echo
