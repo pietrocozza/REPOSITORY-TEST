@@ -210,7 +210,7 @@ def main():
     parametri.register_enabled = True
     parametri.nat_policy = nat
     account = core.create_account(parametri)
-    core.add_auth_info(crea_credenziali(fabbrica, utente, password))
+    credenziali = crea_credenziali(fabbrica, utente, password)
     def aspetta(condizione, secondi):
         fine = time.time() + secondi
         while time.time() < fine:
@@ -234,6 +234,13 @@ def main():
     if not aspetta(acceso, 20):
         esci("Linphone non riesce ad accendersi del tutto: copia tutte le righe e mandale a Claude.")
 
+    # l'account salvato dalle prove precedenti si toglie, così non risulta due volte
+    for pulizia in ("clear_accounts", "clear_all_auth_info"):
+        try:
+            getattr(core, pulizia)()
+        except Exception:
+            pass
+    core.add_auth_info(credenziali)
     core.add_account(account)
     core.default_account = account
     print(f"Mi collego come {io} …")
@@ -273,10 +280,16 @@ def main():
         if valore is not None:
             try:
                 core.media_encryption = valore
-                core.media_encryption_mandatory = False
             except Exception as e:
                 print(f"  (non riesco a impostare la cifratura {cifratura}: {e})")
                 continue
+            # "cifratura obbligatoria" spenta, se questa versione di Linphone ha l'impostazione
+            for campo in ("media_encryption_mandatory", "media_encryption_mandatory_enabled"):
+                try:
+                    setattr(core, campo, False)
+                    break
+                except Exception:
+                    pass
 
         print(f"Chiamo {destinatario} (cifratura {cifratura}) … rispondi dal telefono.")
         chiamata = core.invite(destinatario)
