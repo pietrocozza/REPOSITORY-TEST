@@ -61,3 +61,17 @@ test('strumenti: prenotazioni dal link del calendario, scheda della casa da riem
   assert.match(String(info.esegui({}, {} as never)), /Trastevere Charme/)
   servizi.airbnb = undefined
 })
+
+test('domande sul calendario: risposta immediata, senza Claude', async () => {
+  const { rispostaCalendario } = await import('../src/integrazioni/airbnb.ts')
+  const a = new Airbnb([{ numero: 1, nome: 'Trastevere', ical: 'x' }], async () => ICAL)
+  const oggi = '2026-10-08'
+  const sett = await rispostaCalendario('Chi arriva questa settimana?', a, oggi)
+  assert.match(sett ?? '', /In questo momento a Trastevere c'è un ospite, che parte venerdì 9 ottobre/)
+  assert.match(sett ?? '', /Arriva un ospite nei prossimi 7 giorni: lunedì 12 ottobre per 3 notti/)
+  assert.match((await rispostaCalendario('quanto sono occupato a novembre?', a, oggi)) ?? '', /A novembre non arriva nessuno.*Occupazione 0 per cento/s)
+  assert.match((await rispostaCalendario('chi parte domani', a, oggi)) ?? '', /Partenze domani: venerdì 9 ottobre/)
+  assert.equal(await rispostaCalendario('che prezzo mi consigli per i giorni liberi?', a, oggi), null, 'i prezzi li ragiona Claude')
+  assert.equal(await rispostaCalendario('che tempo fa domani?', a, oggi), null)
+  assert.equal(await rispostaCalendario('chi arriva?', undefined, oggi), null, 'Airbnb non collegato')
+})

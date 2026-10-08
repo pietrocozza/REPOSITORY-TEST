@@ -4,12 +4,13 @@ import type { Eseguibile } from './eseguibile.ts'
 import type { EventoAgente } from './eventi.ts'
 import { istruzioni, PERSONALITA, type IdPersonalita } from './istruzioni.ts'
 import { elencoSuoni } from '../voce/suoni.ts'
+import { rispostaCalendario } from '../integrazioni/airbnb.ts'
 import { ArchivioImpostazioni, MODELLI_CERVELLO, type Cervello } from '../impostazioni.ts'
 import { ArchivioSessione } from './sessione.ts'
 import path from 'node:path'
 import { Database } from '../database/db.ts'
 import { GestorePermessi } from '../permessi/gestore.ts'
-import { STRUMENTI } from '../strumenti/catalogo.ts'
+import { STRUMENTI, servizi } from '../strumenti/catalogo.ts'
 import { rispostaPronta } from './risposte-pronte.ts'
 
 export type Servizi = { db?: Database; gestore?: GestorePermessi; mcp?: { url: string; chiave: string } }
@@ -192,8 +193,15 @@ export class Agente {
     this.db.salvaMessaggio(sessioneTurno, 'user', messaggio)
     this.db.registra('messaggio', `Richiesta: ${messaggio.length > 90 ? messaggio.slice(0, 90) + '…' : messaggio}`)
 
-    // domande elementari (ora, data, saluti…): risposta immediata, senza Claude
-    const pronta = rispostaPronta(messaggio, { appellativo: this.config.appellativo, suoni: elencoSuoni(this.config.cartellaDati) })
+    // domande elementari (ora, data, saluti…) e sul calendario delle case: risposta immediata, senza Claude
+    let pronta = rispostaPronta(messaggio, { appellativo: this.config.appellativo, suoni: elencoSuoni(this.config.cartellaDati) })
+    if (!pronta) {
+      try {
+        pronta = await rispostaCalendario(messaggio, servizi.airbnb, new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date()))
+      } catch (err) {
+        this.db.registra('errore', `Calendario Airbnb: ${(err as Error).message}`)
+      }
+    }
     if (pronta) {
       if (this.inCorso === controller) this.inCorso = null
       this.db.salvaMessaggio(sessioneTurno, 'assistant', pronta)
