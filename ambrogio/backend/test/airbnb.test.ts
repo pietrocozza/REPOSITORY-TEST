@@ -73,5 +73,5 @@ test('domande sul calendario: risposta immediata, senza Claude', async () => {
   assert.match((await rispostaCalendario('chi parte domani', a, oggi)) ?? '', /Partenze domani: venerdì 9 ottobre/)
   assert.equal(await rispostaCalendario('che prezzo mi consigli per i giorni liberi?', a, oggi), null, 'i prezzi li ragiona Claude')
   assert.equal(await rispostaCalendario('che tempo fa domani?', a, oggi), null)
-  assert.equal(await rispostaCalendario('chi arriva?', undefined, oggi), null, 'Airbnb non collegato')
+  assert.match((await rispostaCalendario('chi arriva?', undefined, oggi)) ?? '', /non è ancora collegato.*AMBROGIO_AIRBNB_CASA_1_ICAL/, 'Airbnb non collegato: lo dice subito')
 })

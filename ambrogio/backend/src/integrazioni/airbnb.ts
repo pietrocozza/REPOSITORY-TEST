@@ -177,7 +177,12 @@ const VA_A_CLAUDE = /\b(?:prezz\w*|costa|tariff\w*|consigl\w*|messaggi?\w*|scriv
 /** Risposta parlata e immediata alle domande sul calendario, oppure null (allora risponde Claude) */
 export async function rispostaCalendario(domanda: string, airbnb: Airbnb | undefined, oggi: string): Promise<string | null> {
   const t = domanda.toLowerCase()
-  if (!airbnb?.case.length || !DOMANDA_CALENDARIO.test(t) || VA_A_CLAUDE.test(t)) return null
+  if (!DOMANDA_CALENDARIO.test(t) || VA_A_CLAUDE.test(t)) return null
+  // calendario non collegato: lo si dice subito (niente giri lenti nelle email)
+  if (!airbnb?.case.length)
+    return /airbnb|prenotazion|calendario|arriv|parten|occupa|disponibilit/.test(t)
+      ? 'Il calendario di Airbnb non è ancora collegato: nel file .env manca la riga AMBROGIO_AIRBNB_CASA_1_ICAL con il link del calendario. Aggiungila, salva e riavviami.'
+      : null
   const numero = /\b(?:casa|appartamento)\s*(?:2|due)\b|second[ao] casa/.test(t) ? 2 : undefined
   let letto: Awaited<ReturnType<Airbnb['calendario']>>
   try {
