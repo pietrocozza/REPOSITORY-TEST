@@ -293,6 +293,10 @@ Data e ora: ${ora}.`
           break
         }
         silenzi = 0
+        if (typeof e.durata_ms === 'number')
+          this.d.annota?.(
+            `Telefono: ho sentito una frase di ${(e.durata_ms / 1000).toFixed(1)} s (rumore ${String(e.fondo)}, voce ${String(e.voce)}${e.tagliata ? ', tagliata: non sentivo la pausa' : ''})`,
+          )
         const audio = fs.readFileSync(percorsoWindows(String(e.file)))
         const inizio = Date.now()
         // la parolina d'attesa parte subito, mentre Ambrogio capisce e pensa

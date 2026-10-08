@@ -40,7 +40,7 @@ INIZIO_FRAME = 4  # 80 ms sopra la soglia: sta parlando
 FINE_SILENZIO_MS = 650  # tanto silenzio: ha finito la frase
 PREROLL_MS = 300  # si tiene anche un pezzetto prima dell'inizio
 MIN_PARLATO_MS = 350
-MAX_FRASE_S = 25
+MAX_FRASE_S = 12  # oltre, la frase si chiude comunque (meglio spezzarla che aspettare)
 DOPO_PARLATO_MS = 450  # dopo che Ambrogio ha parlato si aspetta un attimo (eco)
 
 
@@ -101,6 +101,8 @@ class Orecchio:
         self.zitto_fino = 0.0
         self.numero = 0
         self.misura = None  # (ora, dimensione) per capire il formato se manca l'intestazione
+        self.voce = 0.0
+        self.ultima = {}
 
     def zitto_per(self, secondi):
         """mentre parla Ambrogio non si ascolta (si sentirebbe la sua eco)"""
@@ -181,14 +183,20 @@ class Orecchio:
             if self.sopra >= INIZIO_FRAME:
                 self.frase = list(self.storico)
                 self.silenzio_ms = 0
+                self.voce = rms
             return None
         self.frase.append(campioni)
-        self.silenzio_ms = self.silenzio_ms + FRAME_MS if rms < soglia * 0.7 else 0
+        # volume medio della voce in questa frase: la pausa è quando si scende molto sotto (anche con rumore di fondo)
+        if rms > soglia:
+            self.voce = self.voce * 0.9 + rms * 0.1
+        pausa = max(soglia * 0.7, self.voce * 0.35)
+        self.silenzio_ms = self.silenzio_ms + FRAME_MS if rms < pausa else 0
         durata = len(self.frase) * FRAME_MS
         if self.silenzio_ms >= FINE_SILENZIO_MS or durata >= MAX_FRASE_S * 1000:
             frase, self.frase, self.sopra = self.frase, None, 0
             if durata - self.silenzio_ms < MIN_PARLATO_MS:
                 return None
+            self.ultima = {"durata_ms": durata, "fondo": int(self.fondo), "voce": int(self.voce), "tagliata": durata >= MAX_FRASE_S * 1000}
             return self.salva(frase)
         return None
 
@@ -426,7 +434,7 @@ def main():
                         orecchio.segnalato = True
                         evento("errore", messaggio=f"ascolto: {type(e).__name__}: {e}")
                 if frase:
-                    evento("frase", file=frase)
+                    evento("frase", file=frase, **orecchio.ultima)
         time.sleep(0.01)
 
 
