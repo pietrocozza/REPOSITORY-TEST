@@ -11,6 +11,7 @@ import { VoceElevenLabs } from '../voce/elevenlabs.ts'
 import { Trascrizione } from '../voce/trascrizione.ts'
 import { sintetizzaWindows } from '../voce/windows.ts'
 import { elencoSuoni, suono } from '../voce/suoni.ts'
+import { servizi } from '../strumenti/catalogo.ts'
 import { AccessoGoogle, ErroreGoogle } from '../integrazioni/google.ts'
 import type { Gmail } from '../integrazioni/gmail.ts'
 import { frasiDaPreparare } from '../voce/frasi-pronte.ts'
@@ -362,6 +363,23 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
           },
           ora: new Date().toISOString(),
         })
+      }
+
+      // ───────── Airbnb: stato del collegamento (per capire subito se il calendario arriva) ─────────
+      if (req.method === 'GET' && url.pathname === '/api/airbnb') {
+        const a = servizi.airbnb
+        if (!a?.case.length) return inviaJson(res, 200, { collegato: false, motivo: 'Nel file .env manca AMBROGIO_AIRBNB_CASA_1_ICAL.' })
+        const case_ = await Promise.all(
+          a.case.map(async (c) => {
+            try {
+              const { periodi } = await a.calendario(c.numero)
+              return { numero: c.numero, nome: c.nome, ok: true, prenotazioni: periodi.filter((p) => p.tipo === 'prenotazione').length }
+            } catch (err) {
+              return { numero: c.numero, nome: c.nome, ok: false, errore: (err as Error).message }
+            }
+          }),
+        )
+        return inviaJson(res, 200, { collegato: true, case: case_ })
       }
 
       // ───────── Telefono ─────────

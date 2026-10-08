@@ -131,9 +131,15 @@ export class Airbnb {
     this.scarica =
       scarica ??
       (async (url) => {
-        const res = await fetch(url, { signal: AbortSignal.timeout(20_000) })
-        if (!res.ok) throw new Error(`Airbnb non dà il calendario (${res.status}): il link è giusto?`)
-        return res.text()
+        const res = await fetch(url, {
+          signal: AbortSignal.timeout(20_000),
+          // come fanno i programmi di calendario che si sincronizzano con Airbnb
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Ambrogio-Calendario/1.0)', Accept: 'text/calendar, */*' },
+        })
+        if (!res.ok) throw new Error(`Airbnb non dà il calendario (errore ${res.status}): controlla il link nel file .env`)
+        const testo = await res.text()
+        if (!testo.includes('BEGIN:VCALENDAR')) throw new Error('Airbnb ha risposto, ma non con un calendario: controlla il link nel file .env')
+        return testo
       })
   }
 
@@ -165,7 +171,7 @@ const detto = (iso: string) => {
 const notti = (n: number) => (n === 1 ? 'una notte' : `${n} notti`)
 
 // domande sul calendario a cui si risponde da soli; prezzi, consigli e messaggi vanno a Claude
-const DOMANDA_CALENDARIO = /\b(?:chi arriva|arriv\w*|chi parte|parten\w*|check.?in|check.?out|prenotazion\w*|prenotat\w*|occupa\w*|liber\w*|calendario|ospiti?)\b/
+const DOMANDA_CALENDARIO = /\b(?:chi arriva|arriv\w*|chi parte|parten\w*|check.?in|check.?out|prenotazion\w*|prenotat\w*|occupa\w*|liber\w*|calendario|ospiti?|airbnb|disponibilit\w*)\b/
 const VA_A_CLAUDE = /\b(?:prezz\w*|costa|tariff\w*|consigl\w*|messaggi?\w*|scriv\w*|rispond\w*|email|recension\w*|guadagn\w*|incass\w*|perché)\b/
 
 /** Risposta parlata e immediata alle domande sul calendario, oppure null (allora risponde Claude) */
@@ -173,7 +179,13 @@ export async function rispostaCalendario(domanda: string, airbnb: Airbnb | undef
   const t = domanda.toLowerCase()
   if (!airbnb?.case.length || !DOMANDA_CALENDARIO.test(t) || VA_A_CLAUDE.test(t)) return null
   const numero = /\b(?:casa|appartamento)\s*(?:2|due)\b|second[ao] casa/.test(t) ? 2 : undefined
-  const { casa, periodi } = await airbnb.calendario(numero)
+  let letto: Awaited<ReturnType<Airbnb['calendario']>>
+  try {
+    letto = await airbnb.calendario(numero)
+  } catch (err) {
+    return `Non riesco a leggere il calendario di Airbnb: ${(err as Error).message}.`
+  }
+  const { casa, periodi } = letto
   const pren = periodi.filter((p) => p.tipo === 'prenotazione')
 
   // la finestra di tempo della domanda

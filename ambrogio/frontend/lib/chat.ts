@@ -281,3 +281,9 @@ export type Statistiche = {
 }
 
 export const caricaStatistiche = () => leggi<Statistiche>('/api/statistiche')
+
+// ───────── Airbnb ─────────
+export type StatoAirbnb =
+  | { collegato: false; motivo: string }
+  | { collegato: true; case: { numero: number; nome: string; ok: boolean; prenotazioni?: number; errore?: string }[] }
+export const statoAirbnb = () => leggi<StatoAirbnb>('/api/airbnb')

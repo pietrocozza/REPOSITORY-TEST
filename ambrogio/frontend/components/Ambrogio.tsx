@@ -27,6 +27,7 @@ import Conferma from '@/components/Conferma'
 import ProvaMicrofono from '@/components/ProvaMicrofono'
 import SezioneEmail from '@/components/SezioneEmail'
 import SezioneTelefono from '@/components/SezioneTelefono'
+import SezioneAirbnb from '@/components/SezioneAirbnb'
 import { MESSAGGIO_PERMESSO, registraFrase, spiegaRegistrazione } from '@/lib/registra'
 import Codice, { CHIAVE_VISTO, piuRecente } from '@/components/Codice'
 import PannelloCodice from '@/components/PannelloCodice'
@@ -1362,6 +1363,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
               <h2>Impostazioni</h2>
 
               <SezioneTelefono />
+              <SezioneAirbnb />
 
               {cervello && (
                 <div className="j-riga j-riga-colonna">
