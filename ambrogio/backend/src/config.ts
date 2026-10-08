@@ -98,6 +98,16 @@ export const config = {
     comando: env('AMBROGIO_TELEFONO_COMANDO'),
   },
 
+  /**
+   * Airbnb: il link del calendario esportato di ogni casa (Annuncio → Disponibilità → Collega calendari → Esporta).
+   * È un link privato: sta solo nel file .env.
+   */
+  airbnb: {
+    case: [1, 2]
+      .map((n) => ({ numero: n, nome: env(`AMBROGIO_AIRBNB_CASA_${n}_NOME`, `Casa ${n}`), ical: env(`AMBROGIO_AIRBNB_CASA_${n}_ICAL`) }))
+      .filter((c) => c.ical),
+  },
+
   /** come Ambrogio ti chiama */
   appellativo: env('AMBROGIO_APPELLATIVO', 'Pietro'),
 }

@@ -222,6 +222,24 @@ Spazio: circa 1 GB da scaricare, 3 GB sul disco; serve un riavvio la prima volta
    il telefono in Ubuntu, ti chiama, parla con la sua voce, ascolta cosa rispondi e ti risponde; per finire basta salutarlo.
    La conversazione resta scritta sotto il bottone e nel Registro.
 
+## Collegare Airbnb (case vacanza)
+
+Airbnb non permette ai normali host di collegare programmi al proprio account, e far entrare un robot sul sito con la
+password è vietato. Ambrogio usa quindi i canali ufficiali:
+
+1. **Calendario**: su Airbnb (dal computer) apri l'annuncio → **Disponibilità** → **Collega calendari** → **Esporta
+   calendario** → copia il link. Nel file `.env`:
+   ```
+   AMBROGIO_AIRBNB_CASA_1_NOME=Trastevere
+   AMBROGIO_AIRBNB_CASA_1_ICAL=il link copiato
+   ```
+2. **Scheda della casa**: al primo avvio Ambrogio crea `data\case\casa-1.txt`. Aprila con il Blocco note e riempila
+   (check-in, wifi, regole, zona, risposte pronte…). Niente codici di porte o cassette.
+3. **Messaggi degli ospiti**: arrivano per email a Gmail; collega Gmail (sezione sopra).
+
+Poi chiedi: «chi arriva questa settimana?», «quanto sono occupato a novembre?», «che prezzo mi consigli per i buchi?».
+Ambrogio non cambia mai i prezzi: li suggerisce soltanto.
+
 ## Impostazioni
 
 Copia `.env.example` in `.env` e modifica lì (il nome con cui ti chiama, il modello, il percorso di Claude Code).

@@ -1,8 +1,9 @@
 import { TIPI_MEMORIA, type Database, type Livello, type StatoPratica, type TipoMemoria } from '../database/db.ts'
 import type { Gmail } from '../integrazioni/gmail.ts'
+import { riassumiCalendario, schedaCasa, type Airbnb } from '../integrazioni/airbnb.ts'
 
 /** I servizi esterni collegati (impostati all'avvio): gli strumenti li usano se ci sono */
-export const servizi: { gmail?: Gmail } = {}
+export const servizi: { gmail?: Gmail; airbnb?: Airbnb; cartellaDati?: string } = {}
 
 const serveGmail = () => {
   if (!servizi.gmail?.collegato) throw new Error('Gmail non è collegato: Pietro può collegarlo dal menu Email di Ambrogio.')
@@ -157,6 +158,47 @@ export const STRUMENTI: Strumento[] = [
       const lista = db.pratiche(stato)
       if (!lista.length) return 'Nessuna pratica.'
       return lista.map((p) => `[id ${p.id}] ${p.titolo} — ${p.stato}\n  ${p.descrizione}${p.note ? `\n  Note:\n  ${p.note.replace(/\n/g, '\n  ')}` : ''}`).join('\n')
+    },
+  },
+  {
+    nome: 'prenotazioni',
+    descrizione:
+      "Calendario Airbnb di una casa: prenotazioni dei prossimi giorni (arrivi, partenze, notti, codice prenotazione, ultime cifre del telefono dell'ospite), percentuale di occupazione e periodi liberi. Per suggerire prezzi o promozioni sui periodi liberi (Ambrogio non modifica mai i prezzi).",
+    livello: 1,
+    schema: {
+      type: 'object',
+      properties: {
+        casa: { type: 'integer', description: 'Numero della casa (1 o 2; vuoto = la prima)' },
+        giorni: { type: 'integer', description: 'Quanti giorni guardare in avanti (di solito 30)' },
+      },
+      required: [],
+      additionalProperties: false,
+    },
+    riassunto: (a) => `Guardare il calendario Airbnb${intero(a, 'casa') ? ` della casa ${intero(a, 'casa')}` : ''}`,
+    esegui: async (a) => {
+      if (!servizi.airbnb?.case.length) return 'Airbnb non è collegato: nel file .env manca il link del calendario (AMBROGIO_AIRBNB_CASA_1_ICAL).'
+      const { casa, periodi } = await servizi.airbnb.calendario(intero(a, 'casa') || undefined)
+      const oggi = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date())
+      return riassumiCalendario(casa.nome, periodi, oggi, Math.min(365, Math.max(1, intero(a, 'giorni') || 30)))
+    },
+  },
+  {
+    nome: 'info_casa',
+    descrizione:
+      "La scheda di una casa vacanza (indirizzo, check-in e check-out, wifi, regole, dotazioni, parcheggio, zona, risposte pronte, emergenze): usala per rispondere alle domande degli ospiti. Non inventare mai informazioni che non ci sono e non dare mai codici di porte o cassette.",
+    livello: 1,
+    schema: {
+      type: 'object',
+      properties: { casa: { type: 'integer', description: 'Numero della casa (1 o 2; vuoto = 1)' } },
+      required: [],
+      additionalProperties: false,
+    },
+    riassunto: (a) => `Leggere la scheda della casa ${intero(a, 'casa') || 1}`,
+    esegui: (a) => {
+      const scheda = schedaCasa(servizi.cartellaDati ?? 'data', intero(a, 'casa') || 1)
+      return scheda.compilata
+        ? scheda.testo
+        : `La scheda della casa non è ancora compilata: Pietro deve riempire il file ${scheda.file}. Per ora non dare informazioni sulla casa agli ospiti.`
     },
   },
   {

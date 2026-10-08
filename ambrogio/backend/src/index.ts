@@ -11,6 +11,7 @@ import { GestorePermessi } from './permessi/gestore.ts'
 import { creaServerMcp } from './mcp/server.ts'
 import { AccessoGoogle } from './integrazioni/google.ts'
 import { Gmail } from './integrazioni/gmail.ts'
+import { Airbnb, schedaCasa } from './integrazioni/airbnb.ts'
 import { servizi } from './strumenti/catalogo.ts'
 
 // Avvio del backend locale di Ambrogio.
@@ -41,6 +42,10 @@ const google = new AccessoGoogle({
     : {}),
 })
 servizi.gmail = new Gmail(google)
+servizi.airbnb = new Airbnb(config.airbnb.case)
+servizi.cartellaDati = config.cartellaDati
+// la scheda della casa 1 (si crea il modello da riempire, se manca)
+schedaCasa(config.cartellaDati, 1)
 const server = creaServer(config, agente, { mcp: creaServerMcp(gestore, chiaveMcp), google, gmail: servizi.gmail })
 // la versione accesa (utile per capire se un aggiornamento è davvero partito)
 let versione = ''
