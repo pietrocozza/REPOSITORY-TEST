@@ -1,9 +1,10 @@
 import { TIPI_MEMORIA, type Database, type Livello, type StatoPratica, type TipoMemoria } from '../database/db.ts'
 import type { Gmail } from '../integrazioni/gmail.ts'
 import { riassumiCalendario, schedaCasa, type Airbnb } from '../integrazioni/airbnb.ts'
+import { dettoQuando, type CalendarioGoogle } from '../integrazioni/calendario.ts'
 
 /** I servizi esterni collegati (impostati all'avvio): gli strumenti li usano se ci sono */
-export const servizi: { gmail?: Gmail; airbnb?: Airbnb; cartellaDati?: string } = {}
+export const servizi: { gmail?: Gmail; airbnb?: Airbnb; calendario?: CalendarioGoogle; cartellaDati?: string } = {}
 
 const serveGmail = () => {
   if (!servizi.gmail?.collegato) throw new Error('Gmail non è collegato: Pietro può collegarlo dal menu Email di Ambrogio.')
@@ -158,6 +159,59 @@ export const STRUMENTI: Strumento[] = [
       const lista = db.pratiche(stato)
       if (!lista.length) return 'Nessuna pratica.'
       return lista.map((p) => `[id ${p.id}] ${p.titolo} — ${p.stato}\n  ${p.descrizione}${p.note ? `\n  Note:\n  ${p.note.replace(/\n/g, '\n  ')}` : ''}`).join('\n')
+    },
+  },
+  {
+    nome: 'agenda',
+    descrizione:
+      "Gli impegni di Pietro da Google Calendar (tutti i suoi calendari, anche quelli dell'iPhone se sincronizzati con Google) a partire da una data, per un certo numero di giorni.",
+    livello: 1,
+    schema: {
+      type: 'object',
+      properties: {
+        da: { type: 'string', description: 'Data di inizio AAAA-MM-GG (vuoto = oggi)' },
+        giorni: { type: 'integer', description: 'Quanti giorni guardare (di solito 1 o 7)' },
+      },
+      required: [],
+      additionalProperties: false,
+    },
+    riassunto: (a) => `Guardare l'agenda${testo(a, 'da') ? ` dal ${testo(a, 'da')}` : ''}`,
+    esegui: async (a) => {
+      if (!servizi.calendario) return 'Google Calendar non è collegato.'
+      const da = testo(a, 'da') ? new Date(`${testo(a, 'da')}T00:00:00`) : new Date()
+      const a2 = new Date(da.getTime() + Math.min(60, Math.max(1, intero(a, 'giorni') || 7)) * 86_400_000)
+      const lista = await servizi.calendario.impegni(da, a2)
+      if (!lista.length) return 'Nessun impegno in quel periodo.'
+      return lista.map((i) => `- ${dettoQuando(i)}: ${i.titolo}${i.luogo ? ` (${i.luogo})` : ''} [${i.calendario}]`).join('\n')
+    },
+  },
+  {
+    nome: 'aggiungi_impegno',
+    descrizione: "Aggiunge un impegno al Google Calendar di Pietro (chiede sempre il suo permesso).",
+    livello: 2,
+    schema: {
+      type: 'object',
+      properties: {
+        titolo: { type: 'string', description: "Cosa (es. 'Check-in ospiti Trastevere')" },
+        inizio: { type: 'string', description: "Quando: AAAA-MM-GGTHH:MM (ora italiana) oppure AAAA-MM-GG per tutto il giorno" },
+        fine: { type: 'string', description: 'Fine, stesso formato (vuoto = un\'ora dopo, o il giorno intero)' },
+        luogo: { type: 'string', description: 'Dove (facoltativo)' },
+        note: { type: 'string', description: 'Note (facoltative)' },
+      },
+      required: ['titolo', 'inizio'],
+      additionalProperties: false,
+    },
+    riassunto: (a) => `Aggiungere al calendario «${testo(a, 'titolo')}» (${testo(a, 'inizio')})`,
+    esegui: async (a) => {
+      if (!servizi.calendario) return 'Google Calendar non è collegato.'
+      await servizi.calendario.aggiungi({
+        titolo: testo(a, 'titolo'),
+        inizio: testo(a, 'inizio'),
+        fine: testo(a, 'fine') || undefined,
+        luogo: testo(a, 'luogo') || undefined,
+        note: testo(a, 'note') || undefined,
+      })
+      return `Impegno aggiunto: ${testo(a, 'titolo')} (${testo(a, 'inizio')}).`
     },
   },
   {

@@ -5,6 +5,7 @@ import type { EventoAgente } from './eventi.ts'
 import { istruzioni, PERSONALITA, type IdPersonalita } from './istruzioni.ts'
 import { elencoSuoni } from '../voce/suoni.ts'
 import { rispostaCalendario } from '../integrazioni/airbnb.ts'
+import { rispostaAgenda } from '../integrazioni/calendario.ts'
 import { ArchivioImpostazioni, MODELLI_CERVELLO, type Cervello } from '../impostazioni.ts'
 import { ArchivioSessione } from './sessione.ts'
 import path from 'node:path'
@@ -198,6 +199,7 @@ export class Agente {
     if (!pronta) {
       try {
         pronta = await rispostaCalendario(messaggio, servizi.airbnb, new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date()))
+        pronta ??= await rispostaAgenda(messaggio, servizi.calendario?.disponibile ? servizi.calendario : undefined)
       } catch (err) {
         this.db.registra('errore', `Calendario Airbnb: ${(err as Error).message}`)
       }

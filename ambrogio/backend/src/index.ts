@@ -11,6 +11,7 @@ import { GestorePermessi } from './permessi/gestore.ts'
 import { creaServerMcp } from './mcp/server.ts'
 import { AccessoGoogle } from './integrazioni/google.ts'
 import { Gmail } from './integrazioni/gmail.ts'
+import { CalendarioGoogle } from './integrazioni/calendario.ts'
 import { Airbnb, schedaCasa } from './integrazioni/airbnb.ts'
 import { servizi } from './strumenti/catalogo.ts'
 
@@ -42,6 +43,7 @@ const google = new AccessoGoogle({
     : {}),
 })
 servizi.gmail = new Gmail(google)
+servizi.calendario = new CalendarioGoogle(google)
 servizi.airbnb = new Airbnb(config.airbnb.case)
 servizi.cartellaDati = config.cartellaDati
 // la scheda della casa 1 (si crea il modello da riempire, se manca)

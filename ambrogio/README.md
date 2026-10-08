@@ -222,6 +222,16 @@ Spazio: circa 1 GB da scaricare, 3 GB sul disco; serve un riavvio la prima volta
    il telefono in Ubuntu, ti chiama, parla con la sua voce, ascolta cosa rispondi e ti risponde; per finire basta salutarlo.
    La conversazione resta scritta sotto il bottone e nel Registro.
 
+## Collegare Google Calendar (e il calendario dell'iPhone)
+
+1. Su console.cloud.google.com, nel progetto «Ambrogio», cerca **Google Calendar API** e clicca **Abilita**.
+2. In Ambrogio: **Menu → Email → Scollega**, poi **Collega Gmail** di nuovo, e accetta anche i permessi del calendario.
+3. Sull'iPhone, per vedere e creare gli impegni nello stesso calendario: **Impostazioni → App → Calendario → Account →
+   Aggiungi account → Google** (lo stesso account), con **Calendari** acceso; poi in **Calendario predefinito** scegli
+   quello di Google.
+
+Poi: «cosa ho domani?», «che impegni ho venerdì?», «segnami il commercialista giovedì alle 15» (chiede il permesso).
+
 ## Collegare Airbnb (case vacanza)
 
 Airbnb non permette ai normali host di collegare programmi al proprio account, e far entrare un robot sul sito con la

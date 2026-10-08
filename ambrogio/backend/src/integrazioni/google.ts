@@ -10,6 +10,8 @@ import path from 'node:path'
 export const AMBITI_GOOGLE = [
   'https://www.googleapis.com/auth/gmail.readonly', // leggere e cercare le email
   'https://www.googleapis.com/auth/gmail.compose', // preparare bozze e inviare (l'invio chiede sempre il permesso)
+  'https://www.googleapis.com/auth/calendar.readonly', // leggere gli impegni di tutti i calendari
+  'https://www.googleapis.com/auth/calendar.events', // aggiungere impegni (sempre con il permesso di Pietro)
 ]
 
 type Token = { refresh_token: string; access_token?: string; scadenza?: number; email?: string; ambiti?: string }
@@ -63,8 +65,13 @@ export class AccessoGoogle {
     return Boolean(this.token?.refresh_token)
   }
 
+  /** il permesso dato a Google comprende questo ambito? (es. 'calendar') */
+  ha(parola: string) {
+    return Boolean(this.token?.ambiti?.includes(parola))
+  }
+
   stato() {
-    return { configurato: this.configurato, collegato: this.collegato, email: this.token?.email ?? null }
+    return { configurato: this.configurato, collegato: this.collegato, email: this.token?.email ?? null, calendario: this.ha('calendar') }
   }
 
   private salva() {
@@ -162,9 +169,18 @@ export class AccessoGoogle {
   }
 
   /** Chiamata alle API di Google (percorso relativo, es. /gmail/v1/users/me/messages) */
+  /** Gmail ha il suo indirizzo; le altre API di Google (calendario) si passano complete */
+  private indirizzo(percorso: string) {
+    if (percorso.startsWith('https://')) {
+      const u = new URL(percorso)
+      return this.opz.urlApi ? `${this.opz.urlApi}${u.pathname}${u.search}` : percorso
+    }
+    return `${this.opz.urlApi ?? 'https://gmail.googleapis.com'}${percorso}`
+  }
+
   async chiama(percorso: string, init: RequestInit = {}): Promise<unknown> {
     const fai = async () =>
-      fetch(`${this.opz.urlApi ?? 'https://gmail.googleapis.com'}${percorso}`, {
+      fetch(this.indirizzo(percorso), {
         ...init,
         headers: { Authorization: `Bearer ${await this.lasciapassare()}`, ...(init.body ? { 'Content-Type': 'application/json' } : {}), ...(init.headers ?? {}) },
         signal: AbortSignal.timeout(30_000),
