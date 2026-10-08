@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { caricaStatistiche, type Statistiche } from '@/lib/chat'
 import type { Modo } from '@/lib/nucleo-neurale'
-import { COLORI_TIPO, disegnaAnello, disegnaBarre, disegnaGradini, disegnaIstogramma, disegnaRosa } from '@/lib/sala'
+import { COLORI_TIPO, TAVOLOZZA, disegnaAnello, disegnaBarre, disegnaGradini, disegnaGriglia, disegnaIstogramma, disegnaRosa } from '@/lib/sala'
 import { MODULI, Vortice, type IngressiVortice } from '@/lib/vortice'
 
 // La "Sala macchine": il vortice 3D al centro (lo stato vero di Ambrogio: ascolto, pensiero, strumenti, voce),
@@ -95,18 +95,32 @@ function statoDemo(t: number): StatoSala {
   }
 }
 
-function Grafico({ disegna, classe }: { disegna: (t: HTMLCanvasElement) => void; classe?: string }) {
+/** un grafico sempre vivo: si ridisegna di continuo (circa 30 volte al secondo) con i numeri più recenti */
+function Grafico({ disegna, classe }: { disegna: (t: HTMLCanvasElement, tempo: number) => void; classe?: string }) {
   const tela = useRef<HTMLCanvasElement>(null)
+  const funzione = useRef(disegna)
   useEffect(() => {
-    if (tela.current) disegna(tela.current)
+    funzione.current = disegna
   })
+  useEffect(() => {
+    let raf = 0
+    let ultimo = 0
+    const giro = (t: number) => {
+      raf = requestAnimationFrame(giro)
+      if (document.hidden || t - ultimo < 33 || !tela.current) return
+      ultimo = t
+      funzione.current(tela.current, t)
+    }
+    raf = requestAnimationFrame(giro)
+    return () => cancelAnimationFrame(raf)
+  }, [])
   return <canvas ref={tela} className={classe ?? 'j-sm-grafico'} aria-hidden="true" />
 }
 
-function Barra({ nome, valore, max = 100, testo }: { nome: string; valore: number; max?: number; testo: string }) {
+function Barra({ nome, valore, max = 100, testo, colore = '#eaf5ff' }: { nome: string; valore: number; max?: number; testo: string; colore?: string }) {
   const p = Math.max(0, Math.min(1, max ? valore / max : 0))
   return (
-    <div className="j-sm-barra">
+    <div className="j-sm-barra" style={{ '--c': colore } as CSSProperties}>
       <span>{nome}</span>
       <i>
         <b style={{ width: `${p * 100}%` }} />
@@ -124,7 +138,6 @@ export default function SalaMacchine({ onChiudi, leggiStato }: { onChiudi: () =>
   const [demo, setDemo] = useState(false)
   const [ridotto, setRidotto] = useState(false)
   const [espanso, setEspanso] = useState(false)
-  const [dettagli, setDettagli] = useState(false)
   const [selezione, setSelezione] = useState(-1)
   const [senza3d, setSenza3d] = useState(false)
   const [vivo, setVivo] = useState<StatoSala>({ modo: 'idle', strumento: null, errore: null, livelloIn: 0, livelloOut: 0, bande: [] })
@@ -391,11 +404,17 @@ export default function SalaMacchine({ onChiudi, leggiStato }: { onChiudi: () =>
           </section>
           <section>
             <h3>
+              ATTIVITÀ 24 ORE <em>{s ? `${s.attivita.reduce((a, b) => a + b, 0)} eventi` : ''}</em>
+            </h3>
+            <Grafico disegna={(t, tempo) => disegnaGradini(t, s?.attivita ?? new Array(48).fill(0), tempo)} />
+          </section>
+          <section>
+            <h3>
               STRUMENTI USATI <em>{strumenti.length ? `${strumenti.length} tipi` : ''}</em>
             </h3>
             {strumenti.length ? (
               <>
-                <Grafico disegna={(t) => disegnaBarre(t, strumenti.map(([, n]) => n))} />
+                <Grafico disegna={(t, tempo) => disegnaBarre(t, strumenti.map(([, n]) => n), { tempo })} />
                 <p className="j-sm-nomi">{strumenti.map(([n, v]) => `${n} ${v}`).join(' · ')}</p>
               </>
             ) : (
@@ -403,10 +422,19 @@ export default function SalaMacchine({ onChiudi, leggiStato }: { onChiudi: () =>
             )}
           </section>
           <section>
+            <h3>SEGNALI</h3>
+            <Grafico
+              classe="j-sm-grafico basso"
+              disegna={(t, tempo) =>
+                disegnaGriglia(t, s ? [...s.perOra, ...s.giorni.flatMap((g) => [g.richieste, g.azioni, g.errori ? -g.errori : 0]), s.voce.richiesteOggi, s.totali.memorie, s.totali.praticheAperte] : new Array(48).fill(0), tempo)
+              }
+            />
+          </section>
+          <section>
             <h3>
               TEMPI DI RISPOSTA <em>{s?.tempi.length ? `mediana ${sec(mediana(s.tempi))} s` : ''}</em>
             </h3>
-            {s?.tempi.length ? <Grafico disegna={(t) => disegnaIstogramma(t, s.tempi)} /> : <p className="j-sm-riga">Non ancora disponibile</p>}
+            <Grafico disegna={(t, tempo) => disegnaIstogramma(t, s?.tempi ?? [], tempo)} />
           </section>
           <section>
             <h3>
@@ -414,9 +442,9 @@ export default function SalaMacchine({ onChiudi, leggiStato }: { onChiudi: () =>
             </h3>
             {s ? (
               <>
-                <Barra nome="processore" valore={s.sistema.cpu} testo={`${s.sistema.cpu}%`} />
-                <Barra nome="memoria PC" valore={s.sistema.ramUsata} max={s.sistema.ramTotale} testo={`${GB(s.sistema.ramUsata)}/${GB(s.sistema.ramTotale)} GB`} />
-                <Barra nome="motore" valore={s.sistema.memoriaAmbrogio} max={1024 ** 3} testo={`${MB(s.sistema.memoriaAmbrogio)} MB`} />
+                <Barra nome="processore" valore={s.sistema.cpu} testo={`${s.sistema.cpu}%`} colore={s.sistema.cpu > 85 ? TAVOLOZZA.rosso : TAVOLOZZA.giallo} />
+                <Barra nome="memoria PC" valore={s.sistema.ramUsata} max={s.sistema.ramTotale} testo={`${GB(s.sistema.ramUsata)}/${GB(s.sistema.ramTotale)} GB`} colore={TAVOLOZZA.ciano} />
+                <Barra nome="motore" valore={s.sistema.memoriaAmbrogio} max={1024 ** 3} testo={`${MB(s.sistema.memoriaAmbrogio)} MB`} colore={TAVOLOZZA.verde} />
                 <p className="j-sm-nomi">acceso da {durata(s.sistema.accesoDaS)} · cervello {s.cervello}</p>
               </>
             ) : (
@@ -441,37 +469,37 @@ export default function SalaMacchine({ onChiudi, leggiStato }: { onChiudi: () =>
               </div>
             )}
           </section>
-          <button type="button" className="j-sm-altro" onClick={() => setDettagli(!dettagli)} aria-expanded={dettagli}>
-            {dettagli ? 'Meno dettagli' : 'Altri dettagli'}
-          </button>
-          {dettagli && s && (
-            <>
-              <section>
-                <h3>
-                  ATTIVITÀ 24 ORE <em>{s.attivita.reduce((a, b) => a + b, 0)} eventi</em>
-                </h3>
-                <Grafico disegna={(t) => disegnaGradini(t, s.attivita)} />
-              </section>
-              <section>
-                <h3>A CHE ORA LAVORA</h3>
-                <Grafico classe="j-sm-rosa" disegna={(t) => disegnaRosa(t, s.perOra, performance.now())} />
-              </section>
-              <section>
-                <h3>
-                  ULTIMI 7 GIORNI <em>richieste ▮ azioni —</em>
-                </h3>
-                <Grafico classe="j-sm-grafico alto" disegna={(t) => disegnaBarre(t, s.giorni.map((g) => g.richieste), { linea: s.giorni.map((g) => g.azioni), colori: ['#4aa3ff'] })} />
-              </section>
-              <section>
-                <h3>COME RISPONDE</h3>
-                <Barra nome="risposte pronte" valore={s.risposte.pronte} max={totRisposte} testo={`${s.risposte.pronte}`} />
-                <Barra nome="con Claude" valore={s.risposte.conClaude} max={totRisposte} testo={`${s.risposte.conClaude}`} />
-                <Barra nome="permessi dati" valore={s.totali.concesse} max={totPermessi} testo={`${s.totali.concesse}`} />
-                <Barra nome="permessi negati" valore={s.totali.negate} max={totPermessi} testo={`${s.totali.negate}`} />
-              </section>
-            </>
-          )}
         </aside>
+      </div>
+
+      <div className="j-sm-fascia">
+        <section>
+          <h3>A CHE ORA LAVORA</h3>
+          <Grafico classe="j-sm-rosa" disegna={(t, tempo) => disegnaRosa(t, s?.perOra ?? new Array(24).fill(0), tempo)} />
+        </section>
+        <section>
+          <h3>COME RISPONDE</h3>
+          <Barra nome="risposte pronte" valore={s?.risposte.pronte ?? 0} max={totRisposte} testo={`${s?.risposte.pronte ?? 0}`} colore={TAVOLOZZA.verde} />
+          <Barra nome="con Claude" valore={s?.risposte.conClaude ?? 0} max={totRisposte} testo={`${s?.risposte.conClaude ?? 0}`} colore={TAVOLOZZA.blu} />
+          <Barra nome="permessi dati" valore={s?.totali.concesse ?? 0} max={totPermessi} testo={`${s?.totali.concesse ?? 0}`} colore={TAVOLOZZA.giallo} />
+          <Barra nome="permessi negati" valore={s?.totali.negate ?? 0} max={totPermessi} testo={`${s?.totali.negate ?? 0}`} colore={TAVOLOZZA.rosso} />
+          <Barra nome="voci Gemini oggi" valore={s?.voce.richiesteOggi ?? 0} max={100} testo={`${s?.voce.richiesteOggi ?? 0}/100`} colore={TAVOLOZZA.arancio} />
+        </section>
+        <section>
+          <h3>
+            ULTIMI 7 GIORNI <em>richieste ▮ azioni —</em>
+          </h3>
+          <Grafico
+            classe="j-sm-grafico alto"
+            disegna={(t, tempo) =>
+              disegnaBarre(t, s?.giorni.map((g) => g.richieste) ?? new Array(7).fill(0), {
+                linea: s?.giorni.map((g) => g.azioni),
+                colori: [TAVOLOZZA.blu, TAVOLOZZA.blu, TAVOLOZZA.blu, TAVOLOZZA.blu, TAVOLOZZA.blu, TAVOLOZZA.blu, TAVOLOZZA.arancio],
+                tempo,
+              })
+            }
+          />
+        </section>
       </div>
 
       <footer className="j-sm-piede">

@@ -2398,3 +2398,57 @@ select {
     height: 38px;
   }
 }
+/* fascia in basso con i grafici a colori, e barre a cursore colorate */
+.j-sala {
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+}
+.j-sm-fascia {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.j-sm-fascia section {
+  padding: 8px 10px;
+  border: 1px solid var(--sm-linea);
+  background: var(--sm-pannello);
+}
+.j-sala[data-espanso] .j-sm-fascia {
+  display: none;
+}
+.j-sm-fascia .j-sm-rosa {
+  height: 112px;
+}
+.j-sm-fascia .j-sm-grafico.alto {
+  height: 100px;
+}
+.j-sm-grafico.basso {
+  height: 34px;
+}
+.j-sm-barra {
+  margin: 4px 0;
+}
+.j-sm-barra b {
+  background: var(--c, var(--sm-ghiaccio));
+  box-shadow: 0 0 6px var(--c, transparent);
+}
+/* il pallino del cursore alla fine della barra */
+.j-sm-barra b::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #05080d;
+  border: 2px solid var(--c, var(--sm-ghiaccio));
+  transform: translateY(-50%);
+}
+.j-sm-barra i {
+  height: 2px;
+}
+@media (max-width: 900px) {
+  .j-sm-fascia {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -129,74 +129,113 @@ export function disegnaAnello(tela: HTMLCanvasElement, eventi: Evento[], tempo: 
   return null
 }
 
-/** onda quadra a gradini (attività) */
-export function disegnaGradini(tela: HTMLCanvasElement, valori: number[], colore = '#e8f1f5') {
+// Tavolozza dei grafici, come nella console di riferimento: giallo, rosso, arancio, blu, ciano, verde
+export const TAVOLOZZA = { giallo: '#f5d547', rosso: '#ff4d5e', arancio: '#ff9a3c', blu: '#4aa3ff', ciano: '#2ad1c9', verde: '#3dff9a', ghiaccio: '#eaf5ff' }
+
+// piccolo movimento vivo sopra i valori veri (i grafici non stanno mai fermi)
+const vivo = (i: number, tempo: number, ampiezza = 0.12) => 1 + ampiezza * Math.sin(tempo * 0.0021 + i * 1.7) * Math.sin(tempo * 0.0013 + i * 0.6)
+
+/** onda quadra a gradini che scorre (attività): gialla, con una seconda traccia rossa */
+export function disegnaGradini(tela: HTMLCanvasElement, valori: number[], tempo = 0) {
   const { ctx, w, h } = adatta(tela)
   ctx.clearRect(0, 0, w, h)
+  const n = valori.length
   const max = Math.max(1, ...valori)
-  const passo = w / valori.length
-  ctx.strokeStyle = colore
-  ctx.lineWidth = 1.2
-  ctx.beginPath()
-  valori.forEach((v, i) => {
-    const y = h - 2 - (v / max) * (h - 6)
-    if (i === 0) ctx.moveTo(0, y)
-    else ctx.lineTo(i * passo, y)
-    ctx.lineTo((i + 1) * passo, y)
-  })
-  ctx.stroke()
-  ctx.fillStyle = 'rgba(232,241,245,0.06)'
-  ctx.lineTo(w, h)
-  ctx.lineTo(0, h)
-  ctx.fill()
+  const passo = w / n
+  const scorre = ((tempo * 0.012) % passo) || 0
+  const traccia = (colore: string, scala: number, sfasa: number, larghezza: number) => {
+    ctx.strokeStyle = colore
+    ctx.lineWidth = larghezza
+    ctx.beginPath()
+    for (let i = -1; i <= n; i++) {
+      const k = (i + Math.floor(tempo * 0.012 / passo) + sfasa + n * 10) % n
+      // attività vera + un'onda quadra di fondo (il battito del sistema)
+      const quadra = (Math.floor((i + tempo * 0.0006 * n) / 3) % 2) * 0.25
+      const v = (valori[k] / max) * 0.7 * scala + quadra + 0.05
+      const y = h - 3 - Math.min(1, v) * (h - 8)
+      const x = i * passo - scorre
+      if (i === -1) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
+      ctx.lineTo(x + passo, y)
+    }
+    ctx.stroke()
+  }
+  traccia('rgba(255,77,94,0.75)', 0.6, 7, 1)
+  traccia(TAVOLOZZA.giallo, 1, 0, 1.4)
 }
 
-/** istogramma pieno (tempi di risposta) */
-export function disegnaIstogramma(tela: HTMLCanvasElement, valori: number[], classi = 16) {
+/** istogramma pieno (tempi di risposta), grigio come nel riferimento, con un leggero respiro */
+export function disegnaIstogramma(tela: HTMLCanvasElement, valori: number[], tempo = 0, classi = 18) {
   const { ctx, w, h } = adatta(tela)
   ctx.clearRect(0, 0, w, h)
-  if (!valori.length) return
-  const max = Math.max(...valori, 1)
   const conta = new Array(classi).fill(0)
-  for (const v of valori) conta[Math.min(classi - 1, Math.floor((v / max) * classi))]++
+  if (valori.length) {
+    const max = Math.max(...valori, 1)
+    for (const v of valori) conta[Math.min(classi - 1, Math.floor((v / max) * classi))]++
+  }
   const top = Math.max(1, ...conta)
   const passo = w / classi
-  ctx.fillStyle = 'rgba(200,215,222,0.55)'
   conta.forEach((c, i) => {
-    const alt = (c / top) * (h - 4)
+    const alt = Math.max(2, ((c / top) * 0.85 + 0.08) * (h - 4) * vivo(i, tempo, 0.18))
+    const grad = ctx.createLinearGradient(0, h - alt, 0, h)
+    grad.addColorStop(0, 'rgba(220,230,236,0.85)')
+    grad.addColorStop(1, 'rgba(120,140,150,0.35)')
+    ctx.fillStyle = grad
     ctx.fillRect(i * passo + 1, h - alt, passo - 2, alt)
   })
 }
 
-/** barre verticali bicolori (strumenti, giorni) e linea opzionale sopra */
-export function disegnaBarre(tela: HTMLCanvasElement, valori: number[], opz: { linea?: number[]; colori?: string[] } = {}) {
+/** barre verticali arancio e blu (strumenti, giorni), vive; linea bianca opzionale sopra */
+export function disegnaBarre(tela: HTMLCanvasElement, valori: number[], opz: { linea?: number[]; colori?: string[]; tempo?: number } = {}) {
   const { ctx, w, h } = adatta(tela)
   ctx.clearRect(0, 0, w, h)
-  const max = Math.max(1, ...valori, ...(opz.linea ?? []))
-  const passo = w / Math.max(valori.length, 1)
-  valori.forEach((v, i) => {
-    const alt = (v / max) * (h - 8)
-    ctx.fillStyle = opz.colori?.[i % opz.colori.length] ?? (i % 3 === 0 ? '#ff9a3c' : '#4aa3ff')
-    ctx.fillRect(i * passo + passo * 0.18, h - alt, passo * 0.64, alt)
+  const tempo = opz.tempo ?? 0
+  const lista = valori.length ? valori : [0]
+  const max = Math.max(1, ...lista, ...(opz.linea ?? []))
+  const passo = w / lista.length
+  lista.forEach((v, i) => {
+    const alt = Math.max(3, (v / max) * (h - 8) * vivo(i, tempo))
+    ctx.fillStyle = opz.colori?.[i % opz.colori.length] ?? (i % 4 === 0 || i % 4 === 3 ? TAVOLOZZA.arancio : TAVOLOZZA.blu)
+    ctx.fillRect(i * passo + passo * 0.15, h - alt, passo * 0.7, alt)
   })
   if (opz.linea) {
-    ctx.strokeStyle = '#e8f1f5'
+    ctx.strokeStyle = TAVOLOZZA.ghiaccio
     ctx.lineWidth = 1.2
     ctx.beginPath()
     opz.linea.forEach((v, i) => {
       const x = i * passo + passo / 2
-      const y = h - 4 - (v / max) * (h - 8)
+      const y = h - 4 - (v / max) * (h - 8) * vivo(i + 9, tempo, 0.08)
       if (i === 0) ctx.moveTo(x, y)
       else ctx.lineTo(x, y)
     })
     ctx.stroke()
-    ctx.fillStyle = '#e8f1f5'
+    ctx.fillStyle = TAVOLOZZA.ghiaccio
     opz.linea.forEach((v, i) => {
       ctx.beginPath()
-      ctx.arc(i * passo + passo / 2, h - 4 - (v / max) * (h - 8), 2, 0, Math.PI * 2)
+      ctx.arc(i * passo + passo / 2, h - 4 - (v / max) * (h - 8) * vivo(i + 9, tempo, 0.08), 2, 0, Math.PI * 2)
       ctx.fill()
     })
   }
+}
+
+/** griglia di segnali colorati (ciano, giallo, verde, rosso) che si accendono: un quadretto per ogni misura */
+export function disegnaGriglia(tela: HTMLCanvasElement, valori: number[], tempo = 0, colonne = 16) {
+  const { ctx, w, h } = adatta(tela)
+  ctx.clearRect(0, 0, w, h)
+  const righe = Math.max(1, Math.ceil(valori.length / colonne))
+  const lw = w / colonne
+  const lh = h / righe
+  const colori = [TAVOLOZZA.ciano, TAVOLOZZA.giallo, TAVOLOZZA.verde, TAVOLOZZA.blu]
+  const max = Math.max(1, ...valori)
+  valori.forEach((v, i) => {
+    const c = i % colonne
+    const r = Math.floor(i / colonne)
+    const acceso = 0.25 + 0.6 * (v / max) + 0.15 * Math.max(0, Math.sin(tempo * 0.003 + i * 2.1))
+    ctx.globalAlpha = Math.min(1, acceso)
+    ctx.fillStyle = v < 0 ? TAVOLOZZA.rosso : colori[(i * 7 + r) % colori.length]
+    ctx.fillRect(c * lw + 1, r * lh + 1, lw - 2, lh - 2)
+  })
+  ctx.globalAlpha = 1
 }
 
 /** rosa a 24 petali: a che ora del giorno lavora Ambrogio */
@@ -217,8 +256,17 @@ export function disegnaRosa(tela: HTMLCanvasElement, perOra: number[], tempo: nu
   perOra.forEach((v, ora) => {
     const a0 = (ora / 24) * Math.PI * 2 - Math.PI / 2
     const a1 = a0 + (Math.PI * 2) / 24 - 0.03
-    const r = R * (0.12 + 0.88 * (v / max))
-    ctx.fillStyle = ora === adesso ? `rgba(255,154,60,${0.7 + 0.3 * Math.sin(tempo * 0.005)})` : ora >= 7 && ora < 20 ? 'rgba(74,163,255,0.75)' : 'rgba(74,163,255,0.35)'
+    const r = R * Math.min(1, (0.14 + 0.86 * (v / max)) * vivo(ora, tempo, 0.1))
+    // un raggio luminoso gira come un radar e accende i petali che attraversa
+    const giro = ((tempo * 0.0006) % (Math.PI * 2)) - Math.PI / 2
+    const vicino = Math.max(0, 1 - Math.abs(((a0 - giro + Math.PI * 3) % (Math.PI * 2)) - Math.PI) / 0.6)
+    const forte = v >= max * 0.6
+    ctx.fillStyle =
+      ora === adesso
+        ? `rgba(255,77,94,${0.75 + 0.25 * Math.sin(tempo * 0.005)})`
+        : forte
+          ? `rgba(255,154,60,${0.7 + 0.3 * vicino})`
+          : `rgba(74,163,255,${0.45 + 0.25 * (ora >= 7 && ora < 20 ? 1 : 0) + 0.3 * vicino})`
     ctx.beginPath()
     ctx.moveTo(cx, cy)
     ctx.arc(cx, cy, r, a0, a1)

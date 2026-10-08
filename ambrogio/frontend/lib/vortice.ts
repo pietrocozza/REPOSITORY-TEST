@@ -98,12 +98,19 @@ void main() {
   float vicino;
   gl_Position = proietta(p, vicino);
 
-  vec3 blu = vec3(0.45, 0.75, 1.0);
-  vec3 ciano = vec3(0.45, 0.85, 0.91);
-  vec3 ambra = vec3(0.91, 0.73, 0.37);
-  vec3 c = aFibra2.z < 0.5 ? blu : aFibra2.z < 1.5 ? ciano : ambra;
-  float a = (0.06 + 0.26 * vicino * vicino) * uLuce;
-  if (aFibra2.z > 1.5) a *= uAmbra * 1.6;
+  // colori come nel riferimento: tanto blu, poi ciano, oro, arancio, qualche rosso e verde, e fibre ghiaccio
+  float tipo = aFibra2.z;
+  vec3 c = tipo < 0.5 ? vec3(0.36, 0.62, 1.0)
+         : tipo < 1.5 ? vec3(0.4, 0.86, 0.95)
+         : tipo < 2.5 ? vec3(1.0, 0.8, 0.3)
+         : tipo < 3.5 ? vec3(1.0, 0.52, 0.18)
+         : tipo < 4.5 ? vec3(1.0, 0.26, 0.3)
+         : tipo < 5.5 ? vec3(0.35, 1.0, 0.55)
+         : vec3(0.92, 0.96, 1.0);
+  float a = (0.07 + 0.3 * vicino * vicino) * uLuce;
+  // i colori caldi si accendono di più quando Ambrogio lavora, ma restano sempre visibili
+  if (tipo > 1.5 && tipo < 5.5) a *= 1.15 + uAmbra * 0.9;
+  else a *= 0.85;
   // estremità sfumate
   a *= smoothstep(0.0, 0.08, aT) * smoothstep(1.0, 0.92, aT);
   float ang = mod(u, TAU);
@@ -151,7 +158,8 @@ void main() {
   if (uSelezione > -0.5 && abs(aFibra2.w - uSelezione) < 0.5) attivo = 1.0;
   float scia = 1.0 - aImpulso.z / 4.0;
   float a = attivo * scia * (0.35 + 0.65 * vicino) * smoothstep(0.0, 0.05, t) * smoothstep(1.0, 0.95, t);
-  vec3 c = aFibra2.z > 1.5 ? vec3(1.0, 0.85, 0.55) : vec3(0.92, 0.96, 1.0);
+  vec3 c = aFibra2.z > 1.5 && aFibra2.z < 5.5 ? vec3(1.0, 0.85, 0.55) : vec3(0.92, 0.96, 1.0);
+  if (aFibra2.z > 3.5 && aFibra2.z < 4.5) c = vec3(1.0, 0.4, 0.42);
   vColore = vec4(c * a, a);
 }
 `
@@ -171,7 +179,7 @@ void main() {
   // onde e gruppi coerenti: la corona riceve e trasmette
   float onda = max(0.0, sin(4.0 * u - uTempo * 1.1)) * max(0.0, sin(11.0 * u + uTempo * 0.7 + seme));
   float banda = uBande[int(mod(floor(u / TAU * 16.0), 8.0))];
-  float lung = 0.03 + 0.07 * seme * seme + uCorona * (0.12 * onda + 0.22 * banda) + uOndeIn * 0.08 * max(0.0, sin(9.0 * u - uTempo * 6.0));
+  float lung = 0.05 + 0.11 * seme * seme + uCorona * (0.12 * onda + 0.22 * banda) + uOndeIn * 0.08 * max(0.0, sin(9.0 * u - uTempo * 6.0));
   if (uSettore > -5.0) lung += 0.1 * (1.0 - smoothstep(0.1, 0.5, distAng(mod(u, TAU), uSettore)));
   vec3 base = toro(u, 0.0, 0.45);
   vec3 dir = vec3(cos(u), sin(u), 0.0);
@@ -180,8 +188,9 @@ void main() {
   gl_Position = proietta(p, vicino);
   gl_PointSize = aRaggio.y > 0.5 ? 1.6 + 1.6 * vicino : 1.0;
   // una parte dell'anello calda (ambra), il resto ghiaccio, come nel riferimento
-  float caldo = smoothstep(0.35, 0.6, fract(u / TAU + 0.12)) * (1.0 - smoothstep(0.85, 1.0, fract(u / TAU + 0.12)));
-  vec3 c = mix(vec3(0.85, 0.92, 0.97), vec3(0.95, 0.66, 0.3), caldo);
+  float caldo = smoothstep(0.2, 0.4, fract(u / TAU + 0.05)) * (1.0 - smoothstep(0.7, 0.85, fract(u / TAU + 0.05)));
+  vec3 c = mix(vec3(0.9, 0.95, 1.0), vec3(1.0, 0.55, 0.2), caldo);
+  if (seme > 0.97) c = vec3(1.0, 0.3, 0.35); // qualche punta rossa, come segnali da guardare
   float a = (0.18 + 0.45 * vicino) * (0.5 + 0.5 * uLuce) * (aRaggio.y > 0.5 ? 1.0 : 0.55);
   vColore = vec4(c * a, a);
 }
@@ -269,7 +278,7 @@ export class Vortice {
   private nFibre: number
   private nFibreAttive: number
   private nImpulsi: number
-  private nRaggi = 900
+  private nRaggi = 1400
   private indici: number
   private raf = 0
   private ultimo = performance.now()
@@ -314,7 +323,8 @@ export class Vortice {
       const v0 = (fascio * 2.4 + (sciolta ? caso(i * 5.1) * TAU : (caso(i * 4.3) - 0.5) * 0.9)) % TAU
       const avv = (fascio % 3 === 0 ? 1.0 : fascio % 3 === 1 ? 1.6 : 2.3) * (caso(i * 6.7) < 0.5 ? 1 : -1) * (0.9 + caso(i * 7.9) * 0.2)
       const rr = r * (0.78 + caso(i * 8.3) * 0.3)
-      const tipo = caso(i * 9.7) < 0.22 ? 2 : caso(i * 9.9) < 0.4 ? 1 : 0
+      const x = caso(i * 9.7)
+      const tipo = x < 0.38 ? 0 : x < 0.52 ? 1 : x < 0.68 ? 2 : x < 0.79 ? 3 : x < 0.85 ? 4 : x < 0.9 ? 5 : 6
       return { f1: [uBase, span, v0, avv], f2: [rr, caso(i * 11.3), tipo, fascio] }
     }
     const datiFibre = Array.from({ length: this.nFibre }, (_, i) => fibra(i))
@@ -483,7 +493,7 @@ export class Vortice {
     }
     this.aspetto = b.width / Math.max(1, b.height)
     // l'anello riempie la vista senza toccare i bordi (la corona compresa)
-    this.f = Math.min(this.aspetto, 1) * 1.72
+    this.f = Math.min(this.aspetto, 1) * 1.82
     this.gl.viewport(0, 0, w, h)
   }
 
@@ -550,8 +560,8 @@ export class Vortice {
     const deriva = this.ridotto ? 0 : Math.sin(this.tempo * 0.05) * 0.05
     // anello visto di sbieco (ruotato attorno all'asse verticale), poi inclinato: asse lungo dal basso a sinistra all'alto a destra
     this.rot = mul(
-      rotZ(-0.5 + deriva * 0.5),
-      mul(rotY(0.82 + p.x * 0.08 + deriva), rotX(0.32 + p.y * 0.06 + Math.sin(this.tempo * 0.07) * 0.02)),
+      rotZ(-0.32 + deriva * 0.5),
+      mul(rotY(0.92 + p.x * 0.08 + deriva), rotX(0.12 + p.y * 0.06 + Math.sin(this.tempo * 0.07) * 0.02)),
     )
 
     this.adatta()
