@@ -36,3 +36,15 @@ test('tutto il resto va a Claude', () => {
 test('normalizza', () => {
   assert.equal(normalizza('Ambrogio, per favore: che ore sono?'), 'che ore sono')
 })
+
+test('musica: «fammi sentire l\'inno alla gioia» parte subito, senza Claude', async () => {
+  const { rispostaPronta } = await import('../src/agent/risposte-pronte.ts')
+  const suoni = ['inno alla gioia', 'fra martino', 'campanello', 'O mia bela Madunina']
+  const c = { appellativo: 'Pietro', suoni, caso: () => 0 }
+  assert.match(rispostaPronta("fammi sentire l'inno alla gioia", c) ?? '', /\[SUONO: inno alla gioia\]$/)
+  assert.match(rispostaPronta('Ambrogio, suonami Fra Martino per favore', c) ?? '', /\[SUONO: fra martino\]$/)
+  assert.match(rispostaPronta('metti la madunina', c) ?? '', /^$|\[SUONO/, 'nome parziale: o lo trova o va a Claude')
+  assert.match(rispostaPronta('suonami qualcosa', c) ?? '', /\[SUONO: (?!campanello)/)
+  assert.equal(rispostaPronta('fammi sentire bohemian rhapsody', c), null, 'brano che non c’è: risponde Claude')
+  assert.equal(rispostaPronta('fammi sentire la musica', { appellativo: 'Pietro' }), null, 'senza elenco dei suoni: Claude')
+})

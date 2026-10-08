@@ -192,7 +192,7 @@ export class Agente {
     this.db.registra('messaggio', `Richiesta: ${messaggio.length > 90 ? messaggio.slice(0, 90) + '…' : messaggio}`)
 
     // domande elementari (ora, data, saluti…): risposta immediata, senza Claude
-    const pronta = rispostaPronta(messaggio, { appellativo: this.config.appellativo })
+    const pronta = rispostaPronta(messaggio, { appellativo: this.config.appellativo, suoni: elencoSuoni(this.config.cartellaDati) })
     if (pronta) {
       if (this.inCorso === controller) this.inCorso = null
       this.db.salvaMessaggio(sessioneTurno, 'assistant', pronta)

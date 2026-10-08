@@ -2,7 +2,7 @@
 // hanno una risposta immediata calcolata qui, senza disturbare Claude. Tutto il resto va a Claude.
 // Si riconoscono solo frasi brevi e precise: nel dubbio la domanda passa a Claude.
 
-type Contesto = { appellativo: string; adesso?: Date; caso?: () => number }
+type Contesto = { appellativo: string; adesso?: Date; caso?: () => number; suoni?: string[] }
 
 const FUSO = 'Europe/Rome'
 
@@ -126,6 +126,25 @@ const REGOLE: Regola[] = [
   },
 ]
 
+// «Fammi sentire l'inno alla gioia», «suonami qualcosa»: la musica parte subito, senza chiedere a Claude
+const CHIEDE_MUSICA = /^(?:fammi sentire|fammi ascoltare|fai sentire|fai partire|fammi|suona|suonami|suonaci|riproduci|metti|mettimi|mettici|puoi suonare|puoi farmi sentire|vorrei sentire|voglio sentire)\s+(.+)$/
+const GENERICO = /^(?:(?:un po' di |un po di |della |una |un |qualche )?(?:musica|canzone|canzoncina|brano|melodia|motivetto|suono|qualcosa(?: di musica)?)(?: per me)?)$/
+const pulisciNome = (t: string) => t.replace(/'/g, ' ').replace(/\s+/g, ' ').trim()
+
+function musica(t: string, c: Contesto & { caso: () => number }): string | null {
+  const m = CHIEDE_MUSICA.exec(t)
+  if (!m || !c.suoni?.length) return null
+  const resto = pulisciNome(m[1])
+  const trovato = [...c.suoni]
+    .sort((a, b) => b.length - a.length)
+    .find((nome) => resto.includes(pulisciNome(nome.toLowerCase())))
+  const brani = c.suoni.filter((n) => n !== 'campanello')
+  const scelto = trovato ?? (GENERICO.test(m[1].trim()) ? scegli(brani, c.caso) : null)
+  if (!scelto) return null // un brano che non c'è: lo spiega Claude
+  const apertura = scegli([`Ecco a te, ${c.appellativo}!`, 'Subito, maestro!', 'Con piacere.', 'Ghe pensi mi.'], c.caso)
+  return `${apertura} [SUONO: ${scelto}]`
+}
+
 /** La risposta immediata, oppure null se la domanda va a Claude. */
 export function rispostaPronta(frase: string, contesto: Contesto): string | null {
   const t = normalizza(frase)
@@ -133,5 +152,7 @@ export function rispostaPronta(frase: string, contesto: Contesto): string | null
   const c = { adesso: new Date(), caso: Math.random, ...contesto }
   const conto = calcolo(t)
   if (conto) return conto
+  const brano = musica(t, c)
+  if (brano) return brano
   return REGOLE.find((r) => r.frasi.test(t))?.risposta(c) ?? null
 }
