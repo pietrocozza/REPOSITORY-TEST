@@ -44,6 +44,26 @@ export class Trascrizione {
   }
 
   async trascrivi(audio: Buffer, tipo: string): Promise<string> {
+    return (await this.chiediConAudio(ISTRUZIONI, audio, tipo)).replace(/^["«“]|["»”]$/g, '').trim()
+  }
+
+  /**
+   * Al telefono: in UNA sola richiesta Gemini capisce cosa ha detto Pietro e prepara la risposta di Ambrogio
+   * (molto più svelto che trascrivere e poi chiedere a Claude). Risponde in JSON.
+   */
+  async rispondiAlTelefono(audio: Buffer, istruzioni: string): Promise<{ detto: string; risposta: string; azione: 'rispondi' | 'claude' | 'riattacca' }> {
+    const testo = await this.chiediConAudio(istruzioni, audio, 'audio/wav', true)
+    let dati: { detto?: unknown; risposta?: unknown; azione?: unknown } = {}
+    try {
+      dati = JSON.parse(testo.replace(/^```(?:json)?\s*|\s*```$/g, ''))
+    } catch {
+      throw new ErroreVoce('errore', 'Gemini ha risposto in un formato inatteso.')
+    }
+    const azione = dati.azione === 'claude' || dati.azione === 'riattacca' ? dati.azione : 'rispondi'
+    return { detto: String(dati.detto ?? '').trim(), risposta: String(dati.risposta ?? '').trim(), azione }
+  }
+
+  private async chiediConAudio(istruzioni: string, audio: Buffer, tipo: string, json = false): Promise<string> {
     if (!this.disponibile) throw new ErroreVoce('senza-chiave', 'Manca la chiave di Gemini nel file .env.')
     const mime = tipo.split(';')[0].trim() || 'audio/webm'
     const base = this.opz.url ?? 'https://generativelanguage.googleapis.com'
@@ -53,9 +73,13 @@ export class Trascrizione {
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': this.opz.chiave },
         signal: AbortSignal.timeout(30_000),
         body: JSON.stringify({
-          contents: [{ parts: [{ text: ISTRUZIONI }, { inlineData: { mimeType: mime, data: audio.toString('base64') } }] }],
-          // niente "ragionamento": la trascrizione deve essere rapida (non tutti i modelli lo accettano)
-          generationConfig: { temperature: 0, ...(conPensiero ? { thinkingConfig: { thinkingBudget: 0 } } : {}) },
+          contents: [{ parts: [{ text: istruzioni }, { inlineData: { mimeType: mime, data: audio.toString('base64') } }] }],
+          // niente "ragionamento": deve essere rapido (non tutti i modelli lo accettano)
+          generationConfig: {
+            temperature: json ? 0.6 : 0,
+            ...(json ? { responseMimeType: 'application/json' } : {}),
+            ...(conPensiero ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+          },
         }),
       })
     let modello = this.opz.modello || this.modelloScelto || MODELLO
@@ -93,8 +117,6 @@ export class Trascrizione {
     return (dati.candidates?.[0]?.content?.parts ?? [])
       .map((p) => p.text ?? '')
       .join('')
-      .trim()
-      .replace(/^["«“]|["»”]$/g, '')
       .trim()
   }
 }

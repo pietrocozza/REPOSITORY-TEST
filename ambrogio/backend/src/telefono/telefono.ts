@@ -144,6 +144,13 @@ export type Dipendenze = {
   rispondi: (richiesta: string) => Promise<string>
   cartella: string
   annota?: (testo: string) => void
+  /**
+   * strada veloce: Gemini capisce l'audio e risponde in una sola richiesta; Claude solo quando serve davvero
+   * (email, memoria, Airbnb, ricerche…). Senza, si trascrive e risponde sempre Claude (più lento).
+   */
+  capisci?: (audio: Buffer, istruzioni: string) => Promise<{ detto: string; risposta: string; azione: 'rispondi' | 'claude' | 'riattacca' }>
+  /** cose che Ambrogio sa (memoria), per la strada veloce */
+  contesto?: () => string
   /** il WAV di un suono o di una melodia ([SUONO: nome]) */
   suono?: (nome: string) => Buffer | null
   elencoSuoni?: () => string[]
@@ -165,6 +172,8 @@ export class Telefonata {
   conversazione: Battuta[] = []
   private numero = 0
   private finita = false
+  private inizioTurno = 0
+  private strada = ''
 
   constructor(d: Dipendenze) {
     this.d = d
@@ -189,6 +198,10 @@ export class Telefonata {
 
   private async suona(audio: Buffer) {
     if (this.finita) return
+    if (this.inizioTurno) {
+      this.d.annota?.(`Telefono: risposta pronta in ${((Date.now() - this.inizioTurno) / 1000).toFixed(1)} s (${this.strada})`)
+      this.inizioTurno = 0
+    }
     fs.mkdirSync(this.d.cartella, { recursive: true })
     const file = path.join(this.d.cartella, `ambrogio-${Date.now()}-${++this.numero}.wav`)
     fs.writeFileSync(file, audio)
@@ -200,6 +213,44 @@ export class Telefonata {
       this.d.annota?.(`Telefonata chiusa mentre Ambrogio parlava (${String(e.motivo ?? '')})`)
     }
     if (e.evento === 'parlato' && e.errore) this.d.annota?.(`Telefono: non riesco a far sentire la voce (${String(e.errore)})`)
+  }
+
+  /** la richiesta per Claude: chi è al telefono, perché, e cosa si sono detti finora */
+  private richiestaClaude(motivo: string, apertura: string, nome: string, detto: string, primo: boolean) {
+    const storia = this.conversazione
+      .slice(-10, -1)
+      .map((b) => `${b.chi === 'ambrogio' ? 'Tu' : nome}: ${b.testo}`)
+      .join('\n')
+    return primo
+      ? `[TELEFONATA] Sei al telefono con ${nome}: l'hai chiamato tu. Motivo della chiamata: ${motivo}\n` +
+          `Gli hai detto: «${apertura}». Lui risponde: «${detto}».\n` +
+          `Rispondi come in una telefonata vera: una o due frasi brevi, niente elenchi, simboli o emoji. ` +
+          `Quando la conversazione è finita, saluta e scrivi in fondo [RIATTACCA].` +
+          (this.d.elencoSuoni ? ` Al telefono puoi far sentire musica con [SUONO: nome] (${this.d.elencoSuoni().join(', ')}).` : '')
+      : `[TELEFONATA] Conversazione finora:\n${storia}\n${nome} al telefono ora dice: «${detto}». (Frasi brevi; [RIATTACCA] in fondo quando avete finito.)`
+  }
+
+  /** le istruzioni per la strada veloce (Gemini capisce e risponde in un colpo solo) */
+  private istruzioniVeloci(motivo: string, nome: string) {
+    const storia = this.conversazione
+      .slice(-12)
+      .map((b) => `${b.chi === 'ambrogio' ? 'Ambrogio' : nome}: ${b.testo}`)
+      .join('\n')
+    const sa = this.d.contesto?.() ?? ''
+    const suoni = this.d.elencoSuoni?.() ?? []
+    const ora = new Intl.DateTimeFormat('it-IT', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Europe/Rome' }).format(new Date())
+    return `Sei Ambrogio, il maggiordomo personale di ${nome}: italiano con un tocco milanese (ogni tanto, non sempre, un'esclamazione come «Ué!», «Ghe pensi mi.», «Sciur ${nome}»), cordiale, discreto, con umorismo asciutto. Gli dai del tu.
+Sei AL TELEFONO con ${nome}: l'hai chiamato tu. Motivo della chiamata: ${motivo}
+${sa ? `Cose che sai di lui:\n${sa}\n` : ''}Conversazione finora:
+${storia}
+Nell'audio c'è quello che ${nome} ha appena detto.
+Rispondi SOLO con un oggetto JSON: {"detto": "...", "risposta": "...", "azione": "rispondi"}
+- detto: la trascrizione esatta di quello che ha detto; stringa vuota se si sente solo rumore o nessuna parola chiara (non inventare)
+- risposta: quello che gli dici adesso, come in una telefonata vera: una o due frasi brevi e naturali, niente elenchi, simboli o emoji
+- azione "claude" quando per rispondere bisogna fare qualcosa o sapere dati che qui non hai (email, messaggi degli ospiti, prenotazioni Airbnb o Vikey, cose da ricordare o già ricordate, ricerche su internet, notizie, meteo, calendario, inviare o modificare qualcosa): allora risposta è solo una brevissima frase d'attesa come «Un attimo che controllo.»
+- azione "riattacca" quando lui saluta o avete finito: risposta è il saluto
+- azione "rispondi" in tutti gli altri casi${suoni.length ? `\n- musica: puoi farla sentire scrivendo nella risposta [SUONO: nome] (disponibili: ${suoni.join(', ')})` : ''}
+Data e ora: ${ora}.`
   }
 
   async esegui({ motivo, apertura, nome }: { motivo: string; apertura: string; nome: string }): Promise<EsitoTelefonata> {
@@ -242,31 +293,61 @@ export class Telefonata {
           break
         }
         silenzi = 0
-        let detto = ''
-        // la parolina d'attesa parte subito, mentre si trascrive e si pensa
+        const audio = fs.readFileSync(percorsoWindows(String(e.file)))
+        const inizio = Date.now()
+        // la parolina d'attesa parte subito, mentre Ambrogio capisce e pensa
         const attesa = this.parla(ATTESA[turni % ATTESA.length], false)
-        try {
-          detto = (await this.d.trascrivi(fs.readFileSync(percorsoWindows(String(e.file))))).trim()
-        } catch (err) {
-          this.d.annota?.(`Telefonata: non ho capito (${(err as Error).message})`)
+        let detto = ''
+        let testo = ''
+        let chiudi = false
+        let veloce: Awaited<ReturnType<NonNullable<Dipendenze['capisci']>>> | null = null
+        if (this.d.capisci) {
+          try {
+            veloce = await this.d.capisci(audio, this.istruzioniVeloci(motivo, nome))
+          } catch (err) {
+            this.d.annota?.(`Telefono: la strada veloce non risponde (${(err as Error).message}), passo a Claude`)
+          }
         }
-        if (!detto) {
-          await attesa
-          await this.parla('Scusi, non ho capito bene: può ripetere?')
-          continue
+        if (veloce) {
+          detto = veloce.detto
+          // solo rumore: non si risponde, si continua ad ascoltare
+          if (!detto) {
+            await attesa
+            continue
+          }
+          this.conversazione.push({ chi: 'pietro', testo: detto })
+          if (veloce.azione === 'claude') {
+            // serve Claude (email, memoria, Airbnb…): intanto una frase d'attesa
+            await attesa
+            await this.parla(veloce.risposta || 'Un attimo che controllo.')
+            this.inizioTurno = Date.now()
+            this.strada = 'con Claude'
+            testo = await this.d.rispondi(this.richiestaClaude(motivo, apertura, nome, detto, primo))
+          } else {
+            testo = veloce.risposta
+            chiudi = veloce.azione === 'riattacca'
+            this.inizioTurno = inizio
+            this.strada = 'veloce'
+          }
+        } else {
+          try {
+            detto = (await this.d.trascrivi(audio)).trim()
+          } catch (err) {
+            this.d.annota?.(`Telefonata: non ho capito (${(err as Error).message})`)
+          }
+          if (!detto) {
+            await attesa
+            await this.parla('Scusi, non ho capito bene: può ripetere?')
+            continue
+          }
+          this.conversazione.push({ chi: 'pietro', testo: detto })
+          this.inizioTurno = inizio
+          this.strada = 'con Claude'
+          testo = await this.d.rispondi(this.richiestaClaude(motivo, apertura, nome, detto, primo))
         }
-        this.conversazione.push({ chi: 'pietro', testo: detto })
-        const richiesta = primo
-          ? `[TELEFONATA] Sei al telefono con ${nome}: l'hai chiamato tu. Motivo della chiamata: ${motivo}\n` +
-            `Gli hai detto: «${apertura}». Lui risponde: «${detto}».\n` +
-            `Rispondi come in una telefonata vera: una o due frasi brevi, niente elenchi, simboli o emoji. ` +
-            `Quando la conversazione è finita, saluta e scrivi in fondo [RIATTACCA].` +
-            (this.d.elencoSuoni ? ` Al telefono puoi far sentire musica con [SUONO: nome] (${this.d.elencoSuoni().join(', ')}).` : '')
-          : `[TELEFONATA] ${nome} al telefono dice: «${detto}». (Frasi brevi; [RIATTACCA] in fondo quando avete finito.)`
         primo = false
-        const testo = await this.d.rispondi(richiesta)
         await attesa
-        const chiudi = RIATTACCA.test(testo)
+        chiudi = chiudi || RIATTACCA.test(testo)
         const pulito = testo.replace(RIATTACCA, '').replace(/[*_#`>]/g, '').trim()
         if (pulito) await this.parla(pulito)
         if (chiudi) break

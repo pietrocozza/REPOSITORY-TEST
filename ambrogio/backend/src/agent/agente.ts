@@ -49,7 +49,8 @@ export class Agente {
   }
 
   /** Le cose più importanti che Ambrogio ricorda, da dare a Claude all'inizio di ogni conversazione */
-  private sintesiMemoria() {
+  /** le cose ricordate, in breve (anche per il telefono) */
+  sintesiMemoria() {
     const righe = this.db.cercaMemorie('', undefined, 40).map((m) => `- (${m.tipo}) ${m.titolo}: ${m.contenuto}`)
     let testo = ''
     for (const r of righe) {

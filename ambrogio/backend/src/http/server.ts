@@ -130,7 +130,7 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
   const accesoDa = Date.now()
 
   /**
-   * La voce al telefono: Gemini con la voce scelta; se Gemini è al limite per pochi secondi si aspetta,
+   * La voce al telefono: Gemini con la voce scelta; se Gemini è al limite per pochi secondi (al massimo 8) si aspetta,
    * altrimenti si usa la voce di Windows (gratis) per non lasciare Pietro senza risposta.
    */
   async function vocePerTelefono(testo: string): Promise<Buffer> {
@@ -140,7 +140,7 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
         return await gemini.sintetizza(testo, voce)
       } catch (err) {
         const attesa = gemini.sospesaFinoA - Date.now()
-        if (err instanceof ErroreVoce && err.tipo === 'limite' && tentativo === 0 && attesa > 0 && attesa <= 35_000) {
+        if (err instanceof ErroreVoce && err.tipo === 'limite' && tentativo === 0 && attesa > 0 && attesa <= 8_000) {
           await new Promise((r) => setTimeout(r, attesa + 500))
           continue
         }
@@ -164,6 +164,8 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
       cartella: cartellaTelefono,
       sintetizza: (testo) => vocePerTelefono(testo),
       trascrivi: (audio) => orecchie.trascrivi(audio, 'audio/wav'),
+      capisci: (audio, istruzioni) => orecchie.rispondiAlTelefono(audio, istruzioni),
+      contesto: () => agente.sintesiMemoria(),
       suono: (nome) => suono(nome, config.cartellaDati),
       elencoSuoni: () => elencoSuoni(config.cartellaDati),
       rispondi: async (richiesta) => {

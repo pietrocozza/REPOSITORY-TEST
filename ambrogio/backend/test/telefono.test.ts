@@ -61,3 +61,49 @@ test('nessuna risposta e telefono non configurato bene', async () => {
   assert.match(esito.motivo ?? '', /password di Ambrogio/)
   assert.equal(telefono.stato, 'errore')
 })
+
+test('strada veloce: Gemini capisce e risponde; Claude solo quando serve (email, memoria…)', async () => {
+  process.env.FINTO_TELEFONO = 'ok'
+  const telefono = nuovoTelefono()
+  const veloci = [
+    { detto: 'Ciao Ambrogio', risposta: 'Ué Pietro, eccomi!', azione: 'rispondi' as const },
+    { detto: 'Leggimi le email', risposta: 'Un attimo che controllo.', azione: 'claude' as const },
+  ]
+  const istruzioni: string[] = []
+  const aClaude: string[] = []
+  const t = new Telefonata({
+    telefono,
+    cartella: fs.mkdtempSync(path.join(os.tmpdir(), 'ambrogio-tel-')),
+    sintetizza: async (testo) => Buffer.from(`WAV:${testo}`),
+    trascrivi: async () => {
+      throw new Error('non deve servire')
+    },
+    capisci: async (_audio, i) => {
+      istruzioni.push(i)
+      return veloci.shift()!
+    },
+    contesto: () => '- (preferenza) caffè: macchiato',
+    rispondi: async (r) => {
+      aClaude.push(r)
+      return 'Hai due email nuove, niente di urgente. A dopo! [RIATTACCA]'
+    },
+  })
+  const esito = await t.esegui({ motivo: 'prova', apertura: 'Ué Pietro!', nome: 'Pietro' })
+  telefono.spegni()
+  assert.equal(esito.esito, 'conclusa')
+  assert.deepEqual(
+    esito.conversazione.map((b) => `${b.chi}: ${b.testo}`),
+    [
+      'ambrogio: Ué Pietro!',
+      'pietro: Ciao Ambrogio',
+      'ambrogio: Ué Pietro, eccomi!',
+      'pietro: Leggimi le email',
+      'ambrogio: Un attimo che controllo.',
+      'ambrogio: Hai due email nuove, niente di urgente. A dopo!',
+    ],
+  )
+  assert.equal(aClaude.length, 1, 'Claude solo per le email')
+  assert.match(aClaude[0], /Leggimi le email/)
+  assert.match(istruzioni[0], /caffè: macchiato[\s\S]*JSON/)
+  assert.match(istruzioni[1], /Pietro: Ciao Ambrogio/, 'la conversazione finora passa a Gemini')
+})
