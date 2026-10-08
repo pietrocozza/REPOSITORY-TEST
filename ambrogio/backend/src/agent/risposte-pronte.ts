@@ -149,7 +149,7 @@ function musica(t: string, c: Contesto & { caso: () => number }): string | null 
 export function rispostaPronta(frase: string, contesto: Contesto): string | null {
   const t = normalizza(frase)
   if (!t || t.length > 60) return null
-  const c = { adesso: new Date(), caso: Math.random, ...contesto }
+  const c = { adesso: new Date(), caso: Math.random, ...contesto, suoni: contesto.suoni ?? [] }
   const conto = calcolo(t)
   if (conto) return conto
   const brano = musica(t, c)
