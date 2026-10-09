@@ -27,6 +27,23 @@ export type Autorizzazione = {
 }
 
 export type VoceRegistro = { id: number; quando: string; tipo: string; descrizione: string; dettagli: string | null }
+export type PrenotazioneArchiviata = {
+  codice: string
+  annuncio: string | null
+  ospite: string | null
+  adulti: number | null
+  bambini: number | null
+  neonati: number | null
+  animali: number | null
+  checkin: string | null
+  checkout: string | null
+  totale: number | null
+  guadagno: number | null
+  valuta: string | null
+  stato: 'confermata' | 'cancellata' | 'richiesta'
+  aggiornata: string
+}
+export type Avviso = { id: number; quando: string; testo: string; letto: number }
 export type Messaggio = { id: number; sessione: string; ruolo: 'user' | 'assistant'; testo: string; creato: string }
 
 const adesso = () => new Date().toISOString()
@@ -84,6 +101,37 @@ const MIGRAZIONI = [
      tipo TEXT NOT NULL,
      descrizione TEXT NOT NULL,
      dettagli TEXT
+   );`,
+  // le case Airbnb: prenotazioni ricavate dalle email, email già lette, avvisi per Pietro
+  `CREATE TABLE prenotazioni_airbnb (
+     codice TEXT PRIMARY KEY,
+     annuncio TEXT,
+     ospite TEXT,
+     adulti INTEGER,
+     bambini INTEGER,
+     neonati INTEGER,
+     animali INTEGER,
+     checkin TEXT,
+     checkout TEXT,
+     totale REAL,
+     guadagno REAL,
+     valuta TEXT,
+     stato TEXT NOT NULL DEFAULT 'confermata',
+     aggiornata TEXT NOT NULL
+   );
+
+   CREATE TABLE email_airbnb (
+     id TEXT PRIMARY KEY,
+     quando TEXT NOT NULL,
+     tipo TEXT NOT NULL
+   );
+
+   CREATE TABLE avvisi (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     quando TEXT NOT NULL,
+     chiave TEXT UNIQUE,
+     testo TEXT NOT NULL,
+     letto INTEGER NOT NULL DEFAULT 0
    );`,
 ]
 
@@ -244,6 +292,66 @@ export class Database {
 
   permessiPermanenti(): { strumento: string; concesso: string }[] {
     return this.db.prepare('SELECT * FROM permessi_permanenti ORDER BY strumento').all() as { strumento: string; concesso: string }[]
+  }
+
+  // ───────── Airbnb: prenotazioni dalle email ─────────
+
+  /** salva o aggiorna una prenotazione: i dati nuovi si aggiungono, quelli mancanti non cancellano i vecchi */
+  salvaPrenotazione(p: Partial<PrenotazioneArchiviata> & { codice: string }) {
+    const vecchia = this.prenotazione(p.codice)
+    const campi = ['annuncio', 'ospite', 'adulti', 'bambini', 'neonati', 'animali', 'checkin', 'checkout', 'totale', 'guadagno', 'valuta', 'stato'] as const
+    const unita: Record<string, unknown> = { stato: 'confermata', ...vecchia }
+    for (const c of campi) if (p[c] !== undefined && p[c] !== null && p[c] !== '') unita[c] = p[c]
+    this.db
+      .prepare(
+        `INSERT INTO prenotazioni_airbnb (codice, annuncio, ospite, adulti, bambini, neonati, animali, checkin, checkout, totale, guadagno, valuta, stato, aggiornata)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(codice) DO UPDATE SET annuncio=excluded.annuncio, ospite=excluded.ospite, adulti=excluded.adulti, bambini=excluded.bambini,
+           neonati=excluded.neonati, animali=excluded.animali, checkin=excluded.checkin, checkout=excluded.checkout, totale=excluded.totale,
+           guadagno=excluded.guadagno, valuta=excluded.valuta, stato=excluded.stato, aggiornata=excluded.aggiornata`,
+      )
+      .run(p.codice, ...campi.map((c) => (unita[c] ?? null) as string | number | null), adesso())
+    return this.prenotazione(p.codice)!
+  }
+
+  prenotazione(codice: string) {
+    return this.db.prepare('SELECT * FROM prenotazioni_airbnb WHERE codice = ?').get(codice) as PrenotazioneArchiviata | undefined
+  }
+
+  prenotazioniArchiviate(): PrenotazioneArchiviata[] {
+    return this.db.prepare('SELECT * FROM prenotazioni_airbnb ORDER BY checkin').all() as PrenotazioneArchiviata[]
+  }
+
+  emailLetta(id: string) {
+    return Boolean(this.db.prepare('SELECT 1 FROM email_airbnb WHERE id = ?').get(id))
+  }
+
+  segnaEmail(id: string, tipo: string) {
+    this.db.prepare('INSERT OR REPLACE INTO email_airbnb (id, quando, tipo) VALUES (?, ?, ?)').run(id, adesso(), tipo)
+  }
+
+  contaEmailAirbnb() {
+    return (this.db.prepare('SELECT COUNT(*) AS n FROM email_airbnb').get() as { n: number }).n
+  }
+
+  // ───────── Avvisi per Pietro (è Ambrogio che aggiorna lui) ─────────
+
+  /** un avviso nuovo; con la stessa chiave non si ripete */
+  avvisa(testo: string, chiave?: string) {
+    const r = this.db.prepare('INSERT OR IGNORE INTO avvisi (quando, chiave, testo) VALUES (?, ?, ?)').run(adesso(), chiave ?? null, testo)
+    return Number(r.changes) > 0
+  }
+
+  avvisi(soloNonLetti = true, limite = 50): Avviso[] {
+    return this.db
+      .prepare(`SELECT id, quando, testo, letto FROM avvisi ${soloNonLetti ? 'WHERE letto = 0' : ''} ORDER BY id DESC LIMIT ?`)
+      .all(limite)
+      .reverse() as Avviso[]
+  }
+
+  segnaAvvisiLetti(ids: number[]) {
+    const segna = this.db.prepare('UPDATE avvisi SET letto = 1 WHERE id = ?')
+    for (const id of ids) segna.run(id)
   }
 
   // ───────── Registro delle attività ─────────

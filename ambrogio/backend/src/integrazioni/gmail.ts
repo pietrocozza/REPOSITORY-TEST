@@ -103,6 +103,29 @@ export class Gmail {
     return messaggi.map((m) => this.breve(m))
   }
 
+  /** Tutte le email di una ricerca (più pagine), con oggetto e data: serve all'archivio di Airbnb */
+  async elencoCompleto(ricerca: string, massimo = 200, salta: (id: string) => boolean = () => false): Promise<EmailBreve[]> {
+    const ids: string[] = []
+    let pagina: string | undefined
+    do {
+      const p = new URLSearchParams({ q: ricerca, maxResults: String(Math.min(100, massimo - ids.length)) })
+      if (pagina) p.set('pageToken', pagina)
+      const lista = (await this.google.chiama(`/gmail/v1/users/me/messages?${p}`)) as { messages?: { id: string }[]; nextPageToken?: string }
+      ids.push(...(lista.messages ?? []).map((m) => m.id))
+      pagina = lista.nextPageToken
+    } while (pagina && ids.length < massimo)
+    // le email già viste non si riaprono
+    const daLeggere = ids.filter((id) => !salta(id))
+    const meta = 'format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date'
+    const risultato: EmailBreve[] = []
+    // a gruppi di 10, per non fare troppe richieste insieme
+    for (let i = 0; i < daLeggere.length; i += 10) {
+      const gruppo = await Promise.all(daLeggere.slice(i, i + 10).map((id) => this.google.chiama(`/gmail/v1/users/me/messages/${id}?${meta}`) as Promise<Messaggio>))
+      risultato.push(...gruppo.map((m) => this.breve(m)))
+    }
+    return risultato
+  }
+
   /** Un'email intera, con il testo */
   async apri(id: string): Promise<EmailCompleta> {
     if (!/^[A-Za-z0-9_-]{6,64}$/.test(id)) throw new Error('Id email non valido.')

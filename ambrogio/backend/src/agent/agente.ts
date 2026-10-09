@@ -198,7 +198,7 @@ export class Agente {
     let pronta = rispostaPronta(messaggio, { appellativo: this.config.appellativo, suoni: elencoSuoni(this.config.cartellaDati) })
     if (!pronta) {
       try {
-        pronta = await rispostaCalendario(messaggio, servizi.airbnb, new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date()))
+        pronta = await rispostaCalendario(messaggio, servizi.airbnb, new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date()), (c) => this.db.prenotazione(c))
         pronta ??= await rispostaAgenda(messaggio, servizi.calendario?.disponibile ? servizi.calendario : undefined)
       } catch (err) {
         this.db.registra('errore', `Calendario Airbnb: ${(err as Error).message}`)

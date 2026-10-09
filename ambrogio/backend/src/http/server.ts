@@ -8,6 +8,7 @@ import { CARTELLA_AMBROGIO } from '../config.ts'
 import { Aggiornamenti, shaValido } from '../codice/aggiornamenti.ts'
 import { ErroreVoce, VOCI_GEMINI, VoceGemini } from '../voce/gemini.ts'
 import { VoceElevenLabs } from '../voce/elevenlabs.ts'
+import type { ArchivioAirbnb } from '../integrazioni/archivio-airbnb.ts'
 import { Trascrizione } from '../voce/trascrizione.ts'
 import { sintetizzaWindows } from '../voce/windows.ts'
 import { elencoSuoni, suono } from '../voce/suoni.ts'
@@ -70,6 +71,7 @@ type OpzioniServer = {
   google?: AccessoGoogle
   gmail?: Gmail
   telefono?: Telefono
+  archivio?: ArchivioAirbnb
 }
 
 /** Pagina mostrata dopo il «Consenti» di Google (si chiude da sola) */
@@ -382,7 +384,18 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
             }
           }),
         )
-        return inviaJson(res, 200, { collegato: true, case: case_ })
+        return inviaJson(res, 200, { collegato: true, case: case_, archivio: opzioni.archivio?.stato ?? null })
+      }
+
+      // ───────── Avvisi: le novità che Ambrogio dà a Pietro senza che lui chieda ─────────
+      if (req.method === 'GET' && url.pathname === '/api/avvisi') {
+        return inviaJson(res, 200, { avvisi: agente.db.avvisi(url.searchParams.get('tutti') !== '1') })
+      }
+      if (req.method === 'POST' && url.pathname === '/api/avvisi/letti') {
+        const dati = await leggiJson(req)
+        const ids = Array.isArray(dati.ids) ? dati.ids.filter((x): x is number => Number.isInteger(x)) : []
+        agente.db.segnaAvvisiLetti(ids)
+        return inviaJson(res, 200, { ok: true })
       }
 
       // ───────── Telefono ─────────

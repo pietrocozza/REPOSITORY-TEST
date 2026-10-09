@@ -285,5 +285,15 @@ export const caricaStatistiche = () => leggi<Statistiche>('/api/statistiche')
 // ───────── Airbnb ─────────
 export type StatoAirbnb =
   | { collegato: false; motivo: string }
-  | { collegato: true; case: { numero: number; nome: string; ok: boolean; prenotazioni?: number; errore?: string }[] }
+  | {
+      collegato: true
+      case: { numero: number; nome: string; ok: boolean; prenotazioni?: number; errore?: string }[]
+      archivio: { attivo: boolean; ultimoControllo: string | null; prenotazioni: number; email: number; errore: string | null } | null
+    }
 export const statoAirbnb = () => leggi<StatoAirbnb>('/api/airbnb')
+
+/** Le novità che Ambrogio dà da solo (nuove prenotazioni, messaggi degli ospiti, arrivi di domani…) */
+export type Avviso = { id: number; quando: string; testo: string }
+export const leggiAvvisi = () => leggi<{ avvisi: Avviso[] }>('/api/avvisi')
+export const segnaAvvisiLetti = (ids: number[]) =>
+  fetch('/api/avvisi/letti', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) }).catch(() => {})

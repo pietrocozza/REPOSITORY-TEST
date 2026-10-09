@@ -1,10 +1,20 @@
 import { TIPI_MEMORIA, type Database, type Livello, type StatoPratica, type TipoMemoria } from '../database/db.ts'
 import type { Gmail } from '../integrazioni/gmail.ts'
 import { riassumiCalendario, schedaCasa, type Airbnb } from '../integrazioni/airbnb.ts'
+import { incassiPerMese, quantiOspiti, type ArchivioAirbnb } from '../integrazioni/archivio-airbnb.ts'
 import { dettoQuando, type CalendarioGoogle } from '../integrazioni/calendario.ts'
 
 /** I servizi esterni collegati (impostati all'avvio): gli strumenti li usano se ci sono */
-export const servizi: { gmail?: Gmail; airbnb?: Airbnb; calendario?: CalendarioGoogle; cartellaDati?: string } = {}
+export const servizi: { gmail?: Gmail; airbnb?: Airbnb; calendario?: CalendarioGoogle; cartellaDati?: string; archivio?: ArchivioAirbnb } = {}
+
+/** quello che si sa dalle email di Airbnb su una prenotazione (ospite, quanti, guadagno) */
+export function dettagliDalleEmail(db: Database, codice: string) {
+  const p = db.prenotazione(codice)
+  if (!p) return null
+  const parti = [p.ospite && `ospite ${p.ospite}`, quantiOspiti(p), p.guadagno != null && `guadagno ${Math.round(p.guadagno)} ${p.valuta && !/eur/i.test(p.valuta) ? p.valuta : 'euro'}`, p.stato !== 'confermata' && p.stato]
+  const testo = parti.filter(Boolean).join(', ')
+  return testo ? `, ${testo}` : null
+}
 
 const serveGmail = () => {
   if (!servizi.gmail?.collegato) throw new Error('Gmail non è collegato: Pietro può collegarlo dal menu Email di Ambrogio.')
@@ -229,11 +239,28 @@ export const STRUMENTI: Strumento[] = [
       additionalProperties: false,
     },
     riassunto: (a) => `Guardare il calendario Airbnb${intero(a, 'casa') ? ` della casa ${intero(a, 'casa')}` : ''}`,
-    esegui: async (a) => {
+    esegui: async (a, db) => {
       if (!servizi.airbnb?.case.length) return 'Airbnb non è collegato: nel file .env manca il link del calendario (AMBROGIO_AIRBNB_CASA_1_ICAL).'
       const { casa, periodi } = await servizi.airbnb.calendario(intero(a, 'casa') || undefined)
       const oggi = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date())
-      return riassumiCalendario(casa.nome, periodi, oggi, Math.min(365, Math.max(1, intero(a, 'giorni') || 30)))
+      return riassumiCalendario(casa.nome, periodi, oggi, Math.min(365, Math.max(1, intero(a, 'giorni') || 30)), (codice) => dettagliDalleEmail(db, codice))
+    },
+  },
+  {
+    nome: 'incassi',
+    descrizione:
+      'Guadagni Airbnb mese per mese (dalle email di conferma che Ambrogio archivia da solo): guadagno, notti, prenotazioni, ospiti e prezzo medio a notte. Per domande su revenue, incassi, ADR e confronti tra mesi.',
+    livello: 1,
+    schema: { type: 'object', properties: {}, required: [], additionalProperties: false },
+    riassunto: () => 'Guardare gli incassi di Airbnb',
+    esegui: (_a, db) => {
+      const mesi = incassiPerMese(db.prenotazioniArchiviate())
+      if (!mesi.length)
+        return 'Non ci sono ancora prenotazioni archiviate: Ambrogio le ricava da solo dalle email di Airbnb in Gmail (serve Gmail collegato). Se Gmail è collegato da poco, il recupero è in corso.'
+      return (
+        'Mese (del check-in) | guadagno host | notti | prenotazioni | ospiti | prezzo medio a notte\n' +
+        mesi.map((m) => `${m.mese} | ${Math.round(m.guadagno)} € | ${m.notti} | ${m.prenotazioni} | ${m.ospiti} | ${m.prezzoMedio} €`).join('\n')
+      )
     },
   },
   {

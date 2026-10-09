@@ -25,6 +25,17 @@ export default function SezioneAirbnb() {
               ? stato.motivo
               : stato.case.map((c) => (c.ok ? `${c.nome}: calendario letto, ${c.prenotazioni} prenotazioni` : `${c.nome}: ${c.errore}`)).join(' · ')}
         </small>
+        {stato?.collegato && stato.archivio && (
+          <small>
+            {stato.archivio.errore
+              ? `Email di Airbnb: ${stato.archivio.errore}`
+              : `Email di Airbnb (controllo ogni minuto): ${stato.archivio.email} lette, ${stato.archivio.prenotazioni} prenotazioni con ospiti e guadagni${
+                  stato.archivio.ultimoControllo
+                    ? ` · ultimo controllo ${new Date(stato.archivio.ultimoControllo).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`
+                    : ''
+                }`}
+          </small>
+        )}
       </span>
       <button type="button" onClick={() => setProva((p) => p + 1)}>
         Riprova

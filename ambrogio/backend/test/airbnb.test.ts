@@ -5,6 +5,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { Airbnb, leggiIcal, riassumiCalendario, schedaCasa } from '../src/integrazioni/airbnb.ts'
 import { STRUMENTI, servizi } from '../src/strumenti/catalogo.ts'
+import { Database } from '../src/database/db.ts'
 
 // com'è fatto il calendario esportato da Airbnb
 const ICAL = [
@@ -52,7 +53,11 @@ test('strumenti: prenotazioni dal link del calendario, scheda della casa da riem
   servizi.cartellaDati = dati
   servizi.airbnb = new Airbnb([{ numero: 1, nome: 'Trastevere', ical: 'https://www.airbnb.it/calendar/ical/1.ics?s=x' }], async () => ICAL)
   const prenotazioni = STRUMENTI.find((s) => s.nome === 'prenotazioni')!
-  assert.match(await prenotazioni.esegui({ giorni: 365 }, {} as never), /Trastevere: prossimi 365 giorni/)
+  const db = new Database(':memory:')
+  assert.match(await prenotazioni.esegui({ giorni: 365 }, db), /Trastevere: prossimi 365 giorni/)
+  // quello che Ambrogio ha ricavato dalle email si aggiunge alla prenotazione del calendario
+  db.salvaPrenotazione({ codice: 'HMABC12345', ospite: 'Mario', adulti: 2, bambini: 1, guadagno: 320.5 })
+  assert.match(await prenotazioni.esegui({ giorni: 365 }, db), /codice HMABC12345, telefono …4321, ospite Mario, 3 ospiti \(2 adulti, 1 bambino\), guadagno 321 euro/)
   const info = STRUMENTI.find((s) => s.nome === 'info_casa')!
   assert.match(String(info.esegui({}, {} as never)), /non è ancora compilata/)
   const file = path.join(dati, 'case', 'casa-1.txt')
@@ -71,6 +76,13 @@ test('domande sul calendario: risposta immediata, senza Claude', async () => {
   assert.match((await rispostaCalendario("c'è un ospite adesso?", a, oggi)) ?? '', /In questo momento a Trastevere c'è un ospite, che parte venerdì 9 ottobre/)
   assert.equal(await rispostaCalendario('quando arriva la prossima prenotazione?', a, oggi), 'La prossima prenotazione a Trastevere arriva lunedì 12 ottobre, per 3 notti.')
   assert.equal(await rispostaCalendario('quanti ospiti ci sono nella prossima prenotazione?', a, oggi), null, 'il numero di ospiti è nelle email: Claude')
+  const db = new Database(':memory:')
+  db.salvaPrenotazione({ codice: 'HMABC12345', ospite: 'Mario', adulti: 2, bambini: 1 })
+  assert.equal(
+    await rispostaCalendario('quanti ospiti ci sono nella prossima prenotazione?', a, oggi, (c) => db.prenotazione(c)),
+    'A Trastevere arriva lunedì 12 ottobre Mario, 3 ospiti (2 adulti, 1 bambino), per 3 notti.',
+    'già archiviato dalle email: risposta immediata',
+  )
   assert.match(sett ?? '', /Arriva un ospite nei prossimi 7 giorni: lunedì 12 ottobre per 3 notti/)
   assert.match((await rispostaCalendario('quanto sono occupato a novembre?', a, oggi)) ?? '', /A novembre non arriva nessuno.*Occupazione 0 per cento/s)
   assert.match((await rispostaCalendario('chi parte domani', a, oggi)) ?? '', /Partenze domani: venerdì 9 ottobre/)

@@ -1,5 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import type { PrenotazioneArchiviata } from '../database/db.ts'
+import { quantiOspiti } from './archivio-airbnb.ts'
 
 // Airbnb, con i canali ufficiali che Airbnb dà a ogni host (niente password, niente robot sul sito):
 //  - il CALENDARIO esportato (link iCal: Annuncio → Disponibilità → Collega calendari → Esporta): le prenotazioni;
@@ -52,7 +54,7 @@ export function leggiIcal(testo: string): Periodo[] {
 }
 
 /** riassunto parlato dei prossimi giorni: arrivi, partenze, occupazione e buchi */
-export function riassumiCalendario(nome: string, periodi: Periodo[], oggi: string, giorni = 30) {
+export function riassumiCalendario(nome: string, periodi: Periodo[], oggi: string, giorni = 30, dettagli?: (codice: string) => string | null) {
   const fineFinestra = new Date(Date.parse(oggi) + giorni * 86_400_000).toISOString().slice(0, 10)
   const pren = periodi.filter((p) => p.tipo === 'prenotazione' && p.fine > oggi && p.inizio < fineFinestra)
   // notti occupate nella finestra
@@ -71,7 +73,7 @@ export function riassumiCalendario(nome: string, periodi: Periodo[], oggi: strin
   }
   if (libero < fineFinestra) buchi.push(`${libero} → ${fineFinestra} (${differenzaGiorni(libero, fineFinestra)} notti, fino alla fine della finestra)`)
   const righe = pren.map(
-    (p) => `- arrivo ${p.inizio}, partenza ${p.fine} (${p.notti} notti)${p.codice ? `, codice ${p.codice}` : ''}${p.telefono4 ? `, telefono …${p.telefono4}` : ''}${p.inizio <= oggi ? ' — OSPITE IN CASA ORA' : ''}`,
+    (p) => `- arrivo ${p.inizio}, partenza ${p.fine} (${p.notti} notti)${p.codice ? `, codice ${p.codice}` : ''}${p.telefono4 ? `, telefono …${p.telefono4}` : ''}${p.codice && dettagli ? (dettagli(p.codice) ?? '') : ''}${p.inizio <= oggi ? ' — OSPITE IN CASA ORA' : ''}`,
   )
   return `${nome}: prossimi ${giorni} giorni, occupazione ${Math.round((occupate / giorni) * 100)}% (${occupate} notti su ${giorni}).
 Prenotazioni:
@@ -177,9 +179,17 @@ const VA_A_CLAUDE = /\b(?:prezz\w*|costa|tariff\w*|consigl\w*|messaggi?\w*|scriv
 const DETTAGLI_OSPITI = /\b(?:quant[ie]\s+(?:ospiti|persone|adulti|bambini)|quante\s+persone|in\s+quanti|come\s+si\s+chiam\w*|nome|nomi|chi\s+(?:è|e|sono)\b|telefono|numero\s+di|da\s+dove|nazionalit\w*|codice\s+(?:di\s+)?prenotazione)/
 
 /** Risposta parlata e immediata alle domande sul calendario, oppure null (allora risponde Claude) */
-export async function rispostaCalendario(domanda: string, airbnb: Airbnb | undefined, oggi: string): Promise<string | null> {
+export async function rispostaCalendario(
+  domanda: string,
+  airbnb: Airbnb | undefined,
+  oggi: string,
+  archivio?: (codice: string) => PrenotazioneArchiviata | undefined,
+): Promise<string | null> {
   const t = domanda.toLowerCase()
-  if (!DOMANDA_CALENDARIO.test(t) || VA_A_CLAUDE.test(t) || DETTAGLI_OSPITI.test(t)) return null
+  // quanti sono e come si chiamano: si risponde subito solo se l'archivio delle email lo sa
+  const chiedeOspiti = DETTAGLI_OSPITI.test(t)
+  const sappiamoOspiti = chiedeOspiti && archivio && /quant[ie]|in quanti|come si chiam|\bnom[ei]\b|chi (?:è|e|sono)/.test(t)
+  if (!DOMANDA_CALENDARIO.test(t) || VA_A_CLAUDE.test(t) || (chiedeOspiti && !sappiamoOspiti)) return null
   // calendario non collegato: lo si dice subito (niente giri lenti nelle email)
   if (!airbnb?.case.length)
     return /airbnb|prenotazion|calendario|arriv|parten|occupa|disponibilit/.test(t)
@@ -214,6 +224,18 @@ export async function rispostaCalendario(domanda: string, airbnb: Airbnb | undef
     a = mese === 11 ? `${anno + 1}-01-01` : `${anno}-${String(mese + 2).padStart(2, '0')}-01`
     quando = `a ${MESI[mese]}`
   } else if (/\bmese\b/.test(t)) [a, quando] = [piu(oggi, 30), 'nei prossimi 30 giorni']
+
+  if (sappiamoOspiti) {
+    const scelta = /\b(?:adesso|ora|in casa|oggi)\b/.test(t)
+      ? pren.find((p) => p.inizio <= oggi && p.fine > oggi)
+      : /\bdomani\b/.test(t)
+        ? pren.find((p) => p.inizio === piu(oggi, 1))
+        : pren.find((p) => p.inizio > oggi)
+    const a = scelta?.codice ? archivio(scelta.codice) : undefined
+    const ospiti = a ? quantiOspiti(a) : null
+    if (!scelta || !a || (!ospiti && !a.ospite)) return null
+    return `${scelta.inizio <= oggi ? `Ora a ${casa.nome} c'è` : `A ${casa.nome} arriva ${detto(scelta.inizio)}`} ${a.ospite ?? 'un ospite'}${ospiti ? `, ${ospiti}` : ''}, per ${notti(scelta.notti)}.`
+  }
 
   // si risponde solo a quello che è chiesto: «la prossima prenotazione» è una sola
   if (/\bprossim[oa]\s+(?:prenotazion\w*|arriv\w*|ospit\w*|check.?in)/.test(t)) {

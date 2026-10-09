@@ -63,9 +63,23 @@ export class Trascrizione {
     return { detto: String(dati.detto ?? '').trim(), risposta: String(dati.risposta ?? '').trim(), azione }
   }
 
+  /** Legge un testo (per esempio un'email) e ne estrae i dati in JSON, seguendo le istruzioni */
+  async estrai(istruzioni: string, testo: string): Promise<unknown> {
+    const risposta = await this.genera([{ text: `${istruzioni}\n\n---\n${testo}` }], true, 0)
+    try {
+      return JSON.parse(risposta.replace(/^```(?:json)?\s*|\s*```$/g, ''))
+    } catch {
+      throw new ErroreVoce('errore', 'Gemini ha risposto in un formato inatteso.')
+    }
+  }
+
   private async chiediConAudio(istruzioni: string, audio: Buffer, tipo: string, json = false): Promise<string> {
-    if (!this.disponibile) throw new ErroreVoce('senza-chiave', 'Manca la chiave di Gemini nel file .env.')
     const mime = tipo.split(';')[0].trim() || 'audio/webm'
+    return this.genera([{ text: istruzioni }, { inlineData: { mimeType: mime, data: audio.toString('base64') } }], json, json ? 0.6 : 0)
+  }
+
+  private async genera(parti: unknown[], json: boolean, temperatura: number): Promise<string> {
+    if (!this.disponibile) throw new ErroreVoce('senza-chiave', 'Manca la chiave di Gemini nel file .env.')
     const base = this.opz.url ?? 'https://generativelanguage.googleapis.com'
     const chiedi = (modello: string, conPensiero: boolean) =>
       fetch(`${base}/v1beta/models/${modello}:generateContent`, {
@@ -73,10 +87,10 @@ export class Trascrizione {
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': this.opz.chiave },
         signal: AbortSignal.timeout(60_000),
         body: JSON.stringify({
-          contents: [{ parts: [{ text: istruzioni }, { inlineData: { mimeType: mime, data: audio.toString('base64') } }] }],
+          contents: [{ parts: parti }],
           // niente "ragionamento": deve essere rapido (non tutti i modelli lo accettano)
           generationConfig: {
-            temperature: json ? 0.6 : 0,
+            temperature: temperatura,
             ...(json ? { responseMimeType: 'application/json' } : {}),
             ...(conPensiero ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
           },

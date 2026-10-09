@@ -14,6 +14,8 @@ import { Gmail } from './integrazioni/gmail.ts'
 import { CalendarioGoogle } from './integrazioni/calendario.ts'
 import { Airbnb, schedaCasa } from './integrazioni/airbnb.ts'
 import { servizi } from './strumenti/catalogo.ts'
+import { ArchivioAirbnb } from './integrazioni/archivio-airbnb.ts'
+import { Trascrizione } from './voce/trascrizione.ts'
 
 // Avvio del backend locale di Ambrogio.
 
@@ -48,7 +50,20 @@ servizi.airbnb = new Airbnb(config.airbnb.case)
 servizi.cartellaDati = config.cartellaDati
 // la scheda della casa 1 (si crea il modello da riempire, se manca)
 schedaCasa(config.cartellaDati, 1)
-const server = creaServer(config, agente, { mcp: creaServerMcp(gestore, chiaveMcp), google, gmail: servizi.gmail })
+// le case Airbnb si tengono aggiornate da sole: ogni minuto le email nuove di Airbnb, la mattina e la sera i promemoria
+const gemini = new Trascrizione({ chiave: config.gemini.chiave, url: config.gemini.url })
+const fusoRoma = (opz: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome', ...opz })
+const archivio = new ArchivioAirbnb({
+  db,
+  gmail: servizi.gmail,
+  airbnb: servizi.airbnb,
+  leggi: gemini.disponibile ? (istruzioni, testo) => gemini.estrai(istruzioni, testo) : undefined,
+  oggi: () => fusoRoma({}).format(new Date()),
+  ora: () => Number(fusoRoma({ hour: '2-digit', hourCycle: 'h23' }).format(new Date())),
+})
+servizi.archivio = archivio
+archivio.avvia()
+const server = creaServer(config, agente, { mcp: creaServerMcp(gestore, chiaveMcp), google, gmail: servizi.gmail, archivio })
 // la versione accesa (utile per capire se un aggiornamento è davvero partito)
 let versione = ''
 try {

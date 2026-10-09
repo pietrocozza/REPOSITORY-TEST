@@ -16,6 +16,8 @@ import {
   salvaStileVoce,
   salvaCervello,
   leggiStatoBackend,
+  leggiAvvisi,
+  segnaAvvisiLetti,
   nuovaConversazione,
   type Autorizzazione,
   type Cervello,
@@ -488,6 +490,37 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       })
     }, 0)
   }, [usaBackend, statoVoce, attesaSalutoFinita])
+
+  // Le novità le dà Ambrogio, senza che Pietro chieda: nuove prenotazioni, messaggi degli ospiti, chi arriva domani…
+  // Si controlla ogni 30 secondi; si annunciano solo quando Ambrogio è libero (mai sopra una risposta)
+  useEffect(() => {
+    if (!usaBackend) return
+    let fermo = false
+    const controlla = async () => {
+      if (fermo || statoRef.current !== 'pronto' || comandoInCorso.current) return
+      const { avvisi } = (await leggiAvvisi().catch(() => null)) ?? { avvisi: [] }
+      if (fermo || !avvisi.length || statoRef.current !== 'pronto' || comandoInCorso.current) return
+      const prime = avvisi.slice(0, 3).map((a) => a.testo)
+      const altre = avvisi.length - prime.length
+      const frase = `${avvisi.length === 1 ? 'Una novità' : 'Novità'}: ${prime.join(' ')}${altre > 0 ? ` E altre ${altre} novità: chiedimele quando vuoi.` : ''}`
+      segnaAvvisiLetti(avvisi.map((a) => a.id))
+      setVoci((vs) => [...vs, { id: prossimoId++, ruolo: 'assistant', testo: avvisi.map((a) => `• ${a.testo}`).join('\n') }])
+      setAnnuncio(frase)
+      if (!vocaleRef.current) return
+      dettoDaSe.current = frase
+      pronuncia(frase, {
+        onInizio: () => setStato((st) => (st === 'pronto' ? 'risposta' : st)),
+        onFine: () => setStato((st) => (st === 'risposta' ? 'pronto' : st)),
+      })
+    }
+    const primo = setTimeout(controlla, 8000)
+    const id = setInterval(controlla, 30_000)
+    return () => {
+      fermo = true
+      clearTimeout(primo)
+      clearInterval(id)
+    }
+  }, [usaBackend])
 
   // Mentre Ambrogio lavora, il cronometro a sinistra avanza
   useEffect(() => {
