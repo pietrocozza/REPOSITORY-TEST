@@ -62,6 +62,87 @@ function calcolo(t: string): string | null {
   return `${numero(a)} ${parola} ${numero(b)} fa ${numero(r)}.`
 }
 
+// ───────── Calcoli più complessi, senza internet e senza Claude ─────────
+// «quanto fa 3 più 4 per 2», «radice quadrata di 144», «2 alla 10», «il 20 per cento di 150», «(12+8)/4»
+function espressione(frase: string): string | null {
+  let t = frase
+    .toLowerCase()
+    .replace(/[’`]/g, "'")
+    .replace(/\b(?:u[eèé]i? )?ambrogio\b|[?!]|,(?!\d)|\bper favore\b|\bgrazie\b/g, ' ')
+    .replace(/^\s*(?:mi\s+)?(?:sai dire |dimmi )?(?:quanto fa|quanto è|quanto e|quant'è|calcola(?:mi)?|mi calcoli|il risultato di|risultato di|fa)\s+/, '')
+    .trim()
+  if (!/\d/.test(t)) return null
+  // percentuali: «il 20 per cento di 150», «20% di 150»
+  t = t.replace(/(?:il |l')?(\d+(?:[.,]\d+)?)\s*(?:%|per ?cento) (?:di|su) /g, '$1/100*')
+  t = t
+    .replace(/radice(?: quadrata)? (?:di )?/g, ' r ')
+    .replace(/ al quadrato/g, '^2')
+    .replace(/ al cubo/g, '^3')
+    .replace(/ elevato (?:alla?|a) | alla /g, '^')
+    .replace(/\bdiviso(?: per)?\b|÷|:/g, '/')
+    .replace(/\bper\b|×|\bx\b/g, '*')
+    .replace(/(?<!\p{L})più(?!\p{L})|\bpiu\b/gu, '+')
+    .replace(/\bmeno\b/g, '-')
+    .replace(/(\d),(\d)/g, '$1.$2')
+    .replace(/\s+/g, '')
+  if (!/^[\d.+\-*/^()r]+$/.test(t) || !/[+\-*/^r]/.test(t.replace(/^-/, ''))) return null
+  // analisi con precedenza degli operatori (nessun eval)
+  let i = 0
+  const leggi = (): number => {
+    let v = termine()
+    while (t[i] === '+' || t[i] === '-') v = t[i++] === '+' ? v + termine() : v - termine()
+    return v
+  }
+  const termine = (): number => {
+    let v = potenza()
+    while (t[i] === '*' || t[i] === '/') {
+      if (t[i++] === '*') v *= potenza()
+      else {
+        const d = potenza()
+        if (d === 0) throw new Error('zero')
+        v /= d
+      }
+    }
+    return v
+  }
+  const potenza = (): number => {
+    const b = unario()
+    if (t[i] === '^') {
+      i++
+      return b ** potenza()
+    }
+    return b
+  }
+  const unario = (): number => {
+    if (t[i] === '-') return i++, -unario()
+    if (t[i] === 'r') {
+      i++
+      const v = unario()
+      if (v < 0) throw new Error('negativo')
+      return Math.sqrt(v)
+    }
+    if (t[i] === '(') {
+      i++
+      const v = leggi()
+      if (t[i++] !== ')') throw new Error('parentesi')
+      return v
+    }
+    const m = /^\d+(?:\.\d+)?/.exec(t.slice(i))
+    if (!m) throw new Error('numero')
+    i += m[0].length
+    return Number(m[0])
+  }
+  try {
+    const r = leggi()
+    if (i !== t.length || !Number.isFinite(r)) return null
+    return `Fa ${numero(r)}.`
+  } catch (e) {
+    if ((e as Error).message === 'zero') return 'Diviso zero non si può, nemmeno per un maggiordomo.'
+    if ((e as Error).message === 'negativo') return 'La radice di un numero negativo non esiste tra i numeri normali.'
+    return null
+  }
+}
+
 type Regola = { frasi: RegExp; risposta: (c: Required<Contesto>) => string }
 
 // Le risposte fisse (sempre uguali): con la voce di Gemini si registrano una volta e poi non costano più
@@ -148,9 +229,9 @@ function musica(t: string, c: Contesto & { caso: () => number }): string | null 
 /** La risposta immediata, oppure null se la domanda va a Claude. */
 export function rispostaPronta(frase: string, contesto: Contesto): string | null {
   const t = normalizza(frase)
-  if (!t || t.length > 60) return null
+  if (!t || t.length > 90) return null
   const c = { adesso: new Date(), caso: Math.random, ...contesto, suoni: contesto.suoni ?? [] }
-  const conto = calcolo(t)
+  const conto = calcolo(t) ?? espressione(frase)
   if (conto) return conto
   const brano = musica(t, c)
   if (brano) return brano

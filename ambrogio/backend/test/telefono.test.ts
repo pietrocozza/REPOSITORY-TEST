@@ -98,7 +98,7 @@ test('strada veloce: Gemini capisce e risponde; Claude solo quando serve (email,
       'pietro: Ciao Ambrogio',
       'ambrogio: Ué Pietro, eccomi!',
       'pietro: Leggimi le email',
-      'ambrogio: Un attimo che controllo.',
+      'ambrogio: Ghe pènsi mì, fìga! Un attimo che controllo.',
       'ambrogio: Hai due email nuove, niente di urgente. A dopo!',
     ],
   )

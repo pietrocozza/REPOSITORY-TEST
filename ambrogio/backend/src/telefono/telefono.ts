@@ -157,6 +157,9 @@ export type Dipendenze = {
 }
 
 // Mentre Ambrogio pensa la risposta, subito una parolina (dalle frasi già registrate: istantanea) come al telefono vero
+// la presa in carico alla milanese (scritta così perché la voce la pronunci con la cadenza giusta)
+export const GHE_PENSI_MI = 'Ghe pènsi mì, fìga!'
+
 const ATTESA = ['Mmh.', 'Allora.', 'Vediamo.', 'Dunque.', 'Sì sì.', 'Certo.']
 
 export type EsitoTelefonata = { esito: 'conclusa' | 'nessuna-risposta' | 'errore'; motivo?: string; conversazione: Battuta[] }
@@ -217,13 +220,13 @@ export class Telefonata {
 
   /** mentre Claude lavora a lungo, al telefono ogni tanto un aggiornamento (mai minuti di silenzio) */
   private async conAggiornamenti<T>(lavoro: Promise<T>): Promise<T> {
-    const frasi = ['Sto ancora controllando, un attimo.', 'Ci sono quasi, resti in linea.', 'Ancora un momento, sto finendo.']
+    const frasi = ['Sto controllando.', 'Ci sono quasi.', 'Ancora un momento.']
     let i = 0
     let parlando: Promise<void> = Promise.resolve()
     const t = setInterval(() => {
       if (this.finita) return
       parlando = parlando.then(() => this.parla(frasi[Math.min(i++, frasi.length - 1)], false))
-    }, 12_000)
+    }, 10_000)
     try {
       return await lavoro
     } finally {
@@ -264,7 +267,7 @@ Nell'audio c'è quello che ${nome} ha appena detto.
 Rispondi SOLO con un oggetto JSON: {"detto": "...", "risposta": "...", "azione": "rispondi"}
 - detto: la trascrizione esatta di quello che ha detto; stringa vuota se si sente solo rumore o nessuna parola chiara (non inventare)
 - risposta: quello che gli dici adesso, come in una telefonata vera: una o due frasi brevi e naturali, niente elenchi, simboli o emoji
-- azione "claude" quando per rispondere bisogna fare qualcosa o sapere dati che qui non hai (email, messaggi degli ospiti, prenotazioni Airbnb o Vikey, cose da ricordare o già ricordate, ricerche su internet, notizie, meteo, calendario, inviare o modificare qualcosa): allora risposta è solo una brevissima frase d'attesa come «Un attimo che controllo.»
+- azione "claude" quando per rispondere bisogna fare qualcosa o sapere dati che qui non hai (email, messaggi degli ospiti, prenotazioni Airbnb o Vikey, cose da ricordare o già ricordate, ricerche su internet, notizie, meteo, calendario, inviare o modificare qualcosa): allora risposta è solo «Vado subito a …» con cosa vai a fare, brevissima (es. «Vado subito a guardare le email.», «Vado subito a cercare su internet.»)
 - azione "riattacca" quando lui saluta o avete finito: risposta è il saluto
 - azione "rispondi" in tutti gli altri casi${suoni.length ? `\n- musica: puoi farla sentire scrivendo nella risposta [SUONO: nome] (disponibili: ${suoni.join(', ')})` : ''}
 Data e ora: ${ora}.`
@@ -340,7 +343,7 @@ Data e ora: ${ora}.`
           if (veloce.azione === 'claude') {
             // serve Claude (email, memoria, Airbnb…): intanto una frase d'attesa
             await attesa
-            await this.parla(veloce.risposta || 'Un attimo che controllo.')
+            await this.parla(`${GHE_PENSI_MI} ${veloce.risposta || 'Vado subito a controllare.'}`)
             this.inizioTurno = Date.now()
             this.strada = 'con Claude'
             testo = await this.conAggiornamenti(this.d.rispondi(this.richiestaClaude(motivo, apertura, nome, detto, primo)))

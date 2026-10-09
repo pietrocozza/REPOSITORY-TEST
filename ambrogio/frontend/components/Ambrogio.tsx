@@ -172,15 +172,22 @@ function salutoIniziale(ascoltoAttivo: boolean, ora = new Date().getHours()) {
 }
 
 // Detta subito quando serve cercare online, così l'attesa non è un silenzio
-const FRASI_RICERCA = [
-  'Certo, signore. Cerco subito.',
-  'Subito, signore: do un’occhiata in rete.',
-  'Un istante, signore, sto cercando.',
-  'Lo verifico subito, signore.',
-  'Ci penso io, signore. Un attimo che controllo.',
+// Presa in carico, sempre alla milanese: scritta normale sullo schermo, con gli accenti per la voce
+// (così anche Edge la dice con la cadenza giusta), seguita da cosa va a fare
+const GHE_PENSI_MI = { scritto: 'Ghe pensi mi, figa!', detto: 'Ghe pènsi mì, fìga!' }
+const COSA_VADO_A_FARE: [RegExp, string][] = [
+  [/airbnb|vikey|ospit|prenotazion|check.?(in|out)|arriv|partenz/i, 'controllare il calendario di Airbnb'],
+  [/e-?mail|\bmail|posta|gmail/i, 'guardare le email'],
+  [/agenda|impegn|appuntament|calendario|riunion/i, 'guardare la tua agenda'],
+  [/ricord|memoria|ti avevo detto|segna/i, 'controllare nella memoria'],
+  [/scrivi|prepara|bozza|riassum/i, 'prepararlo'],
 ]
-// Detta appena Ambrogio prende in carico una richiesta che richiede qualche secondo (così si sa che ha capito)
-const FRASI_PRESA = ['Ricevuto, ci penso io.', 'Subito.', 'Me ne occupo io.', 'Ghe pensi mi.', 'Certo, un momento.']
+const VADO_A_CERCARE = 'cercare su internet'
+const VADO_DEFAULT = 'occuparmene'
+function presaInCarico(domanda: string) {
+  const cosa = SERVE_RICERCA.test(domanda) ? VADO_A_CERCARE : (COSA_VADO_A_FARE.find(([r]) => r.test(domanda))?.[1] ?? VADO_DEFAULT)
+  return { scritto: `${GHE_PENSI_MI.scritto} Vado subito a ${cosa}.`, detto: `${GHE_PENSI_MI.detto} Vado sùbito a ${cosa}.` }
+}
 // Mentre lavora: cosa sta facendo, strumento per strumento
 const FRASI_STRUMENTO: [RegExp, string][] = [
   [/WebSearch/, 'Cerco su internet.'],
@@ -195,14 +202,32 @@ const FRASI_STRUMENTO: [RegExp, string][] = [
   [/ricorda|cerca_memoria|dimentica/, 'Controllo la memoria.'],
   [/pratic/, 'Aggiorno le pratiche.'],
 ]
-// Se ci mette tanto: un aggiornamento ogni tanto, mai un silenzio lungo
-const FRASI_AGGIORNAMENTO: [number, string][] = [
-  [15, 'Ci sto ancora lavorando.'],
-  [35, 'Sto mettendo insieme le informazioni, un attimo di pazienza.'],
-  [65, 'Ci vuole ancora un po’, ma ci sono.'],
-  [100, 'Quasi fatto, grazie della pazienza.'],
-  [150, 'Sto ancora lavorando: è una richiesta lunga.'],
-]
+
+// Barra di avanzamento: una stima (non si sa quanto manca davvero) che sale in fretta all'inizio
+// e rallenta verso la fine, tarata sulla durata delle ultime richieste; ogni strumento usato la fa avanzare
+const CHIAVE_DURATE = 'ambrogio-durate'
+function durataTipica() {
+  try {
+    const d = JSON.parse(localStorage.getItem(CHIAVE_DURATE) ?? '[]') as number[]
+    if (Array.isArray(d) && d.length) return Math.min(120, Math.max(5, d.reduce((a, b) => a + b, 0) / d.length))
+  } catch {}
+  return 20
+}
+function ricordaDurata(secondi: number) {
+  try {
+    const d = JSON.parse(localStorage.getItem(CHIAVE_DURATE) ?? '[]') as number[]
+    localStorage.setItem(CHIAVE_DURATE, JSON.stringify([...(Array.isArray(d) ? d : []), secondi].slice(-10)))
+  } catch {}
+}
+/** percentuale stimata: alla durata tipica arriva circa all'85%, poi si ferma al 95% finché non finisce */
+function stimaAvanzamento(secondi: number, tipica: number) {
+  return Math.min(95, Math.round(100 * (1 - Math.exp((-secondi * 1.9) / tipica))))
+}
+// Ogni 10 secondi un aggiornamento brevissimo
+const OGNI_AGGIORNAMENTO_MS = 10_000
+const PERCENTUALI_DETTE = [10, 20, 30, 40, 50, 60, 70, 80, 90, 95]
+const QUASI_FATTO = ['Quasi fatto.', 'Ancora un momento.', 'Sto finendo.']
+const aggiornamentoBreve = (p: number) => `Sono ${/^(8|11)/.test(String(p)) ? 'all’' : 'al '}${p} per cento.`
 
 // Domande che quasi certamente richiedono una ricerca: la frase parte prima ancora che Claude risponda
 const SERVE_RICERCA =
@@ -256,6 +281,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   const [senzaWebgl, setSenzaWebgl] = useState(false)
   const [strumento, setStrumento] = useState<string | null>(null)
   const [fraseAttesa, setFraseAttesa] = useState<string | null>(null)
+  const [avanzamento, setAvanzamento] = useState<number | null>(null)
   /** frase detta da Ambrogio fuori dalla conversazione (saluto, «Dimmi»): si mostra al centro */
   const [annuncio, setAnnuncio] = useState<string | null>(null)
 
@@ -407,10 +433,10 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   useEffect(() => {
     if (!voceAmbrogio || motoreVoce !== 'gemini' || statoVoce?.fornitore !== 'gemini' || !statoVoce.pagamento) return
     const frasiInterfaccia = [
-      ...FRASI_RICERCA,
-      ...FRASI_PRESA,
+      ...[VADO_A_CERCARE, VADO_DEFAULT, ...COSA_VADO_A_FARE.map(([, c]) => c)].map((c) => `${GHE_PENSI_MI.detto} Vado sùbito a ${c}.`),
       ...FRASI_STRUMENTO.map(([, f]) => f),
-      ...FRASI_AGGIORNAMENTO.map(([, f]) => f),
+      ...PERCENTUALI_DETTE.map(aggiornamentoBreve),
+      ...QUASI_FATTO,
       ...DOMANDE_ATTIVAZIONE,
       FRASI_ASCOLTO.attivo,
       FRASI_ASCOLTO.spento,
@@ -891,6 +917,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       setStato('elaborazione')
       setStrumento(null)
       setFraseAttesa(null)
+      setAvanzamento(null)
       setAnnuncio(null)
       const adesso = Date.now()
       inizioRef.current = adesso
@@ -907,42 +934,63 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       let primo = true
       // con Gemini la risposta si dice tutta insieme (una sola richiesta: le gratuite sono poche)
       const tuttaInsieme = rispostaIntera()
-      // frase di cortesia per le ricerche (una sola per domanda)
-      let cortesiaDetta = false
-      const cortesia = () => {
-        if (cortesiaDetta || !primo) return
-        cortesiaDetta = true
-        const frase = FRASI_RICERCA[Math.floor(Math.random() * FRASI_RICERCA.length)]
-        setFraseAttesa(frase)
-        if (vocaleRef.current) parla(frase, t)
-      }
-      if (SERVE_RICERCA.test(pulita)) setTimeout(() => t === turno.current && primo && cortesia(), 350)
-
-      // Tenere informato Pietro mentre lavora: presa in carico, cosa sta facendo, aggiornamenti se ci mette tanto
+      // Tenere informato Pietro mentre lavora: «Ghe pensi mi, figa!», cosa sta facendo,
+      // una barra in percentuale e ogni 10 secondi un aggiornamento brevissimo
       let ultimoAvviso = 0
       const detti = new Set<string>()
-      const avvisa = (frase: string, forza = false) => {
+      const avvisa = (frase: string, forza = false, detta = frase) => {
         if (t !== turno.current || !primo || detti.has(frase)) return
         // non uno sopra l'altro: almeno 4 secondi tra un avviso e il successivo (gli aggiornamenti passano comunque)
         if (!forza && Date.now() - ultimoAvviso < 4000) return
         detti.add(frase)
         ultimoAvviso = Date.now()
         setFraseAttesa(frase)
-        if (vocaleRef.current) parla(frase, t)
+        if (vocaleRef.current) parla(detta, t)
       }
-      // le risposte pronte arrivano in un attimo: la presa in carico serve solo se dopo quasi un secondo non c'è ancora niente
-      const presa = setTimeout(() => {
-        if (!cortesiaDetta) avvisa(FRASI_PRESA[Math.floor(Math.random() * FRASI_PRESA.length)])
-      }, 900)
+      // le risposte pronte arrivano in un attimo: la presa in carico parte solo se non c'è ancora niente
+      // (per le ricerche quasi subito, per il resto dopo poco meno di un secondo)
+      const { scritto, detto } = presaInCarico(pulita)
+      let presaDetta = false
+      const presa = setTimeout(
+        () => {
+          presaDetta = true
+          avvisa(scritto, true, detto)
+        },
+        SERVE_RICERCA.test(pulita) ? 350 : 900,
+      )
+      const tipica = durataTipica()
+      let bonus = 0
+      let ultimaPercentuale = 0
+      let quasi = 0
+      const percentuale = () => Math.max(ultimaPercentuale, stimaAvanzamento((Date.now() - adesso) / 1000 + bonus, tipica))
+      const barra = setInterval(() => {
+        if (t !== turno.current || !primo) return clearInterval(barra)
+        if (Date.now() - adesso > 1200) setAvanzamento(percentuale())
+      }, 250)
       const aggiornamenti = setInterval(() => {
         if (t !== turno.current || !primo) return clearInterval(aggiornamenti)
-        const trascorsi = (Date.now() - adesso) / 1000
-        const prossimo = FRASI_AGGIORNAMENTO.find(([s, f]) => trascorsi >= s && !detti.has(f))
-        if (prossimo) avvisa(prossimo[1], true)
-      }, 1000)
+        const p = PERCENTUALI_DETTE.filter((x) => x <= percentuale()).pop() ?? 10
+        const frase = p > ultimaPercentuale ? aggiornamentoBreve(p) : QUASI_FATTO[quasi++ % QUASI_FATTO.length]
+        ultimaPercentuale = Math.max(ultimaPercentuale, p)
+        detti.delete(frase)
+        avvisa(frase, true)
+      }, OGNI_AGGIORNAMENTO_MS)
       const fermaAvvisi = () => {
         clearTimeout(presa)
+        clearInterval(barra)
         clearInterval(aggiornamenti)
+      }
+      // finito: la barra arriva al 100% e poi sparisce; la durata serve a tarare le prossime stime
+      let completata = false
+      const completa = () => {
+        if (completata) return
+        completata = true
+        fermaAvvisi()
+        if (t !== turno.current) return
+        const durata = (Date.now() - adesso) / 1000
+        if (presaDetta || durata > 1.5) ricordaDurata(durata)
+        setAvanzamento((a) => (a === null ? null : 100))
+        setTimeout(() => t === turno.current && setAvanzamento(null), 900)
       }
 
       try {
@@ -951,11 +999,9 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
           onStato: (e) => {
             if (t !== turno.current) return
             if (e.stato === 'WORKING') {
-              if ((e.strumento === 'WebSearch' || e.strumento === 'WebFetch') && !cortesiaDetta && !detti.size) cortesia()
-              else {
-                const frase = FRASI_STRUMENTO.find(([r]) => r.test(e.strumento ?? ''))?.[1]
-                if (frase) avvisa(frase)
-              }
+              const frase = FRASI_STRUMENTO.find(([r]) => r.test(e.strumento ?? ''))?.[1]
+              if (frase) avvisa(frase)
+              bonus += tipica * 0.08
               strumentiUsati.current = true
               setNStrumenti((n) => n + 1)
               setStrumento(e.descrizione ?? e.strumento ?? null)
@@ -974,8 +1020,8 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
           onTesto: (pezzo) => {
             if (t !== turno.current) return
             if (primo) {
+              completa()
               primo = false
-              fermaAvvisi()
               if (!vocaleRef.current) setStato('risposta')
             }
             setStato((s) => (s === 'lavoro' ? 'elaborazione' : s))
@@ -989,7 +1035,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
             }
           },
         })
-        fermaAvvisi()
+        completa()
         if (t !== turno.current) return
         if (vocaleRef.current && buffer.trim()) parla(buffer, t)
         // risposte non lette ad alta voce: la musica richiesta si fa sentire lo stesso
@@ -1000,7 +1046,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
         flussoFinito.current = true
         if (frasiInCoda.current === 0) concludi(t)
       } catch (err) {
-        fermaAvvisi()
+        completa()
         if (controller.signal.aborted || t !== turno.current) return
         const msg = err instanceof Error ? err.message : 'Errore imprevisto.'
         zittisci()
@@ -1033,6 +1079,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     livello.current = 0
     inizioRef.current = null
     setInizioTurno(null)
+    setAvanzamento(null)
     setParziale('')
     setStato('pronto')
   }, [usaBackend, fermaComando])
@@ -1250,6 +1297,21 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
             <p ref={trascrizione} className={ultima?.errore && stato === 'pronto' ? 'j-errore' : undefined}>
               {parlato.replace(/\s*\n+\s*/g, ' ')}
             </p>
+            {avanzamento !== null && (
+              <div
+                className="j-avanzamento"
+                role="progressbar"
+                aria-label="Avanzamento della richiesta (stima)"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={avanzamento}
+              >
+                <i>
+                  <span style={{ width: `${avanzamento}%` }} />
+                </i>
+                <b>{avanzamento}%</b>
+              </div>
+            )}
           </section>
         </div>
       </main>

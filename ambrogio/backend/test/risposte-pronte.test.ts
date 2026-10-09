@@ -48,3 +48,16 @@ test('musica: «fammi sentire l\'inno alla gioia» parte subito, senza Claude', 
   assert.equal(rispostaPronta('fammi sentire bohemian rhapsody', c), null, 'brano che non c’è: risponde Claude')
   assert.equal(rispostaPronta('fammi sentire la musica', { appellativo: 'Pietro' }), null, 'senza elenco dei suoni: Claude')
 })
+
+test('calcoli senza internet: precedenza, parentesi, potenze, radici, percentuali', async () => {
+  const { rispostaPronta } = await import('../src/agent/risposte-pronte.ts')
+  const c = { appellativo: 'Pietro' }
+  assert.equal(rispostaPronta('quanto fa 3 più 4 per 2?', c), 'Fa 11.')
+  assert.equal(rispostaPronta('Ambrogio, calcola (12+8)/4', c), 'Fa 5.')
+  assert.equal(rispostaPronta('radice quadrata di 144', c), 'Fa 12.')
+  assert.equal(rispostaPronta('quanto fa 2 alla 10', c), 'Fa 1024.')
+  assert.equal(rispostaPronta('quanto è il 20 per cento di 150', c), 'Fa 30.')
+  assert.equal(rispostaPronta('7 al quadrato', c), 'Fa 49.')
+  assert.equal(rispostaPronta('quanto fa 10 diviso (5 meno 5)', c), 'Diviso zero non si può, nemmeno per un maggiordomo.')
+  assert.equal(rispostaPronta('quanto costa un biglietto per 2 persone', c), null, 'non è un calcolo')
+})
