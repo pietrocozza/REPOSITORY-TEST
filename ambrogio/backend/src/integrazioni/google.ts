@@ -12,6 +12,7 @@ export const AMBITI_GOOGLE = [
   'https://www.googleapis.com/auth/gmail.compose', // preparare bozze e inviare (l'invio chiede sempre il permesso)
   'https://www.googleapis.com/auth/calendar.readonly', // leggere gli impegni di tutti i calendari
   'https://www.googleapis.com/auth/calendar.events', // aggiungere impegni (sempre con il permesso di Pietro)
+  'https://www.googleapis.com/auth/drive.file', // SOLO i file creati da Ambrogio (il foglio delle spese), non il resto del Drive
 ]
 
 type Token = { refresh_token: string; access_token?: string; scadenza?: number; email?: string; ambiti?: string }
@@ -71,7 +72,7 @@ export class AccessoGoogle {
   }
 
   stato() {
-    return { configurato: this.configurato, collegato: this.collegato, email: this.token?.email ?? null, calendario: this.ha('calendar') }
+    return { configurato: this.configurato, collegato: this.collegato, email: this.token?.email ?? null, calendario: this.ha('calendar'), fogli: this.ha('drive.file') }
   }
 
   private salva() {
@@ -193,7 +194,7 @@ export class AccessoGoogle {
     }
     if (!res.ok) {
       const dettaglio = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
-      throw new ErroreGoogle('errore', `Gmail ha risposto con un errore (${res.status}${dettaglio?.error?.message ? `: ${dettaglio.error.message}` : ''}).`)
+      throw new ErroreGoogle('errore', `Google ha risposto con un errore (${res.status}${dettaglio?.error?.message ? `: ${dettaglio.error.message}` : ''}).`)
     }
     return res.status === 204 ? null : res.json()
   }

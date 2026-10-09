@@ -250,6 +250,19 @@ password è vietato. Ambrogio usa quindi i canali ufficiali:
 Poi chiedi: «chi arriva questa settimana?», «quanto sono occupato a novembre?», «che prezzo mi consigli per i buchi?».
 Ambrogio non cambia mai i prezzi: li suggerisce soltanto.
 
+**Aggiornamenti automatici**: con Gmail collegato, Ambrogio legge da solo ogni minuto le email nuove di Airbnb
+(prenotazioni, modifiche, cancellazioni, messaggi, recensioni, pagamenti), ne ricava ospiti e guadagni e ti avvisa;
+la mattina ti dice chi arriva e chi parte, la sera chi arriva domani.
+
+**Rendimento**:
+- *File dei guadagni*: su airbnb.it dal computer → menu → **Guadagni** → **Cronologia delle transazioni** →
+  **Esporta CSV** (scarica sia i pagamenti *completati* sia quelli *futuri*). Poi in Impostazioni → Airbnb →
+  **Carica file guadagni**.
+- *Spese*: in Impostazioni → Airbnb → **Foglio delle spese** Ambrogio crea un foglio Google (vede solo quello, non il
+  resto del Drive) con affitto e condominio già scritti; le altre spese le scrivi lì o le dici ad Ambrogio
+  («ho pagato la bolletta della luce, 85 euro»). Serve **Google Sheets API** attiva su Google Cloud e ricollegare Google.
+- Poi chiedi: «qual è il rendimento di ottobre?», «quanto ho guadagnato quest'anno al netto delle spese?».
+
 ## Impostazioni
 
 Copia `.env.example` in `.env` e modifica lì (il nome con cui ti chiama, il modello, il percorso di Claude Code).

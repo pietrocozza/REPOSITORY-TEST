@@ -9,6 +9,7 @@ import { Aggiornamenti, shaValido } from '../codice/aggiornamenti.ts'
 import { ErroreVoce, VOCI_GEMINI, VoceGemini } from '../voce/gemini.ts'
 import { VoceElevenLabs } from '../voce/elevenlabs.ts'
 import type { ArchivioAirbnb } from '../integrazioni/archivio-airbnb.ts'
+import { leggiGuadagni } from '../integrazioni/guadagni-airbnb.ts'
 import { Trascrizione } from '../voce/trascrizione.ts'
 import { sintetizzaWindows } from '../voce/windows.ts'
 import { elencoSuoni, suono } from '../voce/suoni.ts'
@@ -203,7 +204,8 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
     if (origine && !config.originiConsentite.includes(origine)) return inviaJson(res, 403, { errore: 'Origine non autorizzata.' })
     const tipoCorpo = String(req.headers['content-type'] ?? '')
     const eAudio = url.pathname === '/api/trascrivi' && tipoCorpo.startsWith('audio/')
-    if (req.method === 'POST' && !tipoCorpo.includes('application/json') && !eAudio) return inviaJson(res, 415, { errore: 'Serve un corpo JSON.' })
+    const eCsv = url.pathname === '/api/airbnb/guadagni' && tipoCorpo.startsWith('text/')
+    if (req.method === 'POST' && !tipoCorpo.includes('application/json') && !eAudio && !eCsv) return inviaJson(res, 415, { errore: 'Serve un corpo JSON.' })
 
     try {
       // il server MCP usato da Claude Code per gli strumenti di Ambrogio (protetto da chiave)
@@ -384,7 +386,51 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
             }
           }),
         )
-        return inviaJson(res, 200, { collegato: true, case: case_, archivio: opzioni.archivio?.stato ?? null })
+        return inviaJson(res, 200, {
+          collegato: true,
+          case: case_,
+          archivio: opzioni.archivio?.stato ?? null,
+          spese: servizi.spese ? { disponibile: servizi.spese.disponibile, link: servizi.spese.link } : null,
+        })
+      }
+
+      // il file dei guadagni scaricato da Airbnb: le prenotazioni con quanto incassa l'host
+      if (req.method === 'POST' && url.pathname === '/api/airbnb/guadagni') {
+        if (!eCsv) return inviaJson(res, 415, { errore: 'Serve il file CSV dei guadagni di Airbnb.' })
+        const testo = (await leggiAudio(req)).toString('utf8')
+        let righe: ReturnType<typeof leggiGuadagni>
+        try {
+          righe = leggiGuadagni(testo)
+        } catch (err) {
+          return inviaJson(res, 400, { errore: (err as Error).message })
+        }
+        for (const r of righe)
+          agente.db.salvaPrenotazione({
+            codice: r.codice,
+            ospite: r.ospite,
+            annuncio: r.annuncio,
+            checkin: r.checkin,
+            checkout: r.checkout,
+            guadagno: r.guadagno,
+            totale: r.lordo,
+            valuta: r.valuta,
+            stato: 'confermata',
+          })
+        const totale = righe.reduce((a, r) => a + r.guadagno, 0)
+        const periodo = righe.length ? `dal ${righe[0].checkin} al ${righe.at(-1)!.checkin}` : ''
+        agente.db.registra('airbnb', `File dei guadagni caricato: ${righe.length} prenotazioni ${periodo}, ${Math.round(totale)} €`)
+        return inviaJson(res, 200, { prenotazioni: righe.length, totale: Math.round(totale), periodo })
+      }
+
+      // il foglio Google delle spese: si crea al primo uso (con affitto e condominio già scritti)
+      if (req.method === 'POST' && url.pathname === '/api/spese/prepara') {
+        if (!servizi.spese) return inviaJson(res, 409, { errore: 'Google non è configurato.' })
+        try {
+          await servizi.spese.prepara()
+          return inviaJson(res, 200, { link: servizi.spese.link })
+        } catch (err) {
+          return inviaJson(res, 409, { errore: (err as Error).message })
+        }
       }
 
       // ───────── Avvisi: le novità che Ambrogio dà a Pietro senza che lui chieda ─────────

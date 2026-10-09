@@ -1853,7 +1853,8 @@ select {
 }
 
 /* Impostazioni → Telefono */
-.j-telefono > button {
+.j-telefono > button,
+.j-riga-pulsanti > button {
   align-self: flex-start;
   padding: 8px 14px;
   border-radius: 999px;
@@ -1862,7 +1863,17 @@ select {
   color: inherit;
   cursor: pointer;
 }
-.j-telefono > button:disabled {
+.j-riga-pulsanti {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.j-esito {
+  opacity: 0.8;
+  overflow-wrap: anywhere;
+}
+.j-telefono > button:disabled,
+.j-riga-pulsanti > button:disabled {
   opacity: 0.5;
   cursor: default;
 }

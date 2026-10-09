@@ -154,6 +154,8 @@ const punteggio = (v: SpeechSynthesisVoice) => {
   if (/isabella|elsa|alice|federica|paola|carla|calimero|female|donna/.test(n)) p += 2
   if (/google/.test(n)) p += 1.5
   if (/luca|diego|cosimo|giorgio|roberto|paolo|benigno|rinaldi|male/.test(n)) p -= 2
+  // le voci "multilingue" indovinano la lingua da sole e con il dialetto sbagliano (leggono in inglese)
+  if (/multilingual|multilingue/.test(n)) p -= 4
   return p
 }
 

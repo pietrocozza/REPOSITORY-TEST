@@ -157,8 +157,9 @@ export type Dipendenze = {
 }
 
 // Mentre Ambrogio pensa la risposta, subito una parolina (dalle frasi già registrate: istantanea) come al telefono vero
-// la presa in carico alla milanese (scritta così perché la voce la pronunci con la cadenza giusta)
-export const GHE_PENSI_MI = 'Ghe pènsi mì, fìga!'
+// la presa in carico alla milanese, attaccata al resto della frase in italiano
+// (da sola e con accenti insoliti alcune voci la leggevano in inglese)
+export const GHE_PENSI_MI = 'Ghe pensi mi, figa,'
 
 const ATTESA = ['Mmh.', 'Allora.', 'Vediamo.', 'Dunque.', 'Sì sì.', 'Certo.']
 
@@ -343,7 +344,8 @@ Data e ora: ${ora}.`
           if (veloce.azione === 'claude') {
             // serve Claude (email, memoria, Airbnb…): intanto una frase d'attesa
             await attesa
-            await this.parla(`${GHE_PENSI_MI} ${veloce.risposta || 'Vado subito a controllare.'}`)
+            const poi = veloce.risposta || 'Vado subito a controllare.'
+            await this.parla(`${GHE_PENSI_MI} ${poi[0].toLowerCase()}${poi.slice(1)}`)
             this.inizioTurno = Date.now()
             this.strada = 'con Claude'
             testo = await this.conAggiornamenti(this.d.rispondi(this.richiestaClaude(motivo, apertura, nome, detto, primo)))

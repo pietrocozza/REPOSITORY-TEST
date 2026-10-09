@@ -2,10 +2,11 @@ import { TIPI_MEMORIA, type Database, type Livello, type StatoPratica, type Tipo
 import type { Gmail } from '../integrazioni/gmail.ts'
 import { riassumiCalendario, schedaCasa, type Airbnb } from '../integrazioni/airbnb.ts'
 import { incassiPerMese, quantiOspiti, type ArchivioAirbnb } from '../integrazioni/archivio-airbnb.ts'
+import { rendimentoPerMese, type FoglioSpese, type Spesa, type SpesaFissa } from '../integrazioni/spese.ts'
 import { dettoQuando, type CalendarioGoogle } from '../integrazioni/calendario.ts'
 
 /** I servizi esterni collegati (impostati all'avvio): gli strumenti li usano se ci sono */
-export const servizi: { gmail?: Gmail; airbnb?: Airbnb; calendario?: CalendarioGoogle; cartellaDati?: string; archivio?: ArchivioAirbnb } = {}
+export const servizi: { gmail?: Gmail; airbnb?: Airbnb; calendario?: CalendarioGoogle; cartellaDati?: string; archivio?: ArchivioAirbnb; spese?: FoglioSpese } = {}
 
 /** quello che si sa dalle email di Airbnb su una prenotazione (ospite, quanti, guadagno) */
 export function dettagliDalleEmail(db: Database, codice: string) {
@@ -247,20 +248,86 @@ export const STRUMENTI: Strumento[] = [
     },
   },
   {
-    nome: 'incassi',
+    nome: 'rendimento',
     descrizione:
-      'Guadagni Airbnb mese per mese (dalle email di conferma che Ambrogio archivia da solo): guadagno, notti, prenotazioni, ospiti e prezzo medio a notte. Per domande su revenue, incassi, ADR e confronti tra mesi.',
+      'Rendimento delle case Airbnb mese per mese: incassi (dalle email di conferma e dal file dei guadagni di Airbnb), notti, occupazione, prezzo medio a notte (ADR), RevPAR, spese fisse (affitto, condominio) e spese registrate (bollette, pulizie…) dal foglio delle spese, utile e margine. Per domande su revenue, incassi, guadagni, spese, utile e confronti tra mesi.',
     livello: 1,
-    schema: { type: 'object', properties: {}, required: [], additionalProperties: false },
-    riassunto: () => 'Guardare gli incassi di Airbnb',
-    esegui: (_a, db) => {
-      const mesi = incassiPerMese(db.prenotazioniArchiviate())
-      if (!mesi.length)
-        return 'Non ci sono ancora prenotazioni archiviate: Ambrogio le ricava da solo dalle email di Airbnb in Gmail (serve Gmail collegato). Se Gmail è collegato da poco, il recupero è in corso.'
-      return (
-        'Mese (del check-in) | guadagno host | notti | prenotazioni | ospiti | prezzo medio a notte\n' +
-        mesi.map((m) => `${m.mese} | ${Math.round(m.guadagno)} € | ${m.notti} | ${m.prenotazioni} | ${m.ospiti} | ${m.prezzoMedio} €`).join('\n')
+    schema: {
+      type: 'object',
+      properties: { da: { type: 'string', description: 'Primo mese AAAA-MM (facoltativo)' }, a: { type: 'string', description: 'Ultimo mese AAAA-MM (facoltativo)' } },
+      required: [],
+      additionalProperties: false,
+    },
+    riassunto: () => 'Calcolare il rendimento delle case',
+    esegui: async (a, db) => {
+      let spese: Spesa[] = []
+      let fisse: SpesaFissa[] = []
+      let notaSpese = ''
+      try {
+        if (servizi.spese?.disponibile) ({ spese, fisse } = await servizi.spese.leggi())
+        else notaSpese = 'Il foglio delle spese non è collegato: le spese non sono incluse (Pietro deve attivare Google Sheets API e ricollegare Google).'
+      } catch (err) {
+        notaSpese = `Non riesco a leggere il foglio delle spese: ${(err as Error).message}`
+      }
+      const da = testo(a, 'da')
+      const fino = testo(a, 'a')
+      const mesi = rendimentoPerMese(incassiPerMese(db.prenotazioniArchiviate()), spese, fisse, servizi.airbnb?.case.length || 1).filter(
+        (m) => (!da || m.mese >= da) && (!fino || m.mese <= fino),
       )
+      if (!mesi.length)
+        return `Non ci sono ancora dati: gli incassi arrivano da soli dalle email di Airbnb (serve Gmail collegato) e dal file dei guadagni caricato in Impostazioni → Airbnb. ${notaSpese}`
+      const tabella = mesi.map(
+        (m) =>
+          `${m.mese} | ${m.incassi} € | ${m.notti} notti | occupazione ${m.occupazione}% | ADR ${m.prezzoMedio} € | RevPAR ${m.revpar} € | spese fisse ${m.speseFisse} € | altre spese ${m.speseVariabili} € | utile ${m.utile} € | margine ${m.margine}%`,
+      )
+      return `Mese (del check-in) | incassi host | notti | occupazione | ADR | RevPAR | spese fisse | altre spese | utile | margine\n${tabella.join('\n')}${notaSpese ? `\n${notaSpese}` : ''}${servizi.spese?.link ? `\nFoglio delle spese: ${servizi.spese.link}` : ''}`
+    },
+  },
+  {
+    nome: 'spese',
+    descrizione:
+      "Le spese delle case dal foglio Google «Ambrogio – Spese case»: spese fisse mensili (affitto, condominio) e spese registrate (bollette, pulizie, riparazioni…), con il link al foglio.",
+    livello: 1,
+    schema: { type: 'object', properties: { mese: { type: 'string', description: 'Mese AAAA-MM (vuoto = tutte)' } }, required: [], additionalProperties: false },
+    riassunto: () => 'Guardare il foglio delle spese',
+    esegui: async (a) => {
+      if (!servizi.spese) return 'Il foglio delle spese non è disponibile.'
+      const { spese, fisse } = await servizi.spese.leggi()
+      const mese = testo(a, 'mese')
+      const elenco = spese.filter((s) => !mese || s.data.startsWith(mese))
+      return [
+        `Spese fisse al mese: ${fisse.map((f) => `${f.voce} ${f.importo} €${f.dal ? ` dal ${f.dal}` : ''}${f.al ? ` al ${f.al}` : ''}`).join(', ') || 'nessuna'}.`,
+        `Spese registrate${mese ? ` di ${mese}` : ''}:`,
+        ...(elenco.length ? elenco.map((s) => `- ${s.data} ${s.descrizione} (${s.categoria}) ${s.importo} €${s.casa ? `, ${s.casa}` : ''}`) : ['- nessuna']),
+        `Foglio: ${servizi.spese.link ?? ''}`,
+      ].join('\n')
+    },
+  },
+  {
+    nome: 'aggiungi_spesa',
+    descrizione:
+      "Registra una spesa di una casa nel foglio delle spese (bolletta luce/gas/acqua/internet, pulizie, lavanderia, riparazione, acquisti…). Usala quando Pietro dice di aver pagato qualcosa per la casa.",
+    livello: 2,
+    schema: {
+      type: 'object',
+      properties: {
+        descrizione: { type: 'string', description: "Cosa (es. 'Bolletta luce settembre')" },
+        importo: { type: 'string', description: 'Quanto, in euro (es. 85.50)' },
+        categoria: { type: 'string', description: 'Bollette, Pulizie, Lavanderia, Manutenzione, Acquisti, Tasse, Altro' },
+        data: { type: 'string', description: 'Quando, AAAA-MM-GG (vuoto = oggi)' },
+        casa: { type: 'string', description: 'Quale casa (facoltativo)' },
+      },
+      required: ['descrizione', 'importo'],
+      additionalProperties: false,
+    },
+    riassunto: (a) => `Registrare la spesa «${testo(a, 'descrizione')}» di ${testo(a, 'importo')} €`,
+    esegui: async (a) => {
+      if (!servizi.spese) return 'Il foglio delle spese non è disponibile.'
+      const importo = Number(String(a.importo).replace(',', '.'))
+      if (!Number.isFinite(importo) || importo <= 0) return 'Importo non valido.'
+      const data = /^\d{4}-\d{2}-\d{2}$/.test(testo(a, 'data')) ? testo(a, 'data') : new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date())
+      await servizi.spese.aggiungi({ data, descrizione: testo(a, 'descrizione'), categoria: testo(a, 'categoria') || 'Altro', importo, casa: testo(a, 'casa') })
+      return `Spesa registrata: ${testo(a, 'descrizione')}, ${importo} € (${data}).`
     },
   },
   {

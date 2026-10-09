@@ -289,7 +289,30 @@ export type StatoAirbnb =
       collegato: true
       case: { numero: number; nome: string; ok: boolean; prenotazioni?: number; errore?: string }[]
       archivio: { attivo: boolean; ultimoControllo: string | null; prenotazioni: number; email: number; errore: string | null } | null
+      spese: { disponibile: boolean; link: string | null } | null
     }
+
+/** Carica il file dei guadagni scaricato da Airbnb (CSV) */
+export async function caricaGuadagni(file: File): Promise<{ prenotazioni: number; totale: number; periodo: string } | { errore: string }> {
+  try {
+    const res = await fetch('/api/airbnb/guadagni', { method: 'POST', headers: { 'Content-Type': 'text/csv' }, body: await file.text() })
+    const dati = await res.json().catch(() => ({ errore: `Errore ${res.status}` }))
+    return res.ok ? dati : { errore: dati.errore ?? `Errore ${res.status}` }
+  } catch {
+    return { errore: 'Il motore di Ambrogio non risponde.' }
+  }
+}
+
+/** Crea (se non c'è) il foglio Google delle spese e ne restituisce il link */
+export async function preparaFoglioSpese(): Promise<{ link: string } | { errore: string }> {
+  try {
+    const res = await fetch('/api/spese/prepara', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    const dati = await res.json().catch(() => ({ errore: `Errore ${res.status}` }))
+    return res.ok ? dati : { errore: dati.errore ?? `Errore ${res.status}` }
+  } catch {
+    return { errore: 'Il motore di Ambrogio non risponde.' }
+  }
+}
 export const statoAirbnb = () => leggi<StatoAirbnb>('/api/airbnb')
 
 /** Le novità che Ambrogio dà da solo (nuove prenotazioni, messaggi degli ospiti, arrivi di domani…) */

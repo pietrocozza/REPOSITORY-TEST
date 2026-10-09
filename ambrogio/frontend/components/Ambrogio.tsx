@@ -177,10 +177,12 @@ function salutoIniziale(ascoltoAttivo: boolean, ora = new Date().getHours()) {
 }
 
 // Detta subito quando serve cercare online, così l'attesa non è un silenzio
-// Presa in carico, sempre alla milanese: scritta normale sullo schermo, con gli accenti per la voce
-// (così anche Edge la dice con la cadenza giusta), seguita da cosa va a fare
-const GHE_PENSI_MI = { scritto: 'Ghe pensi mi, figa!', detto: 'Ghe pènsi mì, fìga!' }
+// Presa in carico, sempre alla milanese. Per la voce è UNA sola frase con la parte in italiano
+// e senza accenti strani: le voci "multilingue" decidono la lingua frase per frase, e una frase
+// corta in dialetto con accenti insoliti la leggevano in inglese
+const GHE_PENSI_MI = { scritto: 'Ghe pensi mi, figa!', detto: 'Ghe pensi mi, figa,' }
 const COSA_VADO_A_FARE: [RegExp, string][] = [
+  [/rendiment|guadagn|incass|revenue|spes[ae]|bollett|utile|margine/i, 'fare i conti'],
   [/airbnb|vikey|ospit|prenotazion|check.?(in|out)|arriv|partenz/i, 'controllare il calendario di Airbnb'],
   [/e-?mail|\bmail|posta|gmail/i, 'guardare le email'],
   [/agenda|impegn|appuntament|calendario|riunion/i, 'guardare la tua agenda'],
@@ -191,7 +193,7 @@ const VADO_A_CERCARE = 'cercare su internet'
 const VADO_DEFAULT = 'occuparmene'
 function presaInCarico(domanda: string) {
   const cosa = SERVE_RICERCA.test(domanda) ? VADO_A_CERCARE : (COSA_VADO_A_FARE.find(([r]) => r.test(domanda))?.[1] ?? VADO_DEFAULT)
-  return { scritto: `${GHE_PENSI_MI.scritto} Vado subito a ${cosa}.`, detto: `${GHE_PENSI_MI.detto} Vado sùbito a ${cosa}.` }
+  return { scritto: `${GHE_PENSI_MI.scritto} Vado subito a ${cosa}.`, detto: `${GHE_PENSI_MI.detto} vado subito a ${cosa}.` }
 }
 // Mentre lavora: cosa sta facendo, strumento per strumento
 const FRASI_STRUMENTO: [RegExp, string][] = [
@@ -202,6 +204,9 @@ const FRASI_STRUMENTO: [RegExp, string][] = [
   [/invia_email/, 'Preparo l’invio.'],
   [/prenotazioni/, 'Controllo il calendario di Airbnb.'],
   [/info_casa/, 'Guardo la scheda della casa.'],
+  [/rendimento/, 'Faccio i conti.'],
+  [/aggiungi_spesa/, 'Segno la spesa.'],
+  [/spese/, 'Guardo le spese.'],
   [/agenda/, 'Guardo la tua agenda.'],
   [/aggiungi_impegno/, 'Preparo l’impegno.'],
   [/ricorda|cerca_memoria|dimentica/, 'Controllo la memoria.'],
@@ -438,7 +443,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   useEffect(() => {
     if (!voceAmbrogio || motoreVoce !== 'gemini' || statoVoce?.fornitore !== 'gemini' || !statoVoce.pagamento) return
     const frasiInterfaccia = [
-      ...[VADO_A_CERCARE, VADO_DEFAULT, ...COSA_VADO_A_FARE.map(([, c]) => c)].map((c) => `${GHE_PENSI_MI.detto} Vado sùbito a ${c}.`),
+      ...[VADO_A_CERCARE, VADO_DEFAULT, ...COSA_VADO_A_FARE.map(([, c]) => c)].map((c) => `${GHE_PENSI_MI.detto} vado subito a ${c}.`),
       ...FRASI_STRUMENTO.map(([, f]) => f),
       ...PERCENTUALI_DETTE.map(aggiornamentoBreve),
       ...QUASI_FATTO,

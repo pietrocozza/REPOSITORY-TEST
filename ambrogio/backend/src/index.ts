@@ -16,6 +16,7 @@ import { Airbnb, schedaCasa } from './integrazioni/airbnb.ts'
 import { servizi } from './strumenti/catalogo.ts'
 import { ArchivioAirbnb } from './integrazioni/archivio-airbnb.ts'
 import { Trascrizione } from './voce/trascrizione.ts'
+import { FoglioSpese } from './integrazioni/spese.ts'
 
 // Avvio del backend locale di Ambrogio.
 
@@ -48,6 +49,8 @@ servizi.gmail = new Gmail(google)
 servizi.calendario = new CalendarioGoogle(google)
 servizi.airbnb = new Airbnb(config.airbnb.case)
 servizi.cartellaDati = config.cartellaDati
+// il foglio Google delle spese (Ambrogio vede solo i file che crea lui)
+servizi.spese = new FoglioSpese(google, config.cartellaDati)
 // la scheda della casa 1 (si crea il modello da riempire, se manca)
 schedaCasa(config.cartellaDati, 1)
 // le case Airbnb si tengono aggiornate da sole: ogni minuto le email nuove di Airbnb, la mattina e la sera i promemoria
