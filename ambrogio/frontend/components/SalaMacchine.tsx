@@ -4,10 +4,11 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { caricaStatistiche, type Statistiche } from '@/lib/chat'
 import type { Modo } from '@/lib/nucleo-neurale'
 import { COLORI_TIPO, TAVOLOZZA, disegnaAnello, disegnaBarre, disegnaGradini, disegnaGriglia, disegnaIstogramma, disegnaRosa } from '@/lib/sala'
-import { MODULI, Vortice, type IngressiVortice } from '@/lib/vortice'
+import { MODULI, Osservatorio, type DatiOsservatorio, type IngressiOsservatorio } from '@/lib/osservatorio'
 
-// La "Sala macchine": il vortice 3D al centro (lo stato vero di Ambrogio: ascolto, pensiero, strumenti, voce),
-// intorno i numeri veri presi dal registro. La modalità demo è dichiarata e simula solo gli stati del vortice.
+// La "Sala macchine": al centro l'Osservatorio 3D (il nucleo di Ambrogio con il suo stato vero, il quadrante
+// delle 24 ore con il lavoro fatto, i moduli in orbita e gli eventi del registro come comete),
+// intorno i numeri veri presi dal registro. La modalità demo è dichiarata e simula solo gli stati del nucleo.
 
 export type StatoSala = { modo: Modo; strumento: string | null; errore: string | null; livelloIn: number; livelloOut: number; bande: number[] }
 
@@ -69,7 +70,29 @@ function moduloDa(strumento: string | null, modo: Modo) {
   return -1
 }
 
-// Demo: una sequenza di stati simulati, per vedere il vortice reagire
+/** cosa serve all'Osservatorio, dai numeri veri del registro */
+function datiOsservatorio(s: Statistiche): DatiOsservatorio {
+  const strumenti = Object.entries(s.strumenti)
+  const conta = (r: RegExp) => strumenti.filter(([n]) => r.test(n)).reduce((a, [, v]) => a + v, 0)
+  const uso: Record<(typeof MODULI)[number], number> = {
+    Linguaggio: s.tipi.messaggio ?? 0,
+    Memoria: (s.tipi.memoria ?? 0) + conta(/ricorda|memoria|dimentica/i),
+    Ricerca: conta(/websearch|webfetch|cerca|ricerca|web/i),
+    Email: conta(/email|mail|bozza/i),
+    Telefono: s.tipi.telefono ?? 0,
+    Voce: s.tipi.voce ?? 0,
+    Pratiche: conta(/pratic/i),
+    Affitti: conta(/prenotazion|info_casa|rendiment|spes|airbnb/i),
+  }
+  return {
+    attivita: s.attivita,
+    uso: MODULI.map((m) => uso[m]),
+    disponibili: MODULI.map((m) => (m === 'Email' ? s.email : m === 'Telefono' ? s.telefono.configurato : m === 'Voce' ? s.voce.disponibile : true)),
+    eventi: s.eventi,
+  }
+}
+
+// Demo: una sequenza di stati simulati, per vedere il nucleo reagire
 const DEMO: { modo: Modo; durata: number; strumento?: string }[] = [
   { modo: 'idle', durata: 4 },
   { modo: 'listening', durata: 4 },
@@ -148,7 +171,6 @@ export default function SalaMacchine({ onChiudi, leggiStato }: { onChiudi: () =>
   const metri = useRef<{ in: HTMLElement | null; out: HTMLElement | null; bande: (HTMLElement | null)[] }>({ in: null, out: null, bande: [] })
   const dati = useRef<Statistiche | null>(null)
   const ingressi = useRef({ demo, selezione, leggiStato })
-  const vortice = useRef<Vortice | null>(null)
 
   useEffect(() => {
     ingressi.current = { demo, selezione, leggiStato }
@@ -195,22 +217,28 @@ export default function SalaMacchine({ onChiudi, leggiStato }: { onChiudi: () =>
     }
   }, [])
 
-  // il vortice (WebGL2); se non si può, l'anello semplificato in 2D
+  // l'Osservatorio (canvas); se proprio non si può, l'anello semplificato
   useEffect(() => {
     if (!tela.current) return
     const inizio = performance.now()
-    const leggi = (): IngressiVortice => {
+    let datiScena: DatiOsservatorio | null = null
+    let datiDa: Statistiche | null = null
+    const leggi = (): IngressiOsservatorio => {
       const { demo, selezione, leggiStato } = ingressi.current
       const st = demo ? statoDemo((performance.now() - inizio) / 1000) : leggiStato()
-      return { modo: st.modo, livelloIn: st.livelloIn, livelloOut: st.livelloOut, bande: st.bande, settore: moduloDa(st.strumento, st.modo), selezione }
+      // i dati della scena si ricalcolano solo quando arrivano numeri nuovi
+      if (dati.current && dati.current !== datiDa) {
+        datiDa = dati.current
+        datiScena = datiOsservatorio(dati.current)
+      }
+      return { modo: st.modo, livelloIn: st.livelloIn, livelloOut: st.livelloOut, bande: st.bande, settore: moduloDa(st.strumento, st.modo), selezione, dati: datiScena }
     }
-    let v: Vortice | null = null
+    let v: Osservatorio | null = null
     let raf2d = 0
     try {
-      v = new Vortice(tela.current, leggi, { ridotto })
-      vortice.current = v
+      v = new Osservatorio(tela.current, leggi, { ridotto })
     } catch (err) {
-      console.error('[sala] grafica 3D non disponibile:', err)
+      console.error('[sala] osservatorio non disponibile:', err)
       const t = setTimeout(() => setSenza3d(true), 0)
       const giro = (t2: number) => {
         try {
@@ -271,11 +299,10 @@ export default function SalaMacchine({ onChiudi, leggiStato }: { onChiudi: () =>
       cancelAnimationFrame(raf)
       elTela.removeEventListener('click', click)
       v?.distruggi()
-      vortice.current = null
     }
   }, [ridotto])
 
-  // Esc chiude (o riduce il vortice espanso)
+  // Esc chiude (o riduce l'osservatorio espanso)
   useEffect(() => {
     const tasto = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
@@ -316,7 +343,7 @@ export default function SalaMacchine({ onChiudi, leggiStato }: { onChiudi: () =>
               data-attivo={settoreVivo === i || undefined}
               aria-pressed={selezione === i}
               onClick={() => setSelezione(selezione === i ? -1 : i)}
-              title={disponibile(nome) ? `${nome}: mostra il percorso nel vortice` : `${nome}: non ancora collegato`}
+              title={disponibile(nome) ? `${nome}: evidenzialo nell'osservatorio` : `${nome}: non ancora collegato`}
             >
               {nome}
             </button>
@@ -330,7 +357,7 @@ export default function SalaMacchine({ onChiudi, leggiStato }: { onChiudi: () =>
 
       <div className="j-sm-corpo">
         <main className="j-sm-centro">
-          <canvas ref={tela} className="j-sm-anello" role="img" aria-label="Vortice dell'attività di Ambrogio" />
+          <canvas ref={tela} className="j-sm-anello" role="img" aria-label="Osservatorio: il nucleo di Ambrogio, il quadrante delle 24 ore con il lavoro fatto e i moduli in orbita" />
           {!senza3d &&
             MODULI.map((nome, i) => (
               <div key={nome} ref={(el) => void (etichette.current[i] = el)} className="j-sm-nodo" data-spento={!disponibile(nome) || undefined}>
@@ -360,6 +387,10 @@ export default function SalaMacchine({ onChiudi, leggiStato }: { onChiudi: () =>
               </button>
             </div>
           )}
+          <p className="j-sm-spiega">
+            Nucleo: Ambrogio adesso · torri: lavoro di ogni mezz’ora nelle ultime 24 ore · lancetta: l’ora attuale · moduli: grandi quanto
+            sono usati · comete: gli eventi del registro
+          </p>
           <div className="j-sm-legenda">
             {Object.entries(COLORI_TIPO)
               .filter(([t]) => NOMI_TIPO[t])
@@ -520,9 +551,9 @@ export default function SalaMacchine({ onChiudi, leggiStato }: { onChiudi: () =>
         </ol>
         <div className="j-sm-comandi">
           <button type="button" onClick={() => setEspanso(!espanso)} aria-pressed={espanso}>
-            {espanso ? 'Riduci vortice' : 'Espandi vortice'}
+            {espanso ? 'Riduci osservatorio' : 'Espandi osservatorio'}
           </button>
-          <button type="button" onClick={() => setDemo(!demo)} aria-pressed={demo} title="Simula gli stati di Ambrogio per vedere le reazioni del vortice">
+          <button type="button" onClick={() => setDemo(!demo)} aria-pressed={demo} title="Simula gli stati di Ambrogio per vedere le reazioni del nucleo">
             {demo ? 'Esci dalla demo' : 'Demo'}
           </button>
           <button type="button" onClick={cambiaRidotto} aria-pressed={ridotto}>

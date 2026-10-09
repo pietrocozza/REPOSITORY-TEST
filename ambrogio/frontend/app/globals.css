@@ -2196,6 +2196,23 @@ select {
   color: var(--sm-testo);
   cursor: pointer;
 }
+.j-sm-spiega {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 30px;
+  margin: 0;
+  color: var(--sm-tenue);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+  pointer-events: none;
+}
+@media (max-width: 700px) {
+  .j-sm-spiega {
+    display: none;
+  }
+}
 .j-sm-legenda {
   position: absolute;
   left: 10px;
