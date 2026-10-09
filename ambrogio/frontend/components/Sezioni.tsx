@@ -43,6 +43,17 @@ const ETICHETTE_REGISTRO: Record<string, string> = {
   sistema: 'Sistema',
 }
 
+/** il testo intero salvato nei dettagli, se è più lungo di quello che si vede nella riga */
+function testoIntero(v: VoceRegistro) {
+  if (!v.dettagli) return null
+  try {
+    const t = (JSON.parse(v.dettagli) as { testo?: unknown }).testo
+    return typeof t === 'string' && t.trim() && t.replace(/\s+/g, ' ').trim().length > v.descrizione.length - 10 ? t.trim() : null
+  } catch {
+    return null
+  }
+}
+
 export function SezioneRegistro() {
   const [dati] = useDati(caricaRegistro)
   // le voci più recenti in alto, raggruppate per giorno
@@ -62,13 +73,27 @@ export function SezioneRegistro() {
         {gruppi.map((gr) => (
           <div key={gr.giorno}>
             <h3 className="j-giorno">{gr.giorno}</h3>
-            {gr.voci.map((v) => (
-              <div key={v.id} className="j-registro-riga" data-tipo={v.tipo}>
-                <time>{ora(v.quando)}</time>
-                <span>{v.descrizione}</span>
-                <em>{ETICHETTE_REGISTRO[v.tipo] ?? v.tipo}</em>
-              </div>
-            ))}
+            {gr.voci.map((v) => {
+              const testo = testoIntero(v)
+              const riga = (
+                <>
+                  <time>{ora(v.quando)}</time>
+                  <span>{v.descrizione}</span>
+                  <em>{ETICHETTE_REGISTRO[v.tipo] ?? v.tipo}</em>
+                </>
+              )
+              // le risposte lunghe: si apre la riga e si legge tutto
+              return testo ? (
+                <details key={v.id} className="j-registro-riga j-registro-aperta" data-tipo={v.tipo}>
+                  <summary>{riga}</summary>
+                  <p>{testo}</p>
+                </details>
+              ) : (
+                <div key={v.id} className="j-registro-riga" data-tipo={v.tipo}>
+                  {riga}
+                </div>
+              )
+            })}
           </div>
         ))}
       </div>

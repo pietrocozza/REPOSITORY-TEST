@@ -107,6 +107,8 @@ export const config = {
       .map((n) => ({ numero: n, nome: env(`AMBROGIO_AIRBNB_CASA_${n}_NOME`, `Casa ${n}`), ical: env(`AMBROGIO_AIRBNB_CASA_${n}_ICAL`) }))
       .filter((c) => c.ical),
     /** annunci che Pietro non vuole MAI nei conti, nei report e negli avvisi (separati da virgola) */
+    /** costo complessivo al mese della casa (affitto, condominio, bollette, pulizie, varie): per utile e previsioni */
+    costoMensile: Number(env('AMBROGIO_AIRBNB_COSTO_MENSILE', '2300')) || null,
     escludi: env('AMBROGIO_AIRBNB_ESCLUDI', 'GIULIO AGRICOLA,Don Bosco')
       .split(',')
       .map((x) => x.trim())

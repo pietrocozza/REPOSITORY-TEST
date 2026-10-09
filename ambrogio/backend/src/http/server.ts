@@ -9,7 +9,8 @@ import { Aggiornamenti, shaValido } from '../codice/aggiornamenti.ts'
 import { ErroreVoce, VOCI_GEMINI, VoceGemini } from '../voce/gemini.ts'
 import { VoceElevenLabs } from '../voce/elevenlabs.ts'
 import type { ArchivioAirbnb } from '../integrazioni/archivio-airbnb.ts'
-import { eCsvSpese, eReportMensile, ISTRUZIONI_REPORT_PDF, leggiCsv, leggiGuadagni, leggiReportMensile, pulisciReportPdf } from '../integrazioni/guadagni-airbnb.ts'
+import { eCsvSpese, eReportMensile, ISTRUZIONI_REPORT_PDF, leggiCsv, leggiGuadagni, leggiReportGuadagniTesto, leggiReportMensile, pulisciReportPdf, type ReportPdf } from '../integrazioni/guadagni-airbnb.ts'
+import { testoPdf } from '../integrazioni/pdf-testo.ts'
 import { leggiRigheSpese } from '../integrazioni/spese.ts'
 import { annuncioEscluso } from '../integrazioni/airbnb.ts'
 import { Trascrizione } from '../voce/trascrizione.ts'
@@ -403,8 +404,26 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
         const corpo = await leggiAudio(req)
         try {
           if (tipoCorpo.startsWith('application/pdf')) {
-            if (!orecchie.disponibile) return inviaJson(res, 409, { errore: 'Per leggere i PDF serve la chiave di Gemini nel file .env.' })
-            const r = pulisciReportPdf(await orecchie.estraiDaFile(ISTRUZIONI_REPORT_PDF, corpo, 'application/pdf'))
+            // prima si legge il testo del PDF direttamente (preciso); Gemini solo se il PDF è fatto in un altro modo
+            let r: ReportPdf | null = null
+            try {
+              r = leggiReportGuadagniTesto(testoPdf(corpo))
+            } catch {
+              r = null
+            }
+            if (!r) {
+              if (!orecchie.disponibile) return inviaJson(res, 400, { errore: 'Non riesco a leggere questo PDF: è il «Report dei guadagni» di Airbnb?' })
+              r = pulisciReportPdf(await orecchie.estraiDaFile(ISTRUZIONI_REPORT_PDF, corpo, 'application/pdf'))
+            }
+            // controllo: la somma dei mesi deve tornare con il totale del report
+            const somma = r.mesi.reduce((a, m) => a + m.netto, 0)
+            if (r.totaleNetto != null && Math.abs(somma - r.totaleNetto) > 1.5)
+              return inviaJson(res, 400, {
+                errore: `I mesi letti (${Math.round(somma)} €) non tornano con il totale del report (${Math.round(r.totaleNetto)} €): non salvo nulla per non sbagliare i conti.`,
+              })
+            // i mesi nel futuro non possono avere guadagni: sarebbero un errore di lettura dell'anno
+            const meseAdesso = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date()).slice(0, 7)
+            if (r.mesi.some((m) => m.mese > meseAdesso)) return inviaJson(res, 400, { errore: 'Nel report risultano mesi nel futuro: lettura dell’anno sbagliata, non salvo nulla.' })
             // i mesi del PDF sommano tutti gli annunci: se dentro ci sono guadagni di un annuncio escluso, non si salva
             const esclusi = r.alloggi.filter((a) => annuncioEscluso(a.nome, config.airbnb.escludi) && Math.abs(a.netto) > 0)
             if (esclusi.length)

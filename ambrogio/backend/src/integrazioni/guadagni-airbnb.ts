@@ -226,7 +226,7 @@ export const ISTRUZIONI_REPORT_PDF = `Questo è un «Report dei guadagni» di Ai
  "totale_lordo": numero, "correzioni": numero, "costi_servizio": numero, "totale_netto": numero,
  "notti": notti prenotate (numero o null), "durata_media": durata media del soggiorno (numero o null),
  "alloggi": [{"nome": nome dell'alloggio, "lordo": numero, "netto": numero}] (solo quelli con guadagni diversi da zero)}
-Le righe dei mesi sono nella tabella «Guadagni mensili» o «Periodo di riferimento»: l'anno è quello del report
+Le righe dei mesi sono nella tabella «Guadagni mensili» o «Periodo di riferimento»: l'anno è quello del PERIODO del report (la riga sopra «Report dei guadagni»), NON la data di «Report generato»
 (un mese parziale come «01–09 ott» vale per quel mese). I numeri sono in formato italiano (1.234,56): restituiscili come numeri (1234.56).
 Non inventare nulla: se un dato non c'è metti null.`
 
@@ -255,3 +255,64 @@ export function pulisciReportPdf(grezzo: unknown): ReportPdf {
 
 // ───────── CSV di spese (Data, Descrizione, Categoria, Importo, Casa): vanno nel foglio delle spese ─────────
 export const eCsvSpese = (testo: string) => /^\uFEFF?\s*"?data"?[,;]\s*"?descrizione"?[,;]/i.test(testo)
+
+// ───────── Lettura diretta del testo del PDF (senza Gemini) ─────────
+
+const MESI_IT = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic']
+const MESI_EN = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+const IMPORTO = /-?\d[\d.]*,\d{2}\s*€|€\s*-?\d[\d,]*\.\d{2}|-?\d[\d,]*\.\d{2}\s*€/g
+const meseDaNome = (t: string) => {
+  const parola = t.toLowerCase().match(/[a-zà-ú]{3,}/)?.[0] ?? ''
+  const i = MESI_IT.findIndex((m) => parola.startsWith(m))
+  return i >= 0 ? i : MESI_EN.findIndex((m) => parola.startsWith(m))
+}
+
+/** il «Report dei guadagni» letto dalle righe di testo del PDF; null se non è fatto come ci si aspetta */
+export function leggiReportGuadagniTesto(righe: string[]): (ReportPdf & { totaleControllo: boolean }) | null {
+  const iTitolo = righe.findIndex((r) => /report dei guadagni|earnings report/i.test(r))
+  if (iTitolo < 0) return null
+  // il periodo è la riga prima del titolo («2025» oppure «1 gennaio 2026 – 9 ottobre 2026»);
+  // attenzione a «Report generato: 9 ottobre 2026», che NON è il periodo
+  const periodo =
+    righe
+      .slice(Math.max(0, iTitolo - 3), iTitolo)
+      .reverse()
+      .find((r) => /\d{4}/.test(r) && !/generat|generated|utente|user id|identificazione/i.test(r))
+      ?.trim() ?? ''
+  const anni = (periodo.match(/\d{4}/g) ?? []).map(Number)
+  if (!anni.length) return null
+  const valori = (r: string) => (r.match(IMPORTO) ?? []).map((x) => importo(x) ?? 0)
+  // riepilogo: «Guadagni  43.311,17 €  …  40.959,33 €» (l'ultimo è il totale)
+  const riepilogo = righe.find((r) => /^(guadagni|earnings)\s/i.test(r.trim()) && valori(r).length >= 2)
+  const totaleNetto = riepilogo ? valori(riepilogo).at(-1)! : null
+  // la tabella dei mesi
+  const iMesi = righe.findIndex((r) => /^(guadagni mensili|periodo di riferimento|monthly earnings|reporting period)/i.test(r.trim()))
+  if (iMesi < 0) return null
+  const mesi: { mese: string; lordo: number | null; netto: number }[] = []
+  let anno = anni[0]
+  let prima = -1
+  for (const r of righe.slice(iMesi + 1)) {
+    if (/^(preferenz|payout|statistiche|tasse)/i.test(r.trim())) break
+    const v = valori(r)
+    const m = meseDaNome(r.replace(/\d+[–-]\d+\s*/, ''))
+    if (m < 0 || !v.length) continue
+    if (prima >= 0 && m < prima) anno++ // il periodo passa all'anno dopo
+    prima = m
+    mesi.push({ mese: `${anno}-${String(m + 1).padStart(2, '0')}`, lordo: v.length > 1 ? v[0] : null, netto: v.at(-1)! })
+  }
+  if (!mesi.length) return null
+  // gli alloggi: tra «Alloggi» e «Tasse»
+  const alloggi: { nome: string; netto: number }[] = []
+  const iAlloggi = righe.findIndex((r) => /^(alloggi|listings)$/i.test(r.trim()))
+  if (iAlloggi >= 0)
+    for (const r of righe.slice(iAlloggi + 1)) {
+      if (/^(tasse|taxes)$/i.test(r.trim())) break
+      const v = valori(r)
+      const nome = r.split(/\s{2,}/)[0].trim()
+      if (v.length >= 2 && !/^(alloggio|listing)$/i.test(nome) && v.at(-1)) alloggi.push({ nome, netto: v.at(-1)! })
+    }
+  const iNotti = righe.findIndex((r) => /^(notti prenotate|nights booked)$/i.test(r.trim()))
+  const notti = iNotti >= 0 ? Number(righe[iNotti + 1]?.trim()) || null : null
+  const somma = mesi.reduce((a, x) => a + x.netto, 0)
+  return { periodo, mesi, totaleNetto, notti, alloggi, totaleControllo: totaleNetto == null || Math.abs(somma - totaleNetto) < 1.5 }
+}

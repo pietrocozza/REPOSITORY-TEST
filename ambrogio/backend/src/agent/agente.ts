@@ -26,6 +26,12 @@ const STRUMENTI_INTEGRATI = ['WebSearch', 'WebFetch']
 // Claude Code acceso da più di un'ora viene riavviato quando è libero (così data e ora nelle istruzioni restano giuste)
 const ETA_MASSIMA_MS = 60 * 60 * 1000
 
+/** una riga corta per il registro (il testo intero va nei dettagli) */
+const breve = (t: string) => {
+  const r = t.replace(/\[\s*SUONO\s*:[^\]]*\]/gi, '').replace(/\s+/g, ' ').trim()
+  return r.length > 110 ? `${r.slice(0, 110)}…` : r
+}
+
 export class Agente {
   private config: Config
   private eseguibile: Eseguibile
@@ -192,7 +198,7 @@ export class Agente {
     let risposta = ''
     const sessioneTurno = this.sessioni.attuale.id
     this.db.salvaMessaggio(sessioneTurno, 'user', messaggio)
-    this.db.registra('messaggio', `Richiesta: ${messaggio.length > 90 ? messaggio.slice(0, 90) + '…' : messaggio}`)
+    this.db.registra('messaggio', `Richiesta: ${breve(messaggio)}`, { testo: messaggio.slice(0, 20_000) })
 
     // domande elementari (ora, data, saluti…) e sul calendario delle case: risposta immediata, senza Claude
     let pronta = rispostaPronta(messaggio, { appellativo: this.config.appellativo, suoni: elencoSuoni(this.config.cartellaDati) })
@@ -207,7 +213,7 @@ export class Agente {
     if (pronta) {
       if (this.inCorso === controller) this.inCorso = null
       this.db.salvaMessaggio(sessioneTurno, 'assistant', pronta)
-      this.db.registra('messaggio', 'Risposta pronta (senza Claude)', { durataMs: Date.now() - inizio, pronta: true })
+      this.db.registra('messaggio', `Risposta pronta: ${breve(pronta)}`, { durataMs: Date.now() - inizio, pronta: true, testo: pronta })
       onEvento({ tipo: 'testo', testo: pronta })
       onEvento({ tipo: 'fine', sessione: sessioneTurno, durataMs: Date.now() - inizio, strumentiUsati: [] })
       return 'ok' as const
@@ -256,8 +262,15 @@ export class Agente {
       this.gestore.notifica = () => {}
     }
     if (risposta.trim()) this.db.salvaMessaggio(sessioneTurno, 'assistant', risposta.trim())
+    // nel registro c'è anche il testo intero della risposta (si apre cliccando la riga)
+    if (esito !== 'ok' && risposta.trim()) this.db.registra('errore', `Risposta interrotta: ${breve(risposta)}`, { testo: risposta.trim().slice(0, 20_000), esito })
     if (esito === 'ok') {
-      this.db.registra('messaggio', 'Risposta data', { durataMs: Date.now() - inizio, strumenti: strumentiUsati, cervello: this.cervello })
+      this.db.registra('messaggio', risposta.trim() ? `Risposta: ${breve(risposta)}` : 'Risposta data', {
+        durataMs: Date.now() - inizio,
+        strumenti: strumentiUsati,
+        cervello: this.cervello,
+        testo: risposta.trim().slice(0, 20_000),
+      })
       if (strumentiUsati.length) inoltra({ tipo: 'stato', stato: 'SUCCESS' })
       inoltra({ tipo: 'fine', sessione: this.sessioni.attuale.id, durataMs: Date.now() - inizio, strumentiUsati })
     } else if (esito === 'sessione-mancante') {

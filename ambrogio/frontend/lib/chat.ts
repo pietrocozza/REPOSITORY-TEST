@@ -141,7 +141,7 @@ export async function impostazioniAgente(personalita?: string): Promise<Impostaz
 export type MessaggioSalvato = { id: number; ruolo: 'user' | 'assistant'; testo: string; creato: string }
 export type Memoria = { id: number; tipo: string; titolo: string; contenuto: string; aggiornata: string }
 export type Pratica = { id: number; titolo: string; descrizione: string; stato: 'aperta' | 'in_attesa' | 'chiusa'; note: string; aggiornata: string }
-export type VoceRegistro = { id: number; quando: string; tipo: string; descrizione: string }
+export type VoceRegistro = { id: number; quando: string; tipo: string; descrizione: string; dettagli?: string | null }
 export type Autorizzazione = { id: number; strumento: string; descrizione: string; livello: 2 | 3 }
 
 async function leggi<T>(percorso: string): Promise<T | null> {

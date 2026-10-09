@@ -168,6 +168,9 @@ const MIGRAZIONI = [
      aggiornato TEXT NOT NULL,
      PRIMARY KEY (periodo, annuncio)
    );`,
+  // i primi report in PDF letti da Gemini prendevano a volte l'anno sbagliato (la data «Report generato»):
+  // si ricominciano da capo, ricaricando i PDF con la lettura nuova
+  `DELETE FROM guadagni_mensili;`,
 ]
 
 /** La memoria di quando si chiamava Jarvis (jarvis.sqlite) diventa quella di Ambrogio, senza perdere nulla. */

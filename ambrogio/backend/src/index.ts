@@ -66,6 +66,7 @@ const archivio = new ArchivioAirbnb({
   escludi: config.airbnb.escludi,
 })
 servizi.escludi = config.airbnb.escludi
+servizi.costoMensile = config.airbnb.costoMensile
 servizi.archivio = archivio
 archivio.avvia()
 const server = creaServer(config, agente, { mcp: creaServerMcp(gestore, chiaveMcp), google, gmail: servizi.gmail, archivio })

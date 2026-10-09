@@ -823,6 +823,34 @@ select {
   border-bottom: 1px solid var(--linea);
   font-size: 13px;
 }
+/* righe con il testo intero: si aprono con un clic */
+.j-registro-aperta {
+  display: block;
+}
+.j-registro-aperta summary {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 8px;
+  align-items: baseline;
+  cursor: pointer;
+  list-style: none;
+}
+.j-registro-aperta summary::-webkit-details-marker {
+  display: none;
+}
+.j-registro-aperta summary span::after {
+  content: ' ▸';
+  color: var(--tenue);
+}
+.j-registro-aperta[open] summary span::after {
+  content: ' ▾';
+}
+.j-registro-aperta p {
+  margin: 8px 0 4px 52px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
 .j-registro-riga time {
   font-variant-numeric: tabular-nums;
   color: var(--tenue);

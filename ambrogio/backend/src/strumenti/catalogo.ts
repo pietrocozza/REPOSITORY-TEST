@@ -2,11 +2,11 @@ import { TIPI_MEMORIA, type Database, type Livello, type StatoPratica, type Tipo
 import type { Gmail } from '../integrazioni/gmail.ts'
 import { annuncioEscluso, riassumiCalendario, schedaCasa, type Airbnb } from '../integrazioni/airbnb.ts'
 import { incassiPerMese, quantiOspiti, type ArchivioAirbnb } from '../integrazioni/archivio-airbnb.ts'
-import { rendimentoPerMese, type FoglioSpese, type Spesa, type SpesaFissa } from '../integrazioni/spese.ts'
+import { rendimentoPerMese, statisticheEPrevisione, type FoglioSpese, type Spesa, type SpesaFissa } from '../integrazioni/spese.ts'
 import { dettoQuando, type CalendarioGoogle } from '../integrazioni/calendario.ts'
 
 /** I servizi esterni collegati (impostati all'avvio): gli strumenti li usano se ci sono */
-export const servizi: { gmail?: Gmail; airbnb?: Airbnb; calendario?: CalendarioGoogle; cartellaDati?: string; archivio?: ArchivioAirbnb; spese?: FoglioSpese; escludi?: string[] } = {}
+export const servizi: { gmail?: Gmail; airbnb?: Airbnb; calendario?: CalendarioGoogle; cartellaDati?: string; archivio?: ArchivioAirbnb; spese?: FoglioSpese; escludi?: string[]; costoMensile?: number | null } = {}
 
 /** quello che si sa dalle email di Airbnb su una prenotazione (ospite, quanti, guadagno) */
 export function dettagliDalleEmail(db: Database, codice: string) {
@@ -300,10 +300,18 @@ export const STRUMENTI: Strumento[] = [
           (r) =>
             `${r.periodo} ${r.annuncio}: ${r.prenotazioni ?? 0} prenotazioni, valore ${r.valore ?? 0} €, ${r.notti ?? 0} notti, prezzo medio ${r.prezzo_medio ?? '—'} €, soggiorno medio ${r.durata_media ?? '—'} notti, prenotano con ${r.anticipo_medio ?? '—'} giorni di anticipo, contatti/visualizzazioni ${r.tasso_contatto ?? '—'}%, prenotazioni/contatti ${r.tasso_prenotazione ?? '—'}%`,
         )
+      const meseAdesso = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date()).slice(0, 7)
+      const statistiche = statisticheEPrevisione(db.guadagniMensili(), meseAdesso, servizi.costoMensile ?? null)
       return [
-        'Incassi = netto per l’host (dopo commissioni Airbnb). Mese | incassi | notti | spese fisse | altre spese | utile | margine',
+        ...(statistiche.length
+          ? [
+              `STATISTICHE E PREVISIONE (dai report ufficiali dei guadagni di Airbnb${servizi.costoMensile ? `; costo complessivo della casa indicato da Pietro: ${servizi.costoMensile} € al mese, già comprensivo di bollette, pulizie e varie` : ''}):`,
+              ...statistiche,
+            ]
+          : []),
+        'DETTAGLIO MESE PER MESE. Incassi = netto per l’host (dopo commissioni Airbnb). Mese | incassi | notti | spese fisse | altre spese | utile | margine',
         ...tabella,
-        'Totali per anno:',
+        'Totali per anno (con le spese del foglio):',
         ...perAnno,
         ...(prestazioni.length ? ['Prestazioni degli annunci (report di Airbnb):', ...prestazioni] : []),
         ...(notaSpese ? [notaSpese] : []),

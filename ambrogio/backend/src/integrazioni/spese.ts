@@ -258,3 +258,73 @@ export function rendimentoPerMese(
     }
   })
 }
+
+const NOMI_MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre']
+const euro = (n: number) => `${Math.round(n).toLocaleString('it-IT')} €`
+
+/**
+ * Statistiche e previsione dell'anno in corso dai guadagni mese per mese (report di Airbnb).
+ * La previsione: quello che manca all'anno si stima dagli stessi mesi degli anni passati,
+ * così com'erano e corretti con l'andamento di quest'anno (crescita da gennaio al mese scorso).
+ */
+export function statisticheEPrevisione(report: { mese: string; netto: number }[], meseAdesso: string, costoMensile: number | null) {
+  const per = new Map(report.map((r) => [r.mese, r.netto]))
+  const anni = [...new Set(report.map((r) => r.mese.slice(0, 4)))].sort()
+  const righe: string[] = []
+  // anno per anno (con il confronto sullo stesso periodo dell'anno prima)
+  const annoAdesso = meseAdesso.slice(0, 4)
+  const meseNum = Number(meseAdesso.slice(5, 7))
+  const somma = (anno: string, da: number, a: number) => {
+    let t = 0
+    let tutti = true
+    for (let m = da; m <= a; m++) {
+      const v = per.get(`${anno}-${String(m).padStart(2, '0')}`)
+      if (v == null) tutti = false
+      else t += v
+    }
+    return { t, tutti }
+  }
+  for (const a of anni) {
+    const mesi = report.filter((r) => r.mese.startsWith(a))
+    const tot = mesi.reduce((x, r) => x + r.netto, 0)
+    const utile = costoMensile ? ` · utile con ${euro(costoMensile)} al mese di costi: ${euro(tot - costoMensile * mesi.length)}` : ''
+    righe.push(`${a}: ${euro(tot)} netti in ${mesi.length} mesi (media ${euro(tot / Math.max(1, mesi.length))} al mese)${utile}`)
+  }
+  // i mesi migliori e peggiori, e la stagionalità (media di ogni mese negli anni)
+  const ordinati = [...report].filter((r) => r.netto > 0 && r.mese < meseAdesso).sort((a, b) => b.netto - a.netto)
+  if (ordinati.length >= 3) {
+    righe.push(`Mesi migliori: ${ordinati.slice(0, 3).map((r) => `${r.mese} ${euro(r.netto)}`).join(', ')}`)
+    righe.push(`Mesi peggiori: ${ordinati.slice(-3).reverse().map((r) => `${r.mese} ${euro(r.netto)}`).join(', ')}`)
+    const stagioni = NOMI_MESI.map((nome, i) => {
+      const v = report.filter((r) => Number(r.mese.slice(5, 7)) === i + 1 && r.netto > 0 && r.mese < meseAdesso).map((r) => r.netto)
+      return { nome, media: v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0 }
+    }).filter((s) => s.media)
+    righe.push(`Stagionalità (media per mese): ${stagioni.map((s) => `${s.nome} ${euro(s.media)}`).join(', ')}`)
+  }
+  // previsione dell'anno in corso
+  const finora = somma(annoAdesso, 1, meseNum - 1)
+  const parziale = per.get(meseAdesso)
+  const stime: number[] = []
+  const confronti: string[] = []
+  for (const a of anni.filter((x) => x < annoAdesso)) {
+    const prima = somma(a, 1, meseNum - 1)
+    const dopo = somma(a, meseNum, 12)
+    if (!prima.tutti || !dopo.tutti || !prima.t) continue
+    const crescita = finora.t / prima.t
+    stime.push(dopo.t, dopo.t * crescita)
+    confronti.push(`rispetto al ${a} ${crescita >= 1 ? '+' : ''}${Math.round((crescita - 1) * 100)}% (stesso periodo)`)
+  }
+  if (meseNum > 1 && finora.tutti && stime.length) {
+    const basso = Math.min(...stime)
+    const alto = Math.max(...stime)
+    const medio = stime.reduce((a, b) => a + b, 0) / stime.length
+    const nomeDa = NOMI_MESI[meseNum - 1]
+    righe.push(
+      `Previsione ${annoAdesso}: finora (gennaio–${NOMI_MESI[meseNum - 2]}) ${euro(finora.t)}, ${confronti.join(', ')}.` +
+        `${parziale != null ? ` ${nomeDa[0].toUpperCase()}${nomeDa.slice(1)} è a ${euro(parziale)} (mese in corso).` : ''}` +
+        ` Da ${nomeDa} a dicembre stima tra ${euro(basso)} e ${euro(alto)} (media ${euro(medio)}): anno tra ${euro(finora.t + basso)} e ${euro(finora.t + alto)}, più probabile ${euro(finora.t + medio)}.` +
+        (costoMensile ? ` Utile previsto con ${euro(costoMensile)} al mese di costi (${euro(costoMensile * 12)} l'anno): circa ${euro(finora.t + medio - costoMensile * 12)} (tra ${euro(finora.t + basso - costoMensile * 12)} e ${euro(finora.t + alto - costoMensile * 12)}).` : ''),
+    )
+  }
+  return righe
+}
