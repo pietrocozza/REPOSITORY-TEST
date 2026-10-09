@@ -2,24 +2,24 @@
 
 import type Lenis from 'lenis'
 
-// Istanza di Lenis condivisa: la crea il Providers, la usano link e pulsanti.
+// Istanza di Lenis condivisa: la crea Providers, la usano menu e pulsanti.
 let lenis: Lenis | null = null
 export const setLenis = (l: Lenis | null) => {
   lenis = l
 }
 export const getLenis = () => lenis
 
-/** Scorre in modo fluido fino alla sezione con quell'id */
-export function scrollToId(id: string) {
-  const el = document.getElementById(id)
-  if (!el) return
+/** Torna in cima alla pagina (usato al cambio pagina) */
+export function scrollInCima() {
+  if (lenis) lenis.scrollTo(0, { immediate: true, force: true })
+  else window.scrollTo(0, 0)
+}
+
+/** Ferma / riattiva lo scroll (menu a tutto schermo aperto) */
+export function bloccaScroll(blocca: boolean) {
   if (lenis) {
-    lenis.scrollTo(el, { offset: -8, duration: 1.4 })
-  } else {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' })
+    if (blocca) lenis.stop()
+    else lenis.start()
   }
-  // sposta anche il focus, per chi naviga con la tastiera o lo screen reader
-  el.setAttribute('tabindex', '-1')
-  el.focus({ preventScroll: true })
+  document.documentElement.style.overflow = blocca ? 'hidden' : ''
 }

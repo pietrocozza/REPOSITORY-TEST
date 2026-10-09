@@ -1,14 +1,10 @@
-# Brace & Peperino
+# Soluzione Affitto
 
-Sito a pagina unica di un'hamburgeria **inventata** nel centro storico di Viterbo.
-Ha un solo scopo: far venire fame e far ordinare. Cinque sezioni, fondo scuro, panini 3D enormi e sospesi,
-pulsante "Ordina" sempre a portata di mano.
+Nuovo sito di [soluzioneaffitto.com](https://www.soluzioneaffitto.com): gestione di affitti brevi a Roma e Milano.
 
-Stack: Next.js (App Router) + TypeScript, Tailwind CSS, Motion (Framer Motion), Lenis,
-Three.js + React Three Fiber (panini 3D), react-hook-form + zod, Web Audio API.
+Tutti i testi, i numeri, le recensioni e le foto vengono dal sito WordPress attuale. Le foto di Roma sono quelle già caricate lì.
 
-> ⚠️ Il locale non esiste. Indirizzo, telefono, orari e social sono **dati fittizi** (`lib/info.ts`).
-> L'ordine non viene inviato a nessuno: la route `app/api/ordine/route.ts` risponde con un numero finto.
+Stack: Next.js (App Router) + TypeScript, Tailwind CSS 4, Motion e Lenis per animazioni e scorrimento fluido.
 
 ## Avviare il sito
 
@@ -19,51 +15,38 @@ npm install      # una volta sola
 npm run dev      # poi apri http://localhost:3000
 ```
 
-```bash
-npm run lint     # controlla il codice
-npm run build    # versione ottimizzata per la pubblicazione
-npm run start    # avvia la versione ottimizzata
-```
+Per la versione di produzione: `npm run build` e poi `npm start`.
 
-## Pubblicarlo su Vercel
+## Dove si cambiano le cose
 
-1. Vai su [vercel.com](https://vercel.com), accedi con GitHub, **Add New → Project**, scegli questo repository e premi **Deploy**.
-2. (Facoltativo) In **Settings → Environment Variables** aggiungi `NEXT_PUBLIC_SITE_URL` con l'indirizzo definitivo, per le anteprime sui social.
-3. Ogni modifica salvata su GitHub viene pubblicata da sola.
+| Cosa | File |
+| --- | --- |
+| Telefono, WhatsApp, email, sedi, P.IVA, menu | `lib/site.ts` |
+| Tutti i testi: vantaggi, servizi, piani, appartamenti, recensioni, FAQ, cantieri | `lib/contenuti.ts` |
+| Foto | `public/img/` |
+| Colori e caratteri | `app/globals.css` (blocco `@theme`) |
 
-## I panini in 3D
+## Pagine
 
-Tutti i panini e i contorni sono **modelli 3D costruiti nel codice** con [Three.js](https://threejs.org)
-e [React Three Fiber](https://r3f.docs.pmnd.rs): librerie gratuite e open source. Non servono foto né file da scaricare.
+- `/` Home
+- `/gestione` Piani (12% e 20%) e servizi
+- `/ristruttura-gratis` Storia di Via Leonina, vantaggi della locazione, testimonianze, FAQ
+- `/operazioni-immobiliari` Cantieri di Roma e Milano
+- `/chi-siamo` Team e recensioni Airbnb
+- `/domande-e-risposte` FAQ sulla gestione
+- `/contatti` Contatti, sedi e simulatore
+- `/calcola-guadagno` Simulatore di guadagno
 
-- Ogni ingrediente (pane con sesamo, lattuga, pomodoro, cipolla, formaggio fuso, carne, bacon, uovo, nocciole, salsa)
-  è un modello a sé in `components/three/ingredienti.tsx`: forma, colori, lucidità.
-- Le ricette dei panini (quali strati e in che ordine) sono in `lib/ricette.ts`: cambiando l'elenco cambia il panino.
-- Luci da studio e ombra morbida: `components/three/Studio.tsx`.
-- Il 3D si accende solo quando è sullo schermo e le card del menu si animano solo in hover, per non scaricare la batteria.
+I vecchi indirizzi di WordPress (`/?page_id=14` e simili) vengono reindirizzati alle nuove pagine (`proxy.ts`), così i link già indicizzati su Google continuano a funzionare.
 
-## Dove si trova cosa
+## Simulatore di guadagno
 
-| Percorso | Contenuto |
-|---|---|
-| `app/page.tsx` | Le 5 sezioni della pagina |
-| `lib/menu.ts` | Panini, contorni, prezzi, zone di consegna |
-| `lib/ricette.ts` | Gli strati di ogni panino 3D e le scritte del panino che si apre |
-| `lib/info.ts` | Dati del locale (fittizi): indirizzo, telefono, orari, fasce di consegna |
-| `lib/animations.ts` | Tempi delle animazioni (quando si apre e si richiude il panino, ecc.) |
-| `lib/order-schema.ts` | Regole e messaggi d'errore del modulo d'ordine |
-| `lib/audio.ts` | Musica di sottofondo generata nel codice |
-| `components/sections/` | Navbar, hero + panino che si apre, secondo panino, menu e ordine, footer, barra mobile |
-| `components/three/` | I modelli 3D, le luci, la scena del panino che si apre e le vetrine del menu |
-| `app/api/ordine/route.ts` | Riceve e controlla l'ordine (qui si collegherà email o gestionale) |
+Il simulatore fa le stesse domande del modulo attuale. Alla fine il visitatore invia la richiesta, già compilata, su WhatsApp (+39 333 612 1597) o via email (info.soluzioneaffitto@gmail.com). Non serve nessun server né servizio esterno.
 
-## Musica
+## Recensioni
 
-Parte al primo clic o tocco, a volume basso; l'icona con le barre nella navbar la spegne e riaccende
-(la scelta viene ricordata). È un sottofondo lounge generato nel codice: per usare un brano tuo
-mettilo in `public/audio/tema.mp3`.
+Le recensioni di Google e Airbnb sono riportate testualmente da quelle mostrate da Trustindex sul sito attuale (tutte a 5 stelle). Per aggiungerne di nuove, modifica `RECENSIONI_GOOGLE` e `RECENSIONI_AIRBNB` in `lib/contenuti.ts`.
 
-## Accessibilità
+## Pubblicazione
 
-Con "Riduci movimento" attivo: niente smooth scroll, parallax o inclinazioni, e il panino è mostrato già aperto e fermo.
-Navigazione da tastiera con focus visibile, errori del modulo letti dagli screen reader, cursore personalizzato disattivato sui dispositivi touch.
+Il modo più semplice è [Vercel](https://vercel.com): si importa il repository e si collega il dominio `soluzioneaffitto.com`.

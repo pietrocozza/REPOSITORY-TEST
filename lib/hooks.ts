@@ -15,12 +15,10 @@ export function useMediaQuery(query: string, serverValue = false) {
   )
 }
 
-export const useIsMobile = () => useMediaQuery('(max-width: 767px)')
-export const useIsTouch = () => useMediaQuery('(pointer: coarse)', true)
+export const usePuntatoreFine = () => useMediaQuery('(hover: hover) and (pointer: fine)')
 
 /**
  * "Riduci movimento" attivo nelle impostazioni del dispositivo.
- * Durante il primo disegno vale sempre false (come sul server), poi si aggiorna:
- * così l'HTML del server e quello del browser coincidono.
+ * Durante il primo disegno vale sempre false (come sul server), poi si aggiorna.
  */
 export const useRiduciMovimento = () => useMediaQuery('(prefers-reduced-motion: reduce)')
