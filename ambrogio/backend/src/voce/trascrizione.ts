@@ -73,6 +73,16 @@ export class Trascrizione {
     }
   }
 
+  /** Legge un file (per esempio un PDF) e ne estrae i dati in JSON */
+  async estraiDaFile(istruzioni: string, file: Buffer, tipo: string): Promise<unknown> {
+    const risposta = await this.genera([{ text: istruzioni }, { inlineData: { mimeType: tipo, data: file.toString('base64') } }], true, 0)
+    try {
+      return JSON.parse(risposta.replace(/^```(?:json)?\s*|\s*```$/g, ''))
+    } catch {
+      throw new ErroreVoce('errore', 'Gemini ha risposto in un formato inatteso.')
+    }
+  }
+
   private async chiediConAudio(istruzioni: string, audio: Buffer, tipo: string, json = false): Promise<string> {
     const mime = tipo.split(';')[0].trim() || 'audio/webm'
     return this.genera([{ text: istruzioni }, { inlineData: { mimeType: mime, data: audio.toString('base64') } }], json, json ? 0.6 : 0)

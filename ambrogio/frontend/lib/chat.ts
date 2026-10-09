@@ -292,10 +292,15 @@ export type StatoAirbnb =
       spese: { disponibile: boolean; link: string | null } | null
     }
 
-/** Carica il file dei guadagni scaricato da Airbnb (CSV) */
-export async function caricaGuadagni(file: File): Promise<{ prenotazioni: number; totale: number; periodo: string } | { errore: string }> {
+/** Carica un file di Airbnb (PDF «Report dei guadagni», CSV «Report mensile» o delle transazioni) o un CSV di spese */
+export async function caricaGuadagni(file: File): Promise<{ tipo: string; descrizione: string } | { errore: string }> {
   try {
-    const res = await fetch('/api/airbnb/guadagni', { method: 'POST', headers: { 'Content-Type': 'text/csv' }, body: await file.text() })
+    const pdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
+    const res = await fetch('/api/airbnb/guadagni', {
+      method: 'POST',
+      headers: { 'Content-Type': pdf ? 'application/pdf' : 'text/csv' },
+      body: pdf ? await file.arrayBuffer() : await file.text(),
+    })
     const dati = await res.json().catch(() => ({ errore: `Errore ${res.status}` }))
     return res.ok ? dati : { errore: dati.errore ?? `Errore ${res.status}` }
   } catch {

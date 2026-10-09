@@ -14,6 +14,12 @@ const API = 'https://sheets.googleapis.com/v4/spreadsheets'
 export const SPESE_FISSE_INIZIALI: SpesaFissa[] = [
   { voce: 'Affitto', importo: 1400, dal: null, al: null },
   { voce: 'Spese condominiali', importo: 75, dal: null, al: null },
+  { voce: 'TARI', importo: 12.5, dal: null, al: null },
+  { voce: 'Wi-Fi Fastweb', importo: 11.95, dal: null, al: null },
+  { voce: 'Polizza Unipolsai', importo: 14.58, dal: null, al: null },
+  // stime finché non si segnano le bollette vere (poi si toglie la riga o si mette «Al»)
+  { voce: 'Luce (stima)', importo: 50, dal: null, al: null },
+  { voce: 'Gas (stima)', importo: 25, dal: null, al: null },
 ]
 
 /** «12/10/2026», «2026-10-12», un numero di Fogli (giorni dal 30/12/1899) → AAAA-MM-GG */
@@ -155,6 +161,35 @@ export class FoglioSpese {
     return this.cache
   }
 
+  /** aggiunge molte spese insieme (per esempio quelle degli anni passati, da un CSV) */
+  async aggiungiMolte(spese: Spesa[]) {
+    if (!spese.length) return
+    const id = await this.prepara()
+    const valori = spese.map((s) => {
+      const [a, m, g] = s.data.split('-')
+      return [`${g}/${m}/${a}`, s.descrizione, s.categoria, s.importo, s.casa]
+    })
+    await this.google.chiama(`${API}/${id}/values/${encodeURIComponent('Spese!A:E')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, {
+      method: 'POST',
+      body: JSON.stringify({ values: valori }),
+    })
+    this.cache = null
+  }
+
+  /** le spese fisse che mancano nel foglio (per nome) si aggiungono; quelle già scritte non si toccano */
+  async completaFisse(fisse = SPESE_FISSE_INIZIALI) {
+    const { fisse: presenti } = await this.leggi()
+    const nomi = new Set(presenti.map((f) => f.voce.toLowerCase()))
+    const mancanti = fisse.filter((f) => !nomi.has(f.voce.toLowerCase()))
+    if (!mancanti.length) return 0
+    await this.google.chiama(`${API}/${await this.prepara()}/values/${encodeURIComponent('Spese fisse!A:D')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, {
+      method: 'POST',
+      body: JSON.stringify({ values: mancanti.map((f) => [f.voce, f.importo, f.dal ?? '', f.al ?? '']) }),
+    })
+    this.cache = null
+    return mancanti.length
+  }
+
   /** aggiunge una spesa in fondo alla scheda «Spese» */
   async aggiungi(s: Spesa) {
     const id = await this.prepara()
@@ -175,6 +210,8 @@ const giorniDelMese = (mese: string) => new Date(Date.UTC(Number(mese.slice(0, 4
 
 export type RendimentoMese = {
   mese: string
+  /** da dove arrivano gli incassi: report ufficiale di Airbnb o somma delle prenotazioni */
+  fonte: 'report' | 'prenotazioni'
   incassi: number
   notti: number
   prenotazioni: number
@@ -193,16 +230,21 @@ export function rendimentoPerMese(
   spese: Spesa[] = [],
   fisse: SpesaFissa[] = [],
   numeroCase = 1,
+  report: { mese: string; netto: number }[] = [],
 ): RendimentoMese[] {
-  const mesi = new Set([...incassi.map((i) => i.mese), ...spese.map((s) => s.data.slice(0, 7))])
+  const mesi = new Set([...incassi.map((i) => i.mese), ...spese.map((s) => s.data.slice(0, 7)), ...report.map((r) => r.mese)])
   return [...mesi].sort().map((mese) => {
-    const i = incassi.find((x) => x.mese === mese) ?? { guadagno: 0, notti: 0, prenotazioni: 0 }
+    const dallePrenotazioni = incassi.find((x) => x.mese === mese) ?? { guadagno: 0, notti: 0, prenotazioni: 0 }
+    // il report ufficiale dei guadagni di Airbnb, quando c'è, vale più della somma delle prenotazioni
+    const ufficiale = report.find((r) => r.mese === mese)
+    const i = ufficiale ? { ...dallePrenotazioni, guadagno: ufficiale.netto } : dallePrenotazioni
     const disponibili = giorniDelMese(mese) * Math.max(1, numeroCase)
     const speseFisse = fisseDelMese(fisse, mese).reduce((a, f) => a + f.importo, 0)
     const speseVariabili = spese.filter((s) => s.data.startsWith(mese)).reduce((a, s) => a + s.importo, 0)
     const utile = i.guadagno - speseFisse - speseVariabili
     return {
       mese,
+      fonte: ufficiale ? 'report' : 'prenotazioni',
       incassi: Math.round(i.guadagno),
       notti: i.notti,
       prenotazioni: i.prenotazioni,

@@ -9,7 +9,8 @@ import { Aggiornamenti, shaValido } from '../codice/aggiornamenti.ts'
 import { ErroreVoce, VOCI_GEMINI, VoceGemini } from '../voce/gemini.ts'
 import { VoceElevenLabs } from '../voce/elevenlabs.ts'
 import type { ArchivioAirbnb } from '../integrazioni/archivio-airbnb.ts'
-import { leggiGuadagni } from '../integrazioni/guadagni-airbnb.ts'
+import { eCsvSpese, eReportMensile, ISTRUZIONI_REPORT_PDF, leggiCsv, leggiGuadagni, leggiReportMensile, pulisciReportPdf } from '../integrazioni/guadagni-airbnb.ts'
+import { leggiRigheSpese } from '../integrazioni/spese.ts'
 import { Trascrizione } from '../voce/trascrizione.ts'
 import { sintetizzaWindows } from '../voce/windows.ts'
 import { elencoSuoni, suono } from '../voce/suoni.ts'
@@ -204,7 +205,7 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
     if (origine && !config.originiConsentite.includes(origine)) return inviaJson(res, 403, { errore: 'Origine non autorizzata.' })
     const tipoCorpo = String(req.headers['content-type'] ?? '')
     const eAudio = url.pathname === '/api/trascrivi' && tipoCorpo.startsWith('audio/')
-    const eCsv = url.pathname === '/api/airbnb/guadagni' && tipoCorpo.startsWith('text/')
+    const eCsv = url.pathname === '/api/airbnb/guadagni' && (tipoCorpo.startsWith('text/') || tipoCorpo.startsWith('application/pdf'))
     if (req.method === 'POST' && !tipoCorpo.includes('application/json') && !eAudio && !eCsv) return inviaJson(res, 415, { errore: 'Serve un corpo JSON.' })
 
     try {
@@ -394,32 +395,60 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
         })
       }
 
-      // il file dei guadagni scaricato da Airbnb: le prenotazioni con quanto incassa l'host
+      // i file scaricati da Airbnb: PDF «Report dei guadagni» (mese per mese), CSV «Report mensile» (prestazioni
+      // degli annunci) o CSV della cronologia delle transazioni (prenotazione per prenotazione)
       if (req.method === 'POST' && url.pathname === '/api/airbnb/guadagni') {
-        if (!eCsv) return inviaJson(res, 415, { errore: 'Serve il file CSV dei guadagni di Airbnb.' })
-        const testo = (await leggiAudio(req)).toString('utf8')
-        let righe: ReturnType<typeof leggiGuadagni>
+        if (!eCsv) return inviaJson(res, 415, { errore: 'Serve un file di Airbnb: il PDF del report dei guadagni o un CSV.' })
+        const corpo = await leggiAudio(req)
         try {
-          righe = leggiGuadagni(testo)
+          if (tipoCorpo.startsWith('application/pdf')) {
+            if (!orecchie.disponibile) return inviaJson(res, 409, { errore: 'Per leggere i PDF serve la chiave di Gemini nel file .env.' })
+            const r = pulisciReportPdf(await orecchie.estraiDaFile(ISTRUZIONI_REPORT_PDF, corpo, 'application/pdf'))
+            for (const m of r.mesi) agente.db.salvaGuadagnoMensile(m.mese, m.netto, m.lordo)
+            const totale = r.mesi.reduce((a, m) => a + m.netto, 0)
+            const descrizione = `Report dei guadagni ${r.periodo}: ${r.mesi.length} mesi (${r.mesi[0].mese} → ${r.mesi.at(-1)!.mese}), ${Math.round(totale).toLocaleString('it-IT')} € netti`
+            agente.db.registra('airbnb', descrizione)
+            return inviaJson(res, 200, { tipo: 'guadagni', descrizione })
+          }
+          const testo = corpo.toString('utf8')
+          // spese (per esempio quelle degli anni passati): nel foglio Google delle spese
+          if (eCsvSpese(testo)) {
+            if (!servizi.spese?.disponibile) return inviaJson(res, 409, { errore: 'Prima collega il foglio delle spese (Google Sheets API attiva e Google ricollegato).' })
+            const spese = leggiRigheSpese(leggiCsv(testo).slice(1))
+            await servizi.spese.aggiungiMolte(spese)
+            const fisse = await servizi.spese.completaFisse()
+            const totale = spese.reduce((a, x) => a + x.importo, 0)
+            const descrizione = `Spese aggiunte al foglio: ${spese.length} righe, ${Math.round(totale).toLocaleString('it-IT')} €${fisse ? `; aggiunte ${fisse} spese fisse mancanti` : ''}`
+            agente.db.registra('airbnb', descrizione)
+            return inviaJson(res, 200, { tipo: 'spese', descrizione })
+          }
+          if (eReportMensile(testo)) {
+            const r = leggiReportMensile(testo)
+            for (const riga of r.righe) agente.db.salvaReportAnnuncio({ periodo: r.periodo, ...riga })
+            const descrizione = `Report delle prestazioni ${r.periodo.replace('/', ' → ')}: ${r.righe.map((x) => `${x.annuncio} ${x.prenotazioni ?? 0} prenotazioni, ${Math.round(x.valore ?? 0)} €`).join('; ')}`
+            agente.db.registra('airbnb', descrizione)
+            return inviaJson(res, 200, { tipo: 'prestazioni', descrizione })
+          }
+          const righe = leggiGuadagni(testo)
+          for (const r of righe)
+            agente.db.salvaPrenotazione({
+              codice: r.codice,
+              ospite: r.ospite,
+              annuncio: r.annuncio,
+              checkin: r.checkin,
+              checkout: r.checkout,
+              guadagno: r.guadagno,
+              totale: r.lordo,
+              valuta: r.valuta,
+              stato: 'confermata',
+            })
+          const totale = righe.reduce((a, r) => a + r.guadagno, 0)
+          const descrizione = `Transazioni: ${righe.length} prenotazioni${righe.length ? ` dal ${righe[0].checkin} al ${righe.at(-1)!.checkin}` : ''}, ${Math.round(totale).toLocaleString('it-IT')} €`
+          agente.db.registra('airbnb', descrizione)
+          return inviaJson(res, 200, { tipo: 'transazioni', descrizione })
         } catch (err) {
-          return inviaJson(res, 400, { errore: (err as Error).message })
+          return inviaJson(res, err instanceof ErroreVoce && err.tipo === 'limite' ? 429 : 400, { errore: (err as Error).message })
         }
-        for (const r of righe)
-          agente.db.salvaPrenotazione({
-            codice: r.codice,
-            ospite: r.ospite,
-            annuncio: r.annuncio,
-            checkin: r.checkin,
-            checkout: r.checkout,
-            guadagno: r.guadagno,
-            totale: r.lordo,
-            valuta: r.valuta,
-            stato: 'confermata',
-          })
-        const totale = righe.reduce((a, r) => a + r.guadagno, 0)
-        const periodo = righe.length ? `dal ${righe[0].checkin} al ${righe.at(-1)!.checkin}` : ''
-        agente.db.registra('airbnb', `File dei guadagni caricato: ${righe.length} prenotazioni ${periodo}, ${Math.round(totale)} €`)
-        return inviaJson(res, 200, { prenotazioni: righe.length, totale: Math.round(totale), periodo })
       }
 
       // il foglio Google delle spese: si crea al primo uso (con affitto e condominio già scritti)

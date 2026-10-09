@@ -271,16 +271,41 @@ export const STRUMENTI: Strumento[] = [
       }
       const da = testo(a, 'da')
       const fino = testo(a, 'a')
-      const mesi = rendimentoPerMese(incassiPerMese(db.prenotazioniArchiviate()), spese, fisse, servizi.airbnb?.case.length || 1).filter(
+      const mesi = rendimentoPerMese(incassiPerMese(db.prenotazioniArchiviate()), spese, fisse, servizi.airbnb?.case.length || 1, db.guadagniMensili()).filter(
         (m) => (!da || m.mese >= da) && (!fino || m.mese <= fino),
       )
       if (!mesi.length)
-        return `Non ci sono ancora dati: gli incassi arrivano da soli dalle email di Airbnb (serve Gmail collegato) e dal file dei guadagni caricato in Impostazioni → Airbnb. ${notaSpese}`
-      const tabella = mesi.map(
-        (m) =>
-          `${m.mese} | ${m.incassi} € | ${m.notti} notti | occupazione ${m.occupazione}% | ADR ${m.prezzoMedio} € | RevPAR ${m.revpar} € | spese fisse ${m.speseFisse} € | altre spese ${m.speseVariabili} € | utile ${m.utile} € | margine ${m.margine}%`,
-      )
-      return `Mese (del check-in) | incassi host | notti | occupazione | ADR | RevPAR | spese fisse | altre spese | utile | margine\n${tabella.join('\n')}${notaSpese ? `\n${notaSpese}` : ''}${servizi.spese?.link ? `\nFoglio delle spese: ${servizi.spese.link}` : ''}`
+        return `Non ci sono ancora dati: gli incassi arrivano dai report di Airbnb caricati in Impostazioni → Airbnb e, da soli, dalle email di Airbnb. ${notaSpese}`
+      const tabella = mesi.map((m) => {
+        const notti = m.notti ? `${m.notti} notti | occupazione ${m.occupazione}% | ADR ${m.prezzoMedio} € | RevPAR ${m.revpar} €` : 'notti non note'
+        return `${m.mese} | ${m.incassi} €${m.fonte === 'report' ? ' (report Airbnb)' : ''} | ${notti} | spese fisse ${m.speseFisse} € | altre spese ${m.speseVariabili} € | utile ${m.utile} € | margine ${m.margine}%`
+      })
+      // totali per anno
+      const anni = new Map<string, { incassi: number; spese: number; utile: number; mesi: number }>()
+      for (const m of mesi) {
+        const t = anni.get(m.mese.slice(0, 4)) ?? { incassi: 0, spese: 0, utile: 0, mesi: 0 }
+        t.incassi += m.incassi
+        t.spese += m.speseFisse + m.speseVariabili
+        t.utile += m.utile
+        t.mesi++
+        anni.set(m.mese.slice(0, 4), t)
+      }
+      const perAnno = [...anni.entries()].map(([a, t]) => `${a} (${t.mesi} mesi): incassi ${t.incassi} €, spese ${t.spese} €, utile ${t.utile} €`)
+      const prestazioni = db
+        .reportAnnunci()
+        .map(
+          (r) =>
+            `${r.periodo} ${r.annuncio}: ${r.prenotazioni ?? 0} prenotazioni, valore ${r.valore ?? 0} €, ${r.notti ?? 0} notti, prezzo medio ${r.prezzo_medio ?? '—'} €, soggiorno medio ${r.durata_media ?? '—'} notti, prenotano con ${r.anticipo_medio ?? '—'} giorni di anticipo, contatti/visualizzazioni ${r.tasso_contatto ?? '—'}%, prenotazioni/contatti ${r.tasso_prenotazione ?? '—'}%`,
+        )
+      return [
+        'Incassi = netto per l’host (dopo commissioni Airbnb). Mese | incassi | notti | spese fisse | altre spese | utile | margine',
+        ...tabella,
+        'Totali per anno:',
+        ...perAnno,
+        ...(prestazioni.length ? ['Prestazioni degli annunci (report di Airbnb):', ...prestazioni] : []),
+        ...(notaSpese ? [notaSpese] : []),
+        ...(servizi.spese?.link ? [`Foglio delle spese: ${servizi.spese.link}`] : []),
+      ].join('\n')
     },
   },
   {

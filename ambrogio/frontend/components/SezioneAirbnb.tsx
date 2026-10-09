@@ -10,12 +10,18 @@ export default function SezioneAirbnb() {
   const [esito, setEsito] = useState<string | null>(null)
   const [occupato, setOccupato] = useState(false)
   const scegliFile = useRef<HTMLInputElement>(null)
-  const carica = async (file: File | undefined) => {
-    if (!file) return
+  // si possono scegliere più file insieme (es. i report dei guadagni di tutti gli anni): uno alla volta
+  const carica = async (files: FileList | null) => {
+    if (!files?.length) return
     setOccupato(true)
-    const r = await caricaGuadagni(file)
+    const esiti: string[] = []
+    for (const file of Array.from(files)) {
+      setEsito(`Leggo ${file.name}…`)
+      const r = await caricaGuadagni(file)
+      esiti.push(`${file.name}: ${'errore' in r ? r.errore : r.descrizione}`)
+    }
     setOccupato(false)
-    setEsito('errore' in r ? r.errore : `Caricate ${r.prenotazioni} prenotazioni ${r.periodo}: ${r.totale.toLocaleString('it-IT')} € di guadagno.`)
+    setEsito(esiti.join(' · '))
     setProva((p) => p + 1)
   }
   const apriFoglio = async () => {
@@ -62,9 +68,21 @@ export default function SezioneAirbnb() {
         )}
       </span>
       <div className="j-riga-pulsanti">
-        <input ref={scegliFile} type="file" accept=".csv,text/csv" hidden onChange={(e) => carica(e.target.files?.[0]).finally(() => (e.target.value = ''))} />
-        <button type="button" disabled={occupato} onClick={() => scegliFile.current?.click()} title="Il file scaricato da Airbnb: Guadagni → Esporta CSV">
-          Carica file guadagni
+        <input
+          ref={scegliFile}
+          type="file"
+          multiple
+          accept=".csv,.pdf,text/csv,application/pdf"
+          hidden
+          onChange={(e) => carica(e.target.files).finally(() => (e.target.value = ''))}
+        />
+        <button
+          type="button"
+          disabled={occupato}
+          onClick={() => scegliFile.current?.click()}
+          title="Report dei guadagni (PDF), report mensile o transazioni (CSV) di Airbnb, oppure un CSV di spese"
+        >
+          {occupato ? 'Leggo i file…' : 'Carica file Airbnb'}
         </button>
         <button type="button" disabled={occupato} onClick={apriFoglio} title="Bollette, pulizie, affitto e condominio: entrano nel calcolo del rendimento">
           Foglio delle spese

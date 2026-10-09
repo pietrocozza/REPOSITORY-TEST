@@ -43,6 +43,19 @@ export type PrenotazioneArchiviata = {
   stato: 'confermata' | 'cancellata' | 'richiesta'
   aggiornata: string
 }
+export type GuadagnoMensile = { mese: string; lordo: number | null; netto: number }
+export type ReportAnnuncio = {
+  periodo: string
+  annuncio: string
+  prenotazioni: number | null
+  valore: number | null
+  notti: number | null
+  prezzo_medio: number | null
+  durata_media: number | null
+  anticipo_medio: number | null
+  tasso_contatto: number | null
+  tasso_prenotazione: number | null
+}
 export type Avviso = { id: number; quando: string; testo: string; letto: number }
 export type Messaggio = { id: number; sessione: string; ruolo: 'user' | 'assistant'; testo: string; creato: string }
 
@@ -132,6 +145,28 @@ const MIGRAZIONI = [
      chiave TEXT UNIQUE,
      testo TEXT NOT NULL,
      letto INTEGER NOT NULL DEFAULT 0
+   );`,
+  // i report di Airbnb: guadagni mese per mese (dai PDF «Report dei guadagni») e prestazioni degli annunci (CSV)
+  `CREATE TABLE guadagni_mensili (
+     mese TEXT PRIMARY KEY,
+     lordo REAL,
+     netto REAL NOT NULL,
+     aggiornato TEXT NOT NULL
+   );
+
+   CREATE TABLE report_annunci (
+     periodo TEXT NOT NULL,
+     annuncio TEXT NOT NULL,
+     prenotazioni REAL,
+     valore REAL,
+     notti REAL,
+     prezzo_medio REAL,
+     durata_media REAL,
+     anticipo_medio REAL,
+     tasso_contatto REAL,
+     tasso_prenotazione REAL,
+     aggiornato TEXT NOT NULL,
+     PRIMARY KEY (periodo, annuncio)
    );`,
 ]
 
@@ -332,6 +367,31 @@ export class Database {
 
   contaEmailAirbnb() {
     return (this.db.prepare('SELECT COUNT(*) AS n FROM email_airbnb').get() as { n: number }).n
+  }
+
+  // ───────── Report di Airbnb ─────────
+
+  salvaGuadagnoMensile(mese: string, netto: number, lordo: number | null) {
+    this.db
+      .prepare('INSERT INTO guadagni_mensili (mese, lordo, netto, aggiornato) VALUES (?, ?, ?, ?) ON CONFLICT(mese) DO UPDATE SET lordo=excluded.lordo, netto=excluded.netto, aggiornato=excluded.aggiornato')
+      .run(mese, lordo, netto, adesso())
+  }
+
+  guadagniMensili(): GuadagnoMensile[] {
+    return this.db.prepare('SELECT mese, lordo, netto FROM guadagni_mensili ORDER BY mese').all() as GuadagnoMensile[]
+  }
+
+  salvaReportAnnuncio(r: ReportAnnuncio) {
+    this.db
+      .prepare(
+        `INSERT OR REPLACE INTO report_annunci (periodo, annuncio, prenotazioni, valore, notti, prezzo_medio, durata_media, anticipo_medio, tasso_contatto, tasso_prenotazione, aggiornato)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(r.periodo, r.annuncio, r.prenotazioni, r.valore, r.notti, r.prezzo_medio, r.durata_media, r.anticipo_medio, r.tasso_contatto, r.tasso_prenotazione, adesso())
+  }
+
+  reportAnnunci(): ReportAnnuncio[] {
+    return this.db.prepare('SELECT * FROM report_annunci ORDER BY periodo, annuncio').all() as ReportAnnuncio[]
   }
 
   // ───────── Avvisi per Pietro (è Ambrogio che aggiorna lui) ─────────

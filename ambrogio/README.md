@@ -255,9 +255,11 @@ Ambrogio non cambia mai i prezzi: li suggerisce soltanto.
 la mattina ti dice chi arriva e chi parte, la sera chi arriva domani.
 
 **Rendimento**:
-- *File dei guadagni*: su airbnb.it dal computer → menu → **Guadagni** → **Cronologia delle transazioni** →
-  **Esporta CSV** (scarica sia i pagamenti *completati* sia quelli *futuri*). Poi in Impostazioni → Airbnb →
-  **Carica file guadagni**.
+- *File di Airbnb*: in Impostazioni → Airbnb → **Carica file Airbnb** (anche più file insieme):
+  - i PDF «Report dei guadagni» di ogni anno (Guadagni → Report): guadagni mese per mese, letti con Gemini;
+  - il CSV «Report mensile» delle prestazioni (Statistiche): prenotazioni, prezzo medio, conversioni per annuncio;
+  - il CSV della cronologia delle transazioni: prenotazione per prenotazione;
+  - un CSV di spese (Data, Descrizione, Categoria, Importo, Casa): finisce nel foglio delle spese.
 - *Spese*: in Impostazioni → Airbnb → **Foglio delle spese** Ambrogio crea un foglio Google (vede solo quello, non il
   resto del Drive) con affitto e condominio già scritti; le altre spese le scrivi lì o le dici ad Ambrogio
   («ho pagato la bolletta della luce, 85 euro»). Serve **Google Sheets API** attiva su Google Cloud e ricollegare Google.
