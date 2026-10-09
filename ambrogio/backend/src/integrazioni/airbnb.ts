@@ -171,13 +171,15 @@ const detto = (iso: string) => {
 const notti = (n: number) => (n === 1 ? 'una notte' : `${n} notti`)
 
 // domande sul calendario a cui si risponde da soli; prezzi, consigli e messaggi vanno a Claude
-const DOMANDA_CALENDARIO = /\b(?:chi arriva|arriv\w*|chi parte|parten\w*|check.?in|check.?out|prenotazion\w*|prenotat\w*|occupa\w*|liber\w*|calendario|ospiti?|airbnb|disponibilit\w*)\b/
+const DOMANDA_CALENDARIO = /\b(?:chi arriva|arriv\w*|chi parte|parten\w*|check.?in|check.?out|prenotazion\w*|prenotat\w*|occupa\w*|liber\w*|calendario|ospit\w*|airbnb|disponibilit\w*)\b/
 const VA_A_CLAUDE = /\b(?:prezz\w*|costa|tariff\w*|consigl\w*|messaggi?\w*|scriv\w*|rispond\w*|email|recension\w*|guadagn\w*|incass\w*|perché)\b/
+// quanti sono, come si chiamano, da dove vengono: il calendario non lo sa (è nelle email di Airbnb), ci pensa Claude
+const DETTAGLI_OSPITI = /\b(?:quant[ie]\s+(?:ospiti|persone|adulti|bambini)|quante\s+persone|in\s+quanti|come\s+si\s+chiam\w*|nome|nomi|chi\s+(?:è|e|sono)\b|telefono|numero\s+di|da\s+dove|nazionalit\w*|codice\s+(?:di\s+)?prenotazione)/
 
 /** Risposta parlata e immediata alle domande sul calendario, oppure null (allora risponde Claude) */
 export async function rispostaCalendario(domanda: string, airbnb: Airbnb | undefined, oggi: string): Promise<string | null> {
   const t = domanda.toLowerCase()
-  if (!DOMANDA_CALENDARIO.test(t) || VA_A_CLAUDE.test(t)) return null
+  if (!DOMANDA_CALENDARIO.test(t) || VA_A_CLAUDE.test(t) || DETTAGLI_OSPITI.test(t)) return null
   // calendario non collegato: lo si dice subito (niente giri lenti nelle email)
   if (!airbnb?.case.length)
     return /airbnb|prenotazion|calendario|arriv|parten|occupa|disponibilit/.test(t)
@@ -213,9 +215,19 @@ export async function rispostaCalendario(domanda: string, airbnb: Airbnb | undef
     quando = `a ${MESI[mese]}`
   } else if (/\bmese\b/.test(t)) [a, quando] = [piu(oggi, 30), 'nei prossimi 30 giorni']
 
+  // si risponde solo a quello che è chiesto: «la prossima prenotazione» è una sola
+  if (/\bprossim[oa]\s+(?:prenotazion\w*|arriv\w*|ospit\w*|check.?in)/.test(t)) {
+    const prossima = pren.find((p) => p.inizio > oggi)
+    return prossima
+      ? `La prossima prenotazione a ${casa.nome} arriva ${detto(prossima.inizio)}, per ${notti(prossima.notti)}.`
+      : `A ${casa.nome} per ora non ci sono altre prenotazioni in arrivo.`
+  }
+
   const frasi: string[] = []
   const inCasa = pren.find((p) => p.inizio <= oggi && p.fine > oggi)
-  if (inCasa && da === oggi) frasi.push(`In questo momento a ${casa.nome} c'è un ospite, che parte ${detto(inCasa.fine)}.`)
+  // chi c'è adesso: solo se lo chiede
+  if (/\b(?:adesso|ora|in casa|c'è qualcuno|c è qualcuno|occupat[ao] oggi)\b/.test(t) || /\boggi\b/.test(t))
+    frasi.push(inCasa ? `In questo momento a ${casa.nome} c'è un ospite, che parte ${detto(inCasa.fine)}.` : `In questo momento a ${casa.nome} non c'è nessuno.`)
 
   const chiedePartenze = /parte|parten|check.?out/.test(t)
   if (chiedePartenze) {
@@ -241,7 +253,7 @@ export async function rispostaCalendario(domanda: string, airbnb: Airbnb | undef
     const y = p.fine < a ? p.fine : a
     occupate += Math.max(0, differenzaGiorni(x, y))
   }
-  if (giorniFinestra >= 7 || /occupa|liber/.test(t))
+  if (/occupa|liber|disponibilit/.test(t))
     frasi.push(`Occupazione ${Math.round((occupate / giorniFinestra) * 100)} per cento: ${notti(occupate)} su ${giorniFinestra}.`)
   return frasi.join(' ')
 }

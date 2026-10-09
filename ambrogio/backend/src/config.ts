@@ -46,7 +46,7 @@ export const config = {
     modalitaVeloce: env('AMBROGIO_MODALITA_VELOCE', '1') !== '0',
     /** tempo massimo per una risposta, in secondi */
     // include l'eventuale attesa di una tua autorizzazione (fino a 10 minuti)
-    timeoutSecondi: Number(env('AMBROGIO_TIMEOUT', '900')),
+    timeoutSecondi: Number(env('AMBROGIO_TIMEOUT', '240')),
     /**
      * Regola sui costi: Ambrogio usa SOLO il tuo abbonamento Claude.
      * Se un giorno vorrai usare l'API a consumo dovrai scrivere AMBROGIO_CONSENTI_API_A_CONSUMO=1 nel file .env.

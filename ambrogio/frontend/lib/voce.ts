@@ -94,6 +94,20 @@ export function dopoParolaAttivazione(frase: string): string | null {
 /** Dopo il microfono: se la frase comincia con «(Uè) Ambrogio», il nome si toglie */
 export const togliNome = (frase: string) => frase.replace(SOLO_NOME, '').trim()
 
+// Quanto silenzio aspettare prima di considerare finita la frase (così si può pensare alla parola dopo)
+export const PAUSA_FINE_FRASE_MS = 2500
+// Parola per chiudere subito la frase senza aspettare: «… passo» (come alla radio) o «… ho finito»
+const PAROLA_FINE = /[\s,.;:!?]*\b(?:passo(?: e chiudo)?|ho finito)[\s.!?]*$/i
+
+/** «quanti ospiti arrivano sabato, passo» → { testo: 'quanti ospiti arrivano sabato', chiusa: true } */
+export function fineFrase(frase: string) {
+  const chiusa = PAROLA_FINE.test(frase)
+  return { testo: chiusa ? frase.replace(PAROLA_FINE, '').trim() : frase.trim(), chiusa }
+}
+
+/** Unisce i pezzi di frase che il riconoscimento consegna separati */
+export const unisciPezzi = (pezzi: string[]) => pezzi.map((p) => p.trim()).filter(Boolean).join(' ')
+
 /** "Uè Ambrogio, basta" / "Uè Ambrogio, stop": fermarsi senza fare altro */
 export const eStop = (comando: string) =>
   /^(?:stop|basta|zitt[oa]|ferm[ao]|fermati|silenzio|annulla|lascia (?:stare|perdere)|niente|nulla)\b[\s.!]*$/i.test(comando)

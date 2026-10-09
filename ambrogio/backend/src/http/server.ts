@@ -25,7 +25,7 @@ import { Telefono, Telefonata, type EsitoTelefonata } from '../telefono/telefono
 // un sito web qualsiasi aperto nel browser non può comandare l'agente.
 
 const MAX_CORPO = 64 * 1024
-const MAX_AUDIO = 4 * 1024 * 1024
+const MAX_AUDIO = 10 * 1024 * 1024
 
 async function leggiAudio(req: http.IncomingMessage) {
   const pezzi: Buffer[] = []
@@ -291,7 +291,10 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
       if (req.method === 'POST' && url.pathname === '/api/trascrivi') {
         if (!eAudio) return inviaJson(res, 415, { errore: 'Serve un file audio.' })
         try {
-          const testo = await orecchie.trascrivi(await leggiAudio(req), tipoCorpo)
+          const audio = await leggiAudio(req)
+          const testo = await orecchie.trascrivi(audio, tipoCorpo)
+          // un audio senza parole capite resta nel registro (così si vede se il microfono ha registrato qualcosa)
+          if (!testo) agente.db.registra('voce', `Ascolto: nessuna parola capita in un audio di ${Math.max(1, Math.round(audio.length / 1024))} KB`)
           return inviaJson(res, 200, { testo })
         } catch (err) {
           const e = err instanceof ErroreVoce ? err : new ErroreVoce('errore', (err as Error).message)

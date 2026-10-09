@@ -67,7 +67,10 @@ test('domande sul calendario: risposta immediata, senza Claude', async () => {
   const a = new Airbnb([{ numero: 1, nome: 'Trastevere', ical: 'x' }], async () => ICAL)
   const oggi = '2026-10-08'
   const sett = await rispostaCalendario('Chi arriva questa settimana?', a, oggi)
-  assert.match(sett ?? '', /In questo momento a Trastevere c'è un ospite, che parte venerdì 9 ottobre/)
+  assert.doesNotMatch(sett ?? '', /In questo momento|Occupazione/, 'solo quello che è chiesto')
+  assert.match((await rispostaCalendario("c'è un ospite adesso?", a, oggi)) ?? '', /In questo momento a Trastevere c'è un ospite, che parte venerdì 9 ottobre/)
+  assert.equal(await rispostaCalendario('quando arriva la prossima prenotazione?', a, oggi), 'La prossima prenotazione a Trastevere arriva lunedì 12 ottobre, per 3 notti.')
+  assert.equal(await rispostaCalendario('quanti ospiti ci sono nella prossima prenotazione?', a, oggi), null, 'il numero di ospiti è nelle email: Claude')
   assert.match(sett ?? '', /Arriva un ospite nei prossimi 7 giorni: lunedì 12 ottobre per 3 notti/)
   assert.match((await rispostaCalendario('quanto sono occupato a novembre?', a, oggi)) ?? '', /A novembre non arriva nessuno.*Occupazione 0 per cento/s)
   assert.match((await rispostaCalendario('chi parte domani', a, oggi)) ?? '', /Partenze domani: venerdì 9 ottobre/)

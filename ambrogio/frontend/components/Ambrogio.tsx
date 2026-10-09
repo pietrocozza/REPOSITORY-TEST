@@ -43,6 +43,9 @@ import {
   dopoParolaAttivazione,
   togliNome,
   eStop,
+  fineFrase,
+  unisciPezzi,
+  PAUSA_FINE_FRASE_MS,
   estraiFrasi,
   senzaSuoni,
   suona,
@@ -703,8 +706,8 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       if (conSuono) suonoAttivazione()
       const turnoInizio = turno.current
       const eseguiComando = (frase: string) => {
-        // se ripete «(Uè) Ambrogio» all'inizio, lo si toglie
-        const comando = togliNome(frase)
+        // se ripete «(Uè) Ambrogio» all'inizio, lo si toglie; «… passo» alla fine pure
+        const comando = togliNome(fineFrase(frase).testo)
         if (!comando || eStop(comando)) interrompiRef.current()
         else inviaRef.current(comando)
       }
@@ -744,28 +747,56 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
 
       // riconoscimento del browser: se l'ascolto continuo era acceso, si aspetta che si chiuda del tutto
       // (Edge non ne accetta due insieme e il secondo fallirebbe in silenzio)
+      // ascolto continuo: i pezzi di frase si mettono insieme e si invia solo dopo una pausa
+      // di 2,5 secondi (si può pensare alla parola dopo) oppure subito con «… passo»
       let sentito = false
       let annullato = false
+      const pezzi: string[] = []
+      let attesaFine: ReturnType<typeof setTimeout> | undefined
+      let fermaRiconoscimento = () => {}
       fermaAscolto.current = () => {
         annullato = true
+        clearTimeout(attesaFine)
+        fermaRiconoscimento()
+      }
+      const invia = () => {
+        clearTimeout(attesaFine)
+        const frase = unisciPezzi(pezzi)
+        if (sentito || annullato || !frase) return
+        sentito = true
+        setParziale('')
+        fermaRiconoscimento()
+        fermaComando()
+        eseguiComando(frase)
+      }
+      const rimanda = () => {
+        clearTimeout(attesaFine)
+        if (pezzi.length) attesaFine = setTimeout(invia, PAUSA_FINE_FRASE_MS)
       }
       setTimeout(
         () => {
           if (annullato) return
-          fermaAscolto.current = ascolta(false, {
-            onParziale: setParziale,
+          fermaRiconoscimento = ascolta(true, {
+            onParziale: (p) => {
+              if (sentito) return
+              setParziale(unisciPezzi([...pezzi, p]))
+              if (p) clearTimeout(attesaFine)
+              else rimanda()
+            },
             onFrase: (frase) => {
-              if (!frase) return
-              sentito = true
-              setParziale('')
-              fermaComando()
-              eseguiComando(frase)
+              if (!frase || sentito) return
+              pezzi.push(frase)
+              setParziale(unisciPezzi(pezzi))
+              if (fineFrase(frase).chiusa) invia()
+              else rimanda()
             },
             onErrore: (codice) => {
               if (codice === 'no-speech') mostraErrore('Non ho sentito niente. Parla subito dopo il suono, vicino al microfono.')
               else if (codice !== 'aborted') erroreMicrofono(codice)
             },
             onFine: () => {
+              // il browser ha chiuso l'ascolto: quello che c'è si invia
+              if (!sentito && !annullato && pezzi.length) invia()
               setParziale('')
               if (!sentito && statoRef.current === 'ascolto') setStato('pronto')
               fermaAscolto.current = () => {}
@@ -802,16 +833,50 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       }
       sveglio = false
     }
+    // dopo «Uè Ambrogio, …» i pezzi di frase si raccolgono e si invia dopo 2,5 secondi di pausa
+    // (o subito con «… passo»): così una pausa per pensare non tronca la richiesta
+    let raccolta: string[] | null = null
+    let attesaFine: ReturnType<typeof setTimeout> | undefined
+    const inviaRaccolta = () => {
+      clearTimeout(attesaFine)
+      if (!raccolta) return
+      const comando = fineFrase(unisciPezzi(raccolta)).testo
+      raccolta = null
+      sveglio = false
+      setParziale('')
+      if (comando) inviaRef.current(comando)
+      else torna()
+    }
+    const rimanda = () => {
+      clearTimeout(attesaFine)
+      attesaFine = setTimeout(inviaRaccolta, PAUSA_FINE_FRASE_MS)
+    }
     fermaSentinella.current = ascolta(true, {
       onParziale: (p) => {
+        if (raccolta) {
+          setParziale(unisciPezzi([...raccolta, p]))
+          if (p) clearTimeout(attesaFine)
+          else rimanda()
+          return
+        }
         if (dopoParolaAttivazione(p) === null || sentitoDaSe()) return
         if (!sveglio) svegliati()
         setParziale(p)
       },
       onFrase: (frase) => {
+        if (raccolta) {
+          if (frase) raccolta.push(frase)
+          setParziale(unisciPezzi(raccolta))
+          return fineFrase(frase).chiusa ? inviaRaccolta() : rimanda()
+        }
         const comando = dopoParolaAttivazione(frase)
         if (comando === null || sentitoDaSe()) return torna()
         if (!sveglio) svegliati()
+        if (comando && !eStop(comando)) {
+          raccolta = [comando]
+          setParziale(comando)
+          return fineFrase(comando).chiusa ? inviaRaccolta() : rimanda()
+        }
         sveglio = false
         setParziale('')
         if (!comando) {
@@ -829,10 +894,10 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
             },
           })
         }
-        else if (eStop(comando)) {
+        else {
           interrompiRef.current()
           suonoAttivazione(true)
-        } else inviaRef.current(comando)
+        }
       },
       onErrore: (codice) => {
         // silenzio: normale. Problemi di rete: la sentinella riprova da sola, ma lo dice una volta
@@ -844,6 +909,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       },
       onFine: () => {
         fermaSentinella.current = null
+        inviaRaccolta()
         torna()
         if (!attivazioneRef.current || comandoInCorso.current) return
         // il browser chiude l'ascolto dopo un po': riparte subito; se si chiude di continuo, aspetta di più
@@ -938,10 +1004,16 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       // una barra in percentuale e ogni 10 secondi un aggiornamento brevissimo
       let ultimoAvviso = 0
       const detti = new Set<string>()
+      // «lavorando» resta vero finché la risposta non è completa: Claude spesso scrive una frase
+      // («Controllo il calendario.») e poi continua a lavorare anche per minuti
+      let lavorando = true
+      let ultimoTesto = 0
       const avvisa = (frase: string, forza = false, detta = frase) => {
-        if (t !== turno.current || !primo || detti.has(frase)) return
+        if (t !== turno.current || !lavorando || detti.has(frase)) return
         // non uno sopra l'altro: almeno 4 secondi tra un avviso e il successivo (gli aggiornamenti passano comunque)
         if (!forza && Date.now() - ultimoAvviso < 4000) return
+        // se ha già cominciato a rispondere: niente avvisi sopra le sue parole
+        if (!primo && (frasiInCoda.current > 0 || Date.now() - ultimoTesto < 8000)) return
         detti.add(frase)
         ultimoAvviso = Date.now()
         setFraseAttesa(frase)
@@ -964,11 +1036,11 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       let quasi = 0
       const percentuale = () => Math.max(ultimaPercentuale, stimaAvanzamento((Date.now() - adesso) / 1000 + bonus, tipica))
       const barra = setInterval(() => {
-        if (t !== turno.current || !primo) return clearInterval(barra)
+        if (t !== turno.current || !lavorando) return clearInterval(barra)
         if (Date.now() - adesso > 1200) setAvanzamento(percentuale())
       }, 250)
       const aggiornamenti = setInterval(() => {
-        if (t !== turno.current || !primo) return clearInterval(aggiornamenti)
+        if (t !== turno.current || !lavorando) return clearInterval(aggiornamenti)
         const p = PERCENTUALI_DETTE.filter((x) => x <= percentuale()).pop() ?? 10
         const frase = p > ultimaPercentuale ? aggiornamentoBreve(p) : QUASI_FATTO[quasi++ % QUASI_FATTO.length]
         ultimaPercentuale = Math.max(ultimaPercentuale, p)
@@ -985,6 +1057,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       const completa = () => {
         if (completata) return
         completata = true
+        lavorando = false
         fermaAvvisi()
         if (t !== turno.current) return
         const durata = (Date.now() - adesso) / 1000
@@ -1019,8 +1092,9 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
           },
           onTesto: (pezzo) => {
             if (t !== turno.current) return
+            ultimoTesto = Date.now()
             if (primo) {
-              completa()
+              clearTimeout(presa)
               primo = false
               if (!vocaleRef.current) setStato('risposta')
             }
@@ -1251,7 +1325,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   else if (conferme.length) parlato = `Mi serve il tuo permesso: ${conferme[0].descrizione}.`
   else if (stato === 'lavoro') parlato = fraseAttesa ?? `${strumento ?? 'Uso uno strumento'}…`
   else if (stato === 'elaborazione' && !ultima?.testo && fraseAttesa) parlato = fraseAttesa
-  else if (stato === 'elaborazione') parlato = ultimaDomanda ? `«${ultimaDomanda.testo}»` : 'Sto collegando le informazioni.'
+  else if (stato === 'elaborazione' && !ultima?.testo) parlato = ultimaDomanda ? `«${ultimaDomanda.testo}»` : 'Sto collegando le informazioni.'
   else if (stato === 'pronto' && parolaAttivazione && !ultima) parlato = 'Quando ti serve, chiamami: «Uè Ambrogio…»'
 
   const [titoloEvento] = errore ? ['Attenzione'] : stato === 'lavoro' && strumento ? [strumento] : EVENTI[stato]

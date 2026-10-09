@@ -62,6 +62,16 @@ function rispondi(messaggio) {
   if (scenario === 'apikey') return
   if (scenario === 'login') return scrivi({ type: 'result', subtype: 'success', is_error: true, result: 'Not logged in · Please run /login' })
   if (scenario === 'lento') return setTimeout(() => {}, 30000)
+  if (scenario === 'scrive-e-lavora') {
+    // una frase subito, poi lavora a lungo prima della risposta vera
+    const d = (text) => scrivi({ type: 'stream_event', event: { type: 'content_block_delta', delta: { type: 'text_delta', text } } })
+    scrivi({ type: 'stream_event', event: { type: 'message_start' } })
+    d('Controllo il calendario.')
+    return setTimeout(() => {
+      d(' Arrivano in tre.')
+      scrivi({ type: 'result', subtype: 'success', is_error: false, result: 'fine', session_id: sessione })
+    }, 25000)
+  }
   const delta = (text) => scrivi({ type: 'stream_event', event: { type: 'content_block_delta', delta: { type: 'text_delta', text } } })
   scrivi({ type: 'stream_event', event: { type: 'message_start' } })
   delta('Cerco ')

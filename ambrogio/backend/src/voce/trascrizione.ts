@@ -71,7 +71,7 @@ export class Trascrizione {
       fetch(`${base}/v1beta/models/${modello}:generateContent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': this.opz.chiave },
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(60_000),
         body: JSON.stringify({
           contents: [{ parts: [{ text: istruzioni }, { inlineData: { mimeType: mime, data: audio.toString('base64') } }] }],
           // niente "ragionamento": deve essere rapido (non tutti i modelli lo accettano)
