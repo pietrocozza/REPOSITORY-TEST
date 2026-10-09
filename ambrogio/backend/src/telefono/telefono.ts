@@ -215,6 +215,23 @@ export class Telefonata {
     if (e.evento === 'parlato' && e.errore) this.d.annota?.(`Telefono: non riesco a far sentire la voce (${String(e.errore)})`)
   }
 
+  /** mentre Claude lavora a lungo, al telefono ogni tanto un aggiornamento (mai minuti di silenzio) */
+  private async conAggiornamenti<T>(lavoro: Promise<T>): Promise<T> {
+    const frasi = ['Sto ancora controllando, un attimo.', 'Ci sono quasi, resti in linea.', 'Ancora un momento, sto finendo.']
+    let i = 0
+    let parlando: Promise<void> = Promise.resolve()
+    const t = setInterval(() => {
+      if (this.finita) return
+      parlando = parlando.then(() => this.parla(frasi[Math.min(i++, frasi.length - 1)], false))
+    }, 12_000)
+    try {
+      return await lavoro
+    } finally {
+      clearInterval(t)
+      await parlando
+    }
+  }
+
   /** la richiesta per Claude: chi è al telefono, perché, e cosa si sono detti finora */
   private richiestaClaude(motivo: string, apertura: string, nome: string, detto: string, primo: boolean) {
     const storia = this.conversazione
@@ -326,7 +343,7 @@ Data e ora: ${ora}.`
             await this.parla(veloce.risposta || 'Un attimo che controllo.')
             this.inizioTurno = Date.now()
             this.strada = 'con Claude'
-            testo = await this.d.rispondi(this.richiestaClaude(motivo, apertura, nome, detto, primo))
+            testo = await this.conAggiornamenti(this.d.rispondi(this.richiestaClaude(motivo, apertura, nome, detto, primo)))
           } else {
             testo = veloce.risposta
             chiudi = veloce.azione === 'riattacca'

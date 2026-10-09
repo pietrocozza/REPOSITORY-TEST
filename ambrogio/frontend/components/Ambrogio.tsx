@@ -179,6 +179,31 @@ const FRASI_RICERCA = [
   'Lo verifico subito, signore.',
   'Ci penso io, signore. Un attimo che controllo.',
 ]
+// Detta appena Ambrogio prende in carico una richiesta che richiede qualche secondo (così si sa che ha capito)
+const FRASI_PRESA = ['Ricevuto, ci penso io.', 'Subito.', 'Me ne occupo io.', 'Ghe pensi mi.', 'Certo, un momento.']
+// Mentre lavora: cosa sta facendo, strumento per strumento
+const FRASI_STRUMENTO: [RegExp, string][] = [
+  [/WebSearch/, 'Cerco su internet.'],
+  [/WebFetch/, 'Leggo una pagina web.'],
+  [/leggi_email|apri_email/, 'Guardo le email.'],
+  [/bozza_email/, 'Preparo la bozza.'],
+  [/invia_email/, 'Preparo l’invio.'],
+  [/prenotazioni/, 'Controllo il calendario di Airbnb.'],
+  [/info_casa/, 'Guardo la scheda della casa.'],
+  [/agenda/, 'Guardo la tua agenda.'],
+  [/aggiungi_impegno/, 'Preparo l’impegno.'],
+  [/ricorda|cerca_memoria|dimentica/, 'Controllo la memoria.'],
+  [/pratic/, 'Aggiorno le pratiche.'],
+]
+// Se ci mette tanto: un aggiornamento ogni tanto, mai un silenzio lungo
+const FRASI_AGGIORNAMENTO: [number, string][] = [
+  [15, 'Ci sto ancora lavorando.'],
+  [35, 'Sto mettendo insieme le informazioni, un attimo di pazienza.'],
+  [65, 'Ci vuole ancora un po’, ma ci sono.'],
+  [100, 'Quasi fatto, grazie della pazienza.'],
+  [150, 'Sto ancora lavorando: è una richiesta lunga.'],
+]
+
 // Domande che quasi certamente richiedono una ricerca: la frase parte prima ancora che Claude risponda
 const SERVE_RICERCA =
   /\b(meteo|che tempo fa|pioverà|piove|notizi|news|prezz|quanto costa|risultat|partit|classifica|borsa|cambio|orari|apert[oa]|chiuso|cerca|cercami|trova|trovami|ultim[ei] |oggi in tv|chi ha vinto)/i
@@ -383,6 +408,9 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
     if (!voceAmbrogio || motoreVoce !== 'gemini' || statoVoce?.fornitore !== 'gemini' || !statoVoce.pagamento) return
     const frasiInterfaccia = [
       ...FRASI_RICERCA,
+      ...FRASI_PRESA,
+      ...FRASI_STRUMENTO.map(([, f]) => f),
+      ...FRASI_AGGIORNAMENTO.map(([, f]) => f),
       ...DOMANDE_ATTIVAZIONE,
       FRASI_ASCOLTO.attivo,
       FRASI_ASCOLTO.spento,
@@ -890,13 +918,44 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
       }
       if (SERVE_RICERCA.test(pulita)) setTimeout(() => t === turno.current && primo && cortesia(), 350)
 
+      // Tenere informato Pietro mentre lavora: presa in carico, cosa sta facendo, aggiornamenti se ci mette tanto
+      let ultimoAvviso = 0
+      const detti = new Set<string>()
+      const avvisa = (frase: string, forza = false) => {
+        if (t !== turno.current || !primo || detti.has(frase)) return
+        // non uno sopra l'altro: almeno 4 secondi tra un avviso e il successivo (gli aggiornamenti passano comunque)
+        if (!forza && Date.now() - ultimoAvviso < 4000) return
+        detti.add(frase)
+        ultimoAvviso = Date.now()
+        setFraseAttesa(frase)
+        if (vocaleRef.current) parla(frase, t)
+      }
+      // le risposte pronte arrivano in un attimo: la presa in carico serve solo se dopo quasi un secondo non c'è ancora niente
+      const presa = setTimeout(() => {
+        if (!cortesiaDetta) avvisa(FRASI_PRESA[Math.floor(Math.random() * FRASI_PRESA.length)])
+      }, 900)
+      const aggiornamenti = setInterval(() => {
+        if (t !== turno.current || !primo) return clearInterval(aggiornamenti)
+        const trascorsi = (Date.now() - adesso) / 1000
+        const prossimo = FRASI_AGGIORNAMENTO.find(([s, f]) => trascorsi >= s && !detti.has(f))
+        if (prossimo) avvisa(prossimo[1], true)
+      }, 1000)
+      const fermaAvvisi = () => {
+        clearTimeout(presa)
+        clearInterval(aggiornamenti)
+      }
+
       try {
         await chiedi(pulita, {
           signal: controller.signal,
           onStato: (e) => {
             if (t !== turno.current) return
             if (e.stato === 'WORKING') {
-              if (e.strumento === 'WebSearch' || e.strumento === 'WebFetch') cortesia()
+              if ((e.strumento === 'WebSearch' || e.strumento === 'WebFetch') && !cortesiaDetta && !detti.size) cortesia()
+              else {
+                const frase = FRASI_STRUMENTO.find(([r]) => r.test(e.strumento ?? ''))?.[1]
+                if (frase) avvisa(frase)
+              }
               strumentiUsati.current = true
               setNStrumenti((n) => n + 1)
               setStrumento(e.descrizione ?? e.strumento ?? null)
@@ -916,6 +975,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
             if (t !== turno.current) return
             if (primo) {
               primo = false
+              fermaAvvisi()
               if (!vocaleRef.current) setStato('risposta')
             }
             setStato((s) => (s === 'lavoro' ? 'elaborazione' : s))
@@ -929,6 +989,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
             }
           },
         })
+        fermaAvvisi()
         if (t !== turno.current) return
         if (vocaleRef.current && buffer.trim()) parla(buffer, t)
         // risposte non lette ad alta voce: la musica richiesta si fa sentire lo stesso
@@ -939,6 +1000,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
         flussoFinito.current = true
         if (frasiInCoda.current === 0) concludi(t)
       } catch (err) {
+        fermaAvvisi()
         if (controller.signal.aborted || t !== turno.current) return
         const msg = err instanceof Error ? err.message : 'Errore imprevisto.'
         zittisci()
@@ -1140,7 +1202,7 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
   let parlato = annuncio || (ultima?.testo ? senzaSuoni(ultima.testo) : '') || fraseAttesa || SALUTO
   if (stato === 'ascolto') parlato = parziale ? `«${parziale}»` : 'Ti ascolto.'
   else if (conferme.length) parlato = `Mi serve il tuo permesso: ${conferme[0].descrizione}.`
-  else if (stato === 'lavoro') parlato = `${strumento ?? 'Uso uno strumento'}…`
+  else if (stato === 'lavoro') parlato = fraseAttesa ?? `${strumento ?? 'Uso uno strumento'}…`
   else if (stato === 'elaborazione' && !ultima?.testo && fraseAttesa) parlato = fraseAttesa
   else if (stato === 'elaborazione') parlato = ultimaDomanda ? `«${ultimaDomanda.testo}»` : 'Sto collegando le informazioni.'
   else if (stato === 'pronto' && parolaAttivazione && !ultima) parlato = 'Quando ti serve, chiamami: «Uè Ambrogio…»'
@@ -1179,7 +1241,12 @@ export default function Ambrogio({ chiedi = chiediAlServer }: { chiedi?: Chiedi 
             <span className="j-reticle">+</span>
           </div>
           <section className="j-dialogue" aria-live="polite">
-            <span className="j-overline">AMBROGIO / {inAttesa && !errore ? 'STANDBY' : ETICHETTE[modo]}</span>
+            <span className="j-overline">
+              AMBROGIO / {inAttesa && !errore ? 'STANDBY' : ETICHETTE[modo]}
+              {(stato === 'elaborazione' || stato === 'lavoro') && inizioTurno !== null && ora - inizioTurno > 2000
+                ? ` · ${Math.round((ora - inizioTurno) / 1000)} s`
+                : ''}
+            </span>
             <p ref={trascrizione} className={ultima?.errore && stato === 'pronto' ? 'j-errore' : undefined}>
               {parlato.replace(/\s*\n+\s*/g, ' ')}
             </p>
