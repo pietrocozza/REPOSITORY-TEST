@@ -9,6 +9,10 @@ import { quantiOspiti } from './archivio-airbnb.ts'
 //  - la SCHEDA DELLA CASA (data/case/casa-1.txt): le informazioni con cui Ambrogio risponde agli ospiti.
 // I prezzi non si toccano mai: Ambrogio può solo suggerirli.
 
+/** l'annuncio è tra quelli da non considerare mai? (confronto senza maiuscole, anche su una parte del nome) */
+export const annuncioEscluso = (nome: string | null | undefined, escludi: string[]) =>
+  Boolean(nome) && escludi.some((x) => nome!.toLowerCase().includes(x.toLowerCase()))
+
 export type Casa = { numero: number; nome: string; ical: string }
 export type Periodo = {
   inizio: string // AAAA-MM-GG (check-in)

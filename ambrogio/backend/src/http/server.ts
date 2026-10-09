@@ -11,6 +11,7 @@ import { VoceElevenLabs } from '../voce/elevenlabs.ts'
 import type { ArchivioAirbnb } from '../integrazioni/archivio-airbnb.ts'
 import { eCsvSpese, eReportMensile, ISTRUZIONI_REPORT_PDF, leggiCsv, leggiGuadagni, leggiReportMensile, pulisciReportPdf } from '../integrazioni/guadagni-airbnb.ts'
 import { leggiRigheSpese } from '../integrazioni/spese.ts'
+import { annuncioEscluso } from '../integrazioni/airbnb.ts'
 import { Trascrizione } from '../voce/trascrizione.ts'
 import { sintetizzaWindows } from '../voce/windows.ts'
 import { elencoSuoni, suono } from '../voce/suoni.ts'
@@ -404,6 +405,12 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
           if (tipoCorpo.startsWith('application/pdf')) {
             if (!orecchie.disponibile) return inviaJson(res, 409, { errore: 'Per leggere i PDF serve la chiave di Gemini nel file .env.' })
             const r = pulisciReportPdf(await orecchie.estraiDaFile(ISTRUZIONI_REPORT_PDF, corpo, 'application/pdf'))
+            // i mesi del PDF sommano tutti gli annunci: se dentro ci sono guadagni di un annuncio escluso, non si salva
+            const esclusi = r.alloggi.filter((a) => annuncioEscluso(a.nome, config.airbnb.escludi) && Math.abs(a.netto) > 0)
+            if (esclusi.length)
+              return inviaJson(res, 400, {
+                errore: `Questo report comprende anche ${esclusi.map((a) => `${a.nome} (${Math.round(a.netto)} €)`).join(', ')}, che non vuoi nei conti: scaricalo di nuovo da Airbnb scegliendo solo l'annuncio giusto (filtro «Annunci»).`,
+              })
             for (const m of r.mesi) agente.db.salvaGuadagnoMensile(m.mese, m.netto, m.lordo)
             const totale = r.mesi.reduce((a, m) => a + m.netto, 0)
             const descrizione = `Report dei guadagni ${r.periodo}: ${r.mesi.length} mesi (${r.mesi[0].mese} → ${r.mesi.at(-1)!.mese}), ${Math.round(totale).toLocaleString('it-IT')} € netti`
@@ -424,6 +431,7 @@ export function creaServer(config: Config, agente: Agente, opzioni: OpzioniServe
           }
           if (eReportMensile(testo)) {
             const r = leggiReportMensile(testo)
+            r.righe = r.righe.filter((x) => !annuncioEscluso(x.annuncio, config.airbnb.escludi))
             for (const riga of r.righe) agente.db.salvaReportAnnuncio({ periodo: r.periodo, ...riga })
             const descrizione = `Report delle prestazioni ${r.periodo.replace('/', ' → ')}: ${r.righe.map((x) => `${x.annuncio} ${x.prenotazioni ?? 0} prenotazioni, ${Math.round(x.valore ?? 0)} €`).join('; ')}`
             agente.db.registra('airbnb', descrizione)

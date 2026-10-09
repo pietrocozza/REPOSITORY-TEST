@@ -118,3 +118,14 @@ test('promemoria: la mattina chi arriva oggi, la sera chi arriva domani (una vol
   await presto.controlla()
   assert.equal(db.avvisi().at(-1)?.testo, 'Oggi arriva Mario, 2 ospiti a Leonina per 3 notti.')
 })
+
+test('annunci esclusi: mai nell’archivio né negli avvisi', async () => {
+  const db = new Database(':memory:')
+  const gmail = gmailFinto([{ id: 'bbbbbb1', oggetto: 'Prenotazione confermata - Luca arriva il 12 ott', data: recente, testo: 'HMGIU12345' }])
+  const leggi = async () => ({ codice: 'HMGIU12345', annuncio: 'Suite Don Bosco [METRO Giulio Agricola]', ospite: 'Luca', adulti: 2, guadagno: 300 })
+  const archivio = new ArchivioAirbnb({ db, gmail, leggi, oggi: () => '2026-10-09', ora: () => 7, escludi: ['GIULIO AGRICOLA', 'Don Bosco'] })
+  await archivio.controlla()
+  assert.equal(db.prenotazione('HMGIU12345'), undefined)
+  assert.equal(db.avvisi().length, 0)
+  assert.equal(db.emailLetta('bbbbbb1'), true, 'non si rilegge')
+})

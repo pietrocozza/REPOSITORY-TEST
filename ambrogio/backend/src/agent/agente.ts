@@ -76,7 +76,7 @@ export class Agente {
       sessione: { ...this.sessioni.attuale },
       eseguibile: this.eseguibile,
       cartellaLavoro: this.config.cartellaLavoro,
-      istruzioni: istruzioni(this.config.appellativo, this.impostazioni.attuali.personalita, this.sintesiMemoria(), new Date(), elencoSuoni(this.config.cartellaDati)),
+      istruzioni: istruzioni(this.config.appellativo, this.impostazioni.attuali.personalita, this.sintesiMemoria(), new Date(), elencoSuoni(this.config.cartellaDati), this.config.airbnb.escludi),
       strumenti: STRUMENTI_INTEGRATI,
       // il modello scritto nel file .env vince; altrimenti decide l'impostazione «cervello»
       modello: this.config.claude.modello || MODELLI_CERVELLO[this.impostazioni.attuali.cervello],

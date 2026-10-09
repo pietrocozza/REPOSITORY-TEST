@@ -1,12 +1,12 @@
 import { TIPI_MEMORIA, type Database, type Livello, type StatoPratica, type TipoMemoria } from '../database/db.ts'
 import type { Gmail } from '../integrazioni/gmail.ts'
-import { riassumiCalendario, schedaCasa, type Airbnb } from '../integrazioni/airbnb.ts'
+import { annuncioEscluso, riassumiCalendario, schedaCasa, type Airbnb } from '../integrazioni/airbnb.ts'
 import { incassiPerMese, quantiOspiti, type ArchivioAirbnb } from '../integrazioni/archivio-airbnb.ts'
 import { rendimentoPerMese, type FoglioSpese, type Spesa, type SpesaFissa } from '../integrazioni/spese.ts'
 import { dettoQuando, type CalendarioGoogle } from '../integrazioni/calendario.ts'
 
 /** I servizi esterni collegati (impostati all'avvio): gli strumenti li usano se ci sono */
-export const servizi: { gmail?: Gmail; airbnb?: Airbnb; calendario?: CalendarioGoogle; cartellaDati?: string; archivio?: ArchivioAirbnb; spese?: FoglioSpese } = {}
+export const servizi: { gmail?: Gmail; airbnb?: Airbnb; calendario?: CalendarioGoogle; cartellaDati?: string; archivio?: ArchivioAirbnb; spese?: FoglioSpese; escludi?: string[] } = {}
 
 /** quello che si sa dalle email di Airbnb su una prenotazione (ospite, quanti, guadagno) */
 export function dettagliDalleEmail(db: Database, codice: string) {
@@ -271,7 +271,9 @@ export const STRUMENTI: Strumento[] = [
       }
       const da = testo(a, 'da')
       const fino = testo(a, 'a')
-      const mesi = rendimentoPerMese(incassiPerMese(db.prenotazioniArchiviate()), spese, fisse, servizi.airbnb?.case.length || 1, db.guadagniMensili()).filter(
+      const escludi = servizi.escludi ?? []
+      const prenotazioni = db.prenotazioniArchiviate().filter((p) => !annuncioEscluso(p.annuncio, escludi))
+      const mesi = rendimentoPerMese(incassiPerMese(prenotazioni), spese, fisse, servizi.airbnb?.case.length || 1, db.guadagniMensili()).filter(
         (m) => (!da || m.mese >= da) && (!fino || m.mese <= fino),
       )
       if (!mesi.length)
@@ -293,6 +295,7 @@ export const STRUMENTI: Strumento[] = [
       const perAnno = [...anni.entries()].map(([a, t]) => `${a} (${t.mesi} mesi): incassi ${t.incassi} €, spese ${t.spese} €, utile ${t.utile} €`)
       const prestazioni = db
         .reportAnnunci()
+        .filter((r) => !annuncioEscluso(r.annuncio, escludi))
         .map(
           (r) =>
             `${r.periodo} ${r.annuncio}: ${r.prenotazioni ?? 0} prenotazioni, valore ${r.valore ?? 0} €, ${r.notti ?? 0} notti, prezzo medio ${r.prezzo_medio ?? '—'} €, soggiorno medio ${r.durata_media ?? '—'} notti, prenotano con ${r.anticipo_medio ?? '—'} giorni di anticipo, contatti/visualizzazioni ${r.tasso_contatto ?? '—'}%, prenotazioni/contatti ${r.tasso_prenotazione ?? '—'}%`,

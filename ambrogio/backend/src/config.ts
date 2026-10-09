@@ -106,6 +106,11 @@ export const config = {
     case: [1, 2]
       .map((n) => ({ numero: n, nome: env(`AMBROGIO_AIRBNB_CASA_${n}_NOME`, `Casa ${n}`), ical: env(`AMBROGIO_AIRBNB_CASA_${n}_ICAL`) }))
       .filter((c) => c.ical),
+    /** annunci che Pietro non vuole MAI nei conti, nei report e negli avvisi (separati da virgola) */
+    escludi: env('AMBROGIO_AIRBNB_ESCLUDI', 'GIULIO AGRICOLA,Don Bosco')
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean),
   },
 
   /** come Ambrogio ti chiama */

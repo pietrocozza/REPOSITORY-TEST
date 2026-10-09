@@ -63,7 +63,9 @@ const archivio = new ArchivioAirbnb({
   leggi: gemini.disponibile ? (istruzioni, testo) => gemini.estrai(istruzioni, testo) : undefined,
   oggi: () => fusoRoma({}).format(new Date()),
   ora: () => Number(fusoRoma({ hour: '2-digit', hourCycle: 'h23' }).format(new Date())),
+  escludi: config.airbnb.escludi,
 })
+servizi.escludi = config.airbnb.escludi
 servizi.archivio = archivio
 archivio.avvia()
 const server = creaServer(config, agente, { mcp: creaServerMcp(gestore, chiaveMcp), google, gmail: servizi.gmail, archivio })

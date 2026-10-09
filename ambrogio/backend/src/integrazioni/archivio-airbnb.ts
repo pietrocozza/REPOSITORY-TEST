@@ -1,6 +1,6 @@
 import type { Database, PrenotazioneArchiviata } from '../database/db.ts'
 import type { Gmail } from './gmail.ts'
-import type { Airbnb, Periodo } from './airbnb.ts'
+import { annuncioEscluso, type Airbnb, type Periodo } from './airbnb.ts'
 
 // Ambrogio si tiene aggiornato DA SOLO sulle case Airbnb, senza che Pietro debba fare niente:
 //  - ogni minuto guarda se in Gmail sono arrivate email nuove di Airbnb (prenotazioni, modifiche,
@@ -138,13 +138,15 @@ export class ArchivioAirbnb {
   private leggi?: Leggi
   private oggi: () => string
   private ora: () => number
+  private escludi: string[]
   private timer?: ReturnType<typeof setInterval>
   private inCorso = false
   // il recupero dell'ultimo anno dura qualche giro (30 email per volta): finché non è finito si continua
   private recupero: boolean | null = null
   stato: StatoArchivio = { attivo: false, ultimoControllo: null, prenotazioni: 0, email: 0, errore: null }
 
-  constructor(o: { db: Database; gmail: Gmail; airbnb?: Airbnb; leggi?: Leggi; oggi: () => string; ora?: () => number }) {
+  constructor(o: { db: Database; gmail: Gmail; airbnb?: Airbnb; leggi?: Leggi; oggi: () => string; ora?: () => number; escludi?: string[] }) {
+    this.escludi = o.escludi ?? []
     this.db = o.db
     this.gmail = o.gmail
     this.airbnb = o.airbnb
@@ -221,6 +223,11 @@ export class ArchivioAirbnb {
           }
           throw err
         }
+      }
+      // gli annunci esclusi da Pietro non entrano né nell'archivio né negli avvisi
+      if (annuncioEscluso(dati.annuncio, this.escludi) || annuncioEscluso(completa.oggetto, this.escludi)) {
+        this.db.segnaEmail(e.id, `${tipo} (annuncio escluso)`)
+        continue
       }
       if (dati.codice && ['conferma', 'modifica', 'cancellazione', 'richiesta'].includes(tipo)) {
         const vecchia = this.db.prenotazione(dati.codice)
