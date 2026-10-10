@@ -241,3 +241,50 @@ export const CANTIERI = [
     stato: 'In ristrutturazione',
   },
 ] as const
+
+// ───────── Versioni brevi per elenchi grafici (riassunti dei testi sopra, nessuna aggiunta) ─────────
+
+export const VANTAGGI_BREVI = [
+  { icona: 'grafico', titolo: 'Guadagni maggiori', testo: 'Lo stesso appartamento può rendere fino al 300% in più.', dato: '+300%', foto: '/img/case/terrazza.jpg' },
+  { icona: 'scudo', titolo: 'Protezione OTA', testo: 'Coperto da qualunque danno fino a 3 milioni di euro.', dato: '3 mln €', foto: '/img/case/living.jpg' },
+  { icona: 'carta', titolo: 'Pagamenti anticipati', testo: 'Gli ospiti pagano sempre prima, tramite Booking e Airbnb.', dato: 'Prima', foto: '/img/case/brera-terrace.jpg' },
+  { icona: 'chiave', titolo: 'Flessibilità', testo: 'La casa è tua quando ti serve. Niente 3+2 o 4+4.', dato: 'Sempre tua', foto: '/img/case/soggiorno.jpg' },
+  { icona: 'valigia', titolo: 'Gestione semplificata', testo: 'Niente inquilini problematici: ospiti turisti che arrivano e ripartono.', dato: 'Zero pensieri', foto: '/img/case/leonina-2.jpg' },
+] as const
+
+export const SERVIZI_BREVI = [
+  { icona: 'Valorizzazione', titolo: 'Valorizzazione', testo: 'Foto professionali, home staging e restyling.' },
+  { icona: 'Gestione annuncio', titolo: 'Annuncio', testo: 'Su tutti i portali, con foto e descrizione.' },
+  { icona: 'Selezione', titolo: 'Selezione ospiti', testo: 'Scegliamo noi gli ospiti e parliamo noi con loro.' },
+  { icona: 'Accoglienza', titolo: 'Accoglienza', testo: 'Check-in con personale multilingue.' },
+  { icona: 'Manutenzione', titolo: 'Manutenzione', testo: 'Un team dedicato alla tua casa.' },
+  { icona: 'Pulizia', titolo: 'Pulizia', testo: 'Casa pulita, biancheria fresca e profumata.' },
+  { icona: 'Burocrazia', titolo: 'Burocrazia', testo: 'Pratiche, CIN e keybox: tutto in regola.' },
+  { icona: 'Monitoraggio', titolo: 'Monitoraggio', testo: 'Ospiti, canali e prezzi in tempo reale sul telefono.' },
+] as const
+
+export const VANTAGGI_LOCAZIONE_BREVI = [
+  { icona: 'casa', titolo: 'Casa rivalutata', testo: 'La rinnoviamo con un designer, senza spese per te.' },
+  { icona: 'grafico', titolo: 'Canone più alto', testo: 'Valutiamo di aumentarlo rispetto a quello di oggi.' },
+  { icona: 'divano', titolo: 'Arredo incluso', testo: 'A fine locazione il nuovo arredamento resta a te.' },
+  { icona: 'scudo', titolo: 'Zero morosità', testo: 'Contratti strutturati e clausole rescissorie.' },
+  { icona: 'occhio', titolo: 'Ispezioni', testo: 'Puoi vedere la casa 1 o 2 volte al mese.' },
+  { icona: 'chiave-inglese', titolo: 'Manutenzione', testo: 'Ogni piccolo danno riparato subito.' },
+  { icona: 'carta', titolo: 'Affitto in anticipo', testo: 'Flussi di cassa stabili, senza ritardi.' },
+  { icona: 'stretta', titolo: 'Serietà', testo: 'Teniamo alla tua casa quanto te.' },
+] as const
+
+// Come funziona la ristrutturazione gratuita (dalle pagine "Ristruttura gratis" e "FAQ locazione")
+export const PASSI_LOCAZIONE = [
+  { titolo: 'Visita e progetto', testo: 'Visitiamo la casa e ti presentiamo un progetto dettagliato da approvare.' },
+  { titolo: 'Lavori a nostre spese', testo: 'Ristrutturiamo con un designer professionista. Tu non anticipi nulla.' },
+  { titolo: 'Contratto sicuro', testo: 'Locazione a lungo termine con garante e cedolare secca.' },
+  { titolo: 'Affitto in anticipo', testo: 'Ricevi il canone sempre puntuale, in anticipo.' },
+] as const
+
+export const CANTIERI_BREVI: Record<string, string> = {
+  'Rione Monti — Via Leonina': 'Palazzina storica vincolata, a pochi passi dal Colosseo. Ammodernata conservando travi a vista e arcate in pietra.',
+  'Rione Monti — Via del Tempio della Pace': 'Trilocale del XV secolo a pochi metri dal Colosseo e dal Foro. A fine lavori: 2 matrimoniali con bagno en suite, cucina a isola, soggiorno.',
+  'Brera — Via Pietro Maroncelli': 'Cantiere in corso: il video racconta la trasformazione, la seconda parte mostrerà il prima e il dopo.',
+  'San Babila — Corso Monforte': 'Stiamo ristrutturando, prevediamo di pubblicare entro aprile 2025.',
+}

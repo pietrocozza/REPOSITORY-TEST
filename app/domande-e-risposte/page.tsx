@@ -26,7 +26,7 @@ export default function DomandeRisposte() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
       <IntestazionePagina etichetta="Domande e risposte" titolo="Ancora dei *dubbi?*" sottotitolo="Le risposte alle domande che ci fanno più spesso i proprietari." />
-      <section className="bg-avorio">
+      <section className="bg-crema">
         <div className="contenitore grid gap-12 pb-28 lg:grid-cols-[1fr_2.4fr]">
           <aside className="lg:sticky lg:top-28 lg:self-start">
             <p className="text-pietra">Non trovi la risposta che cerchi?</p>

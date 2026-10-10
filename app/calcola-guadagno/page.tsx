@@ -15,7 +15,7 @@ export default function CalcolaGuadagno() {
         titolo="Quanto può *rendere* la tua casa?"
         sottotitolo="Rispondi a poche domande sul tuo appartamento: ti ricontattiamo con la stima del guadagno con gli affitti brevi."
       />
-      <section className="bg-avorio">
+      <section className="bg-crema">
         <div className="contenitore pb-28">
           <div className="mx-auto max-w-5xl">
             <Calcolatore />

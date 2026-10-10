@@ -2,11 +2,9 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import IntestazionePagina from '@/components/sezioni/IntestazionePagina'
 import Recensioni from '@/components/sezioni/Recensioni'
-import Partner from '@/components/sezioni/Partner'
 import InvitoFinale from '@/components/sezioni/InvitoFinale'
-import Etichetta from '@/components/ui/Etichetta'
 import Rivela from '@/components/ui/Rivela'
-import TestoAScorrimento from '@/components/ui/TestoAScorrimento'
+import Icona from '@/components/ui/Icona'
 import { SITO } from '@/lib/site'
 
 export const metadata: Metadata = {
@@ -18,15 +16,23 @@ const TEAM = [
   {
     nome: 'Francesco Ignoti',
     ruolo: 'Responsabile proprietari',
-    testo: 'Gestisce i rapporti con i proprietari e garantisce la massima affidabilità. Si occupa della logistica di pulizie e manutenzione degli immobili.',
+    compiti: ['Rapporti con i proprietari', 'Logistica pulizie', 'Manutenzione'],
     contatto: { label: SITO.telefono.numero, href: SITO.telefono.href },
+    colore: 'bg-cielo',
   },
   {
     nome: 'Pietro Cozza',
     ruolo: 'Amministrazione',
-    testo: 'Coordina i pagamenti puntuali e gli adempimenti normativi giornalieri dell’attività. Si occupa della comunicazione con gli ospiti 24/24.',
+    compiti: ['Pagamenti puntuali', 'Adempimenti normativi', 'Ospiti 24/24'],
     contatto: { label: `WhatsApp ${SITO.whatsapp.numero}`, href: SITO.whatsapp.href },
+    colore: 'bg-pesca',
   },
+]
+
+const VALORI = [
+  { icona: 'casa', testo: 'Esperienza maturata con le nostre strutture' },
+  { icona: 'occhio', testo: 'Sappiamo ascoltare' },
+  { icona: 'stretta', testo: 'Collaborazione su misura' },
 ]
 
 export default function ChiSiamo() {
@@ -35,44 +41,44 @@ export default function ChiSiamo() {
       <IntestazionePagina
         etichetta="Chi siamo"
         titolo="Ogni casa ha la sua *identità.*"
-        sottotitolo="Soluzione Affitto è un’azienda specializzata nella gestione di affitti a breve termine, principalmente nelle città di Roma e Milano."
+        sottotitolo="Gestiamo affitti brevi a Roma e Milano. Ogni proprietario ha esigenze diverse: per questo lavoriamo su misura."
         foto="/img/roma/pantheon.jpg"
         altFoto="Il Pantheon e Piazza della Rotonda a Roma"
       />
 
-      <section className="bg-avorio">
-        <div className="contenitore py-24 md:py-36">
-          <Etichetta numero="01" className="mb-10 text-pietra">La nostra storia</Etichetta>
-          <TestoAScorrimento
-            className="titolo-lg max-w-5xl"
-            testo="La nostra esperienza l’abbiamo maturata sul campo, direttamente con le nostre strutture. Abbiamo perseguito obiettivi ambiziosi, imparato dai nostri errori (perché no?) e compreso l’importanza di saper ascoltare."
-          />
-          <Rivela className="mt-14 ml-auto max-w-xl text-lg leading-relaxed text-pietra">
-            <p>
-              Ogni casa ha una sua identità specifica, esattamente come ogni proprietario ha delle esigenze altrettanto peculiari. Per questo motivo, ogni volta che
-              firmiamo un contratto cerchiamo di venire incontro a ogni richiesta e di rendere l’esperienza della nostra collaborazione su misura per voi.
-            </p>
-          </Rivela>
-        </div>
+      <section className="bg-crema">
+        <ul className="contenitore grid gap-3 py-16 sm:grid-cols-3">
+          {VALORI.map((v, i) => (
+            <Rivela as="li" key={v.testo} ritardo={i * 0.1} className="flex items-center gap-4 rounded-3xl bg-limone p-5">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white">
+                <Icona nome={v.icona} className="size-6 text-corallo" />
+              </span>
+              <span className="font-display text-lg font-bold tracking-tight">{v.testo}</span>
+            </Rivela>
+          ))}
+        </ul>
       </section>
 
-      <section aria-labelledby="titolo-team" className="bg-carta">
-        <div className="contenitore grid gap-14 py-24 md:py-32 lg:grid-cols-[1.1fr_1fr] lg:items-center">
-          <Rivela className="relative aspect-square overflow-hidden rounded-sm">
-            <Image src="/img/team/team.jpg" alt="Il team di Soluzione Affitto" fill sizes="(min-width:1024px) 50vw, 100vw" className="object-cover" />
+      <section aria-labelledby="titolo-team" className="bg-sabbia">
+        <div className="contenitore grid gap-10 py-20 md:py-28 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+          <Rivela className="relative aspect-square overflow-hidden rounded-[2rem] md:rounded-[3rem]">
+            <Image src="/img/team/team.jpg" alt="Il team di Soluzione Affitto" fill sizes="(min-width:1024px) 45vw, 100vw" className="object-cover" />
           </Rivela>
           <div>
-            <Etichetta numero="02" className="mb-8 text-pietra">Il nostro team</Etichetta>
-            <h2 id="titolo-team" className="titolo-lg">
-              Le persone <span className="italic text-terracotta">dietro le chiavi.</span>
+            <h2 id="titolo-team" className="titolo-xl">
+              Il <span className="italic text-corallo">team.</span>
             </h2>
-            <ul className="mt-12 space-y-10">
+            <ul className="mt-10 space-y-4">
               {TEAM.map((t, i) => (
-                <Rivela as="li" key={t.nome} ritardo={i * 0.1} className="border-t border-linea pt-8">
-                  <p className="etichetta text-terracotta">{t.ruolo}</p>
-                  <h3 className="mt-3 font-display text-4xl">{t.nome}</h3>
-                  <p className="mt-4 text-pietra">{t.testo}</p>
-                  <a href={t.contatto.href} className="mt-4 inline-block text-sm font-semibold underline-offset-4 hover:text-terracotta hover:underline">
+                <Rivela as="li" key={t.nome} ritardo={i * 0.12} className={`rounded-[2rem] p-6 md:p-8 ${t.colore}`}>
+                  <p className="text-sm font-bold text-corallo">{t.ruolo}</p>
+                  <h3 className="mt-1 font-display text-3xl font-bold tracking-tight">{t.nome}</h3>
+                  <ul className="mt-4 flex flex-wrap gap-2">
+                    {t.compiti.map((c) => (
+                      <li key={c} className="rounded-full bg-white px-3 py-1.5 text-sm font-medium">{c}</li>
+                    ))}
+                  </ul>
+                  <a href={t.contatto.href} className="mt-5 inline-block text-sm font-bold underline-offset-4 hover:text-corallo hover:underline">
                     {t.contatto.label}
                   </a>
                 </Rivela>
@@ -83,7 +89,6 @@ export default function ChiSiamo() {
       </section>
 
       <Recensioni iniziale="airbnb" />
-      <Partner />
       <InvitoFinale />
     </>
   )

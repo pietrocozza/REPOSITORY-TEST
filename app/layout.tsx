@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Instrument_Serif, Manrope } from 'next/font/google'
+import { Bricolage_Grotesque, Instrument_Serif, Manrope } from 'next/font/google'
 import Providers from '@/components/Providers'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
@@ -9,8 +9,14 @@ import Grana from '@/components/layout/Grana'
 import { SITO } from '@/lib/site'
 import './globals.css'
 
-// Instrument Serif: serif da rivista, elegante, per i titoli
-const display = Instrument_Serif({
+// Bricolage Grotesque: sans moderno e con carattere, per i titoli
+const display = Bricolage_Grotesque({
+  variable: '--font-bricolage',
+  subsets: ['latin'],
+})
+
+// Instrument Serif in corsivo: le parole d'accento nei titoli
+const accento = Instrument_Serif({
   variable: '--font-instrument',
   subsets: ['latin'],
   weight: '400',
@@ -41,7 +47,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#f4eee4',
+  themeColor: '#fff9f1',
 }
 
 // Dati strutturati per Google: attività locale con le due sedi
@@ -62,10 +68,10 @@ const JSON_LD = {
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="it" className={`${display.variable} ${testo.variable} antialiased`}>
+    <html lang="it" className={`${display.variable} ${accento.variable} ${testo.variable} antialiased`}>
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
-        <a href="#contenuto" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:rounded-full focus:bg-inchiostro focus:px-5 focus:py-3 focus:text-avorio">
+        <a href="#contenuto" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:rounded-full focus:bg-inchiostro focus:px-5 focus:py-3 focus:text-crema">
           Vai al contenuto
         </a>
         <Providers>

@@ -21,7 +21,7 @@ export default function Gestione() {
         foto="/img/case/terrazza.jpg"
         altFoto="Terrazza arredata di un appartamento gestito"
       />
-      <section aria-label="Piani" className="bg-avorio">
+      <section aria-label="Piani" className="bg-crema">
         <div className="contenitore py-24 md:py-32">
           <Etichetta numero="01" className="mb-12 text-pietra">Piani e commissioni</Etichetta>
           <Piani />

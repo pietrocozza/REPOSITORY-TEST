@@ -36,13 +36,13 @@ function LogoFonte({ fonte }: { fonte: string }) {
 
 function Scheda({ r, fonte }: { r: Recensione; fonte: string }) {
   return (
-    <figure className="flex h-full w-[82vw] shrink-0 flex-col justify-between rounded-sm border border-linea bg-avorio p-7 sm:w-[26rem] md:p-9">
+    <figure className="flex h-full w-[82vw] shrink-0 flex-col justify-between rounded-3xl bg-white p-7 shadow-[0_20px_40px_-28px_rgba(29,34,54,0.4)] sm:w-[24rem] md:p-8">
       <div>
         <div className="flex items-center justify-between">
-          <Stelle className="text-terracotta" />
+          <Stelle className="text-sole" />
           <LogoFonte fonte={fonte} />
         </div>
-        <blockquote lang={r.lingua} className="mt-6 font-display text-xl leading-snug md:text-[1.4rem]">“{r.testo}”</blockquote>
+        <blockquote lang={r.lingua} className="mt-5 line-clamp-6 text-base leading-relaxed">“{r.testo}”</blockquote>
       </div>
       <figcaption className="mt-8 flex items-center justify-between border-t border-linea pt-5 text-sm">
         <span className="font-semibold">{r.nome}</span>
@@ -57,16 +57,16 @@ export default function Recensioni({ iniziale = 'google', numero }: { iniziale?:
   const attiva = FONTI[fonte]
 
   return (
-    <section aria-labelledby="titolo-recensioni" className="overflow-hidden bg-carta">
-      <div className="contenitore pt-24 md:pt-36">
+    <section aria-labelledby="titolo-recensioni" className="overflow-hidden bg-pesca">
+      <div className="contenitore pt-20 md:pt-28">
         <div className="grid gap-10 lg:grid-cols-[1.3fr_1fr] lg:items-end">
           <div>
-            <Etichetta numero={numero} className="mb-8 text-pietra">Recensioni verificate</Etichetta>
-            <TestoDiviso as="h2" testo="Cosa dicono *di noi.*" className="titolo-xl" />
+            <Etichetta numero={numero} className="mb-6 text-corallo">Recensioni verificate</Etichetta>
+            <TestoDiviso as="h2" testo="5 stelle, *tutte vere.*" className="titolo-xl" />
             <span id="titolo-recensioni" className="sr-only">Recensioni di proprietari e ospiti</span>
           </div>
           <div className="lg:justify-self-end">
-            <div role="tablist" aria-label="Fonte delle recensioni" className="inline-flex rounded-full border border-linea bg-avorio p-1">
+            <div role="tablist" aria-label="Fonte delle recensioni" className="inline-flex rounded-full bg-white p-1 shadow-sm">
               {(Object.keys(FONTI) as Fonte[]).map((k) => (
                 <button
                   key={k}
@@ -78,7 +78,7 @@ export default function Recensioni({ iniziale = 'google', numero }: { iniziale?:
                   {fonte === k && (
                     <motion.span layoutId="scheda-attiva" className="absolute inset-0 rounded-full bg-inchiostro" transition={{ duration: 0.6, ease: EASE_LUSSO }} />
                   )}
-                  <span className={`relative transition-colors duration-300 ${fonte === k ? 'text-avorio' : ''}`}>{FONTI[k].etichetta}</span>
+                  <span className={`relative transition-colors duration-300 ${fonte === k ? 'text-crema' : ''}`}>{FONTI[k].etichetta}</span>
                 </button>
               ))}
             </div>
@@ -87,7 +87,7 @@ export default function Recensioni({ iniziale = 'google', numero }: { iniziale?:
         </div>
       </div>
 
-      <div className="group mt-14 pb-24 md:pb-36" role="tabpanel" aria-label={attiva.etichetta}>
+      <div className="group mt-12 pb-20 md:pb-28" role="tabpanel" aria-label={attiva.etichetta}>
         <AnimatePresence mode="wait">
           <motion.div
             key={fonte}

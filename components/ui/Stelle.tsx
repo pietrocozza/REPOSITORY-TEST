@@ -1,5 +1,5 @@
 /** Cinque stelle piene (tutte le recensioni pubblicate sono a 5 stelle) */
-export default function Stelle({ className = 'text-oro' }: { className?: string }) {
+export default function Stelle({ className = 'text-sole' }: { className?: string }) {
   return (
     <span className={`inline-flex gap-0.5 ${className}`} role="img" aria-label="5 stelle su 5">
       {Array.from({ length: 5 }, (_, i) => (

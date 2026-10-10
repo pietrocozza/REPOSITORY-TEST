@@ -27,7 +27,7 @@ export default function PrimaDopo({ prima, dopo, alt }: { prima: string; dopo: s
   return (
     <div
       ref={ref}
-      className="relative aspect-[16/10] touch-pan-y overflow-hidden rounded-sm select-none"
+      className="relative aspect-[16/10] touch-pan-y overflow-hidden rounded-[2rem] select-none shadow-[0_30px_60px_-30px_rgba(29,34,54,0.5)]"
       onPointerDown={(e) => {
         trascinando.current = true
         e.currentTarget.setPointerCapture(e.pointerId)
@@ -43,10 +43,10 @@ export default function PrimaDopo({ prima, dopo, alt }: { prima: string; dopo: s
       <motion.div className="absolute inset-0" style={{ clipPath: clip }}>
         <Image src={prima} alt={`${alt}: prima`} fill sizes="(min-width:1024px) 60vw, 100vw" className="object-cover" />
       </motion.div>
-      <span className="etichetta absolute top-4 left-4 rounded-full bg-notte/80 px-3 py-1.5 text-avorio backdrop-blur">Prima</span>
-      <span className="etichetta absolute top-4 right-4 rounded-full bg-avorio/90 px-3 py-1.5 text-inchiostro backdrop-blur">Dopo</span>
-      <motion.div className="pointer-events-none absolute inset-y-0 w-px bg-avorio" style={{ left: sinistra }}>
-        <span className="absolute top-1/2 left-1/2 flex size-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-avorio text-inchiostro shadow-xl">
+      <span className="etichetta absolute top-4 left-4 rounded-full bg-inchiostro/80 px-3 py-1.5 text-white backdrop-blur">Prima</span>
+      <span className="etichetta absolute top-4 right-4 rounded-full bg-sole px-3 py-1.5 text-inchiostro">Dopo</span>
+      <motion.div className="pointer-events-none absolute inset-y-0 w-px bg-crema" style={{ left: sinistra }}>
+        <span className="absolute top-1/2 left-1/2 flex size-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-crema text-inchiostro shadow-xl">
           <svg viewBox="0 0 24 24" className="size-5" aria-hidden="true">
             <path d="m9 6-6 6 6 6M15 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>

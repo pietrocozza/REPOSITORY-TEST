@@ -22,11 +22,11 @@ export default function Contatti() {
     <>
       <IntestazionePagina
         etichetta="Contattaci"
-        titolo="Vuoi ottenere *di più* dalla tua proprietà?"
-        sottotitolo="Saremo felici di poterti aiutare. Siamo a disposizione per ascoltare la tua offerta e valutare insieme una soluzione vantaggiosa."
+        titolo="Parliamo della *tua casa.*"
+        sottotitolo="Vuoi ottenere di più dalla tua proprietà? Valutiamo insieme la soluzione migliore."
       />
 
-      <section className="bg-avorio">
+      <section className="bg-crema">
         <div className="contenitore pb-24 md:pb-32">
           <ul className="border-t border-linea">
             {CANALI.map((c, i) => (
@@ -40,7 +40,7 @@ export default function Contatti() {
                     <span className="etichetta block text-pietra">{c.tipo}</span>
                     <span className="text-sm text-pietra">{c.nota}</span>
                   </span>
-                  <span className="font-display text-[clamp(1.8rem,5vw,4rem)] leading-none break-all transition-all duration-500 ease-lusso group-hover:translate-x-3 group-hover:text-terracotta group-hover:italic">
+                  <span className="font-display text-[clamp(1.6rem,4.4vw,3.4rem)] leading-none font-bold tracking-tight break-all transition-all duration-500 ease-lusso group-hover:translate-x-3 group-hover:text-corallo">
                     {c.valore}
                   </span>
                   <svg viewBox="0 0 24 24" className="hidden size-8 transition-transform duration-500 ease-lusso group-hover:rotate-[-45deg] md:block" aria-hidden="true">
@@ -52,7 +52,7 @@ export default function Contatti() {
           </ul>
 
           <div className="mt-20">
-            <Etichetta className="mb-8 text-pietra">Previo appuntamento ci puoi venire a trovare in una delle nostre sedi</Etichetta>
+            <Etichetta className="mb-6 text-corallo">Le nostre sedi, su appuntamento</Etichetta>
             <div className="grid gap-6 md:grid-cols-2">
               {SITO.sedi.map((s, i) => (
                 <Rivela key={s.citta} ritardo={i * 0.1}>
@@ -60,10 +60,10 @@ export default function Contatti() {
                     href={s.mappa}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group block rounded-sm bg-notte p-8 text-avorio transition-colors duration-500 hover:bg-terracotta md:p-12"
+                    className={`group block rounded-[2rem] p-8 text-inchiostro transition-transform duration-500 hover:-translate-y-1.5 md:p-12 ${i === 0 ? 'bg-sole' : 'bg-cielo'}`}
                   >
-                    <p className="font-display text-6xl md:text-7xl">{s.citta}</p>
-                    <p className="mt-6 text-avorio/80">{s.indirizzo}</p>
+                    <p className="font-display text-5xl font-bold tracking-tighter md:text-7xl">{s.citta}</p>
+                    <p className="mt-6 text-inchiostro/80">{s.indirizzo}</p>
                     <p className="etichetta mt-8 flex items-center gap-3">
                       Apri in Google Maps
                       <span aria-hidden="true" className="transition-transform duration-500 ease-lusso group-hover:translate-x-2">→</span>
@@ -76,12 +76,12 @@ export default function Contatti() {
         </div>
       </section>
 
-      <section aria-labelledby="titolo-simulatore" className="bg-carta">
+      <section aria-labelledby="titolo-simulatore" className="bg-sabbia">
         <div className="contenitore grid gap-12 py-24 md:py-32 lg:grid-cols-[1fr_2fr]">
           <div className="lg:sticky lg:top-28 lg:self-start">
-            <Etichetta className="mb-8 text-pietra">Simulatore di guadagno online</Etichetta>
+            <Etichetta className="mb-6 text-corallo">Simulatore di guadagno online</Etichetta>
             <h2 id="titolo-simulatore" className="titolo-lg">
-              Raccontaci <span className="italic text-terracotta">la tua casa.</span>
+              Raccontaci <span className="italic text-corallo">la tua casa.</span>
             </h2>
             <p className="mt-6 text-pietra">Bastano pochi passaggi: ti ricontattiamo con la stima del guadagno.</p>
           </div>

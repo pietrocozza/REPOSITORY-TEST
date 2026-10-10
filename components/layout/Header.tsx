@@ -25,6 +25,13 @@ export default function Header() {
   const pathname = usePathname()
   const [aperto, setAperto] = useState(false)
   const [nascosto, setNascosto] = useState(false)
+  const [scorso, setScorso] = useState(false)
+  // la pagina comincia con una foto scura a tutto schermo? (la home)
+  const [heroScuro, setHeroScuro] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setHeroScuro(!!document.getElementById('hero-scuro')))
+    return () => cancelAnimationFrame(id)
+  }, [pathname])
   const [voce, setVoce] = useState<string>(pathname)
   const { scrollY } = useScroll()
 
@@ -32,7 +39,11 @@ export default function Header() {
   useMotionValueEvent(scrollY, 'change', (y) => {
     const prima = scrollY.getPrevious() ?? 0
     setNascosto(y > prima && y > 160)
+    setScorso(y > (heroScuro ? window.innerHeight * 0.85 : 40))
   })
+
+  // Sopra la foto della home il testo è chiaro; altrove scuro su fondo crema sfocato
+  const chiaro = aperto || (heroScuro && !scorso)
 
   useEffect(() => {
     bloccaScroll(aperto)
@@ -47,14 +58,18 @@ export default function Header() {
   return (
     <>
       <motion.header
-        className="fixed inset-x-0 top-0 z-50 text-avorio mix-blend-difference"
+        className={`fixed inset-x-0 top-0 z-50 transition-colors duration-500 ${chiaro ? 'text-crema' : 'text-inchiostro'}`}
         animate={{ y: nascosto && !aperto ? '-110%' : '0%' }}
         transition={{ duration: 0.6, ease: EASE_LUSSO }}
       >
-        <div className="contenitore flex h-20 items-center justify-between md:h-24">
+        <div
+          aria-hidden="true"
+          className={`absolute inset-0 border-b border-linea/70 bg-crema/85 backdrop-blur-xl transition-opacity duration-500 ${scorso && !aperto ? 'opacity-100' : 'opacity-0'}`}
+        />
+        <div className={`contenitore relative flex items-center justify-between transition-[height] duration-500 ${scorso ? 'h-16 md:h-[4.5rem]' : 'h-20 md:h-24'}`}>
           <Logo onClick={chiudi} />
           <nav aria-label="Principale" className="hidden items-center gap-8 xl:flex">
-            {NAV.slice(1, 6).map((n) => (
+            {NAV.slice(1, 5).map((n) => (
               <Link key={n.href} href={n.href} className="group relative text-sm font-medium">
                 {n.label}
                 <span
@@ -65,6 +80,14 @@ export default function Header() {
               </Link>
             ))}
           </nav>
+          <div className="flex items-center gap-5">
+          <Link
+            href="/calcola-guadagno"
+            onClick={chiudi}
+            className="hidden rounded-full bg-corallo px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(217,72,31,0.7)] transition-transform duration-300 hover:-translate-y-0.5 md:inline-block"
+          >
+            Calcola guadagno
+          </Link>
           <button
             type="button"
             onClick={() => setAperto((a) => !a)}
@@ -79,6 +102,7 @@ export default function Header() {
             </span>
             <span className="sr-only">{aperto ? 'Chiudi il menu' : 'Apri il menu'}</span>
           </button>
+          </div>
         </div>
       </motion.header>
 
@@ -89,7 +113,7 @@ export default function Header() {
             role="dialog"
             aria-modal="true"
             aria-label="Menu"
-            className="fixed inset-0 z-40 overflow-y-auto bg-notte text-avorio"
+            className="fixed inset-0 z-40 overflow-y-auto bg-notte text-crema"
             initial={{ clipPath: 'inset(0% 0% 100% 0%)' }}
             animate={{ clipPath: 'inset(0% 0% 0% 0%)' }}
             exit={{ clipPath: 'inset(100% 0% 0% 0%)' }}
@@ -115,8 +139,8 @@ export default function Header() {
                         >
                           <span className="font-display text-sm text-nebbia italic">0{i + 1}</span>
                           <span
-                            className={`font-display text-[clamp(2.1rem,5.4vw,4.6rem)] leading-none transition-all duration-500 ease-lusso group-hover:translate-x-3 group-hover:italic group-hover:text-terracotta-chiara ${
-                              pathname === n.href ? 'italic text-terracotta-chiara' : ''
+                            className={`font-display text-[clamp(2.1rem,5.4vw,4.6rem)] leading-none transition-all duration-500 ease-lusso group-hover:translate-x-3 group-hover:italic group-hover:text-sole ${
+                              pathname === n.href ? 'italic text-sole' : ''
                             }`}
                           >
                             {n.label}
@@ -134,7 +158,7 @@ export default function Header() {
                 animate={{ opacity: 1, transition: { delay: 0.6, duration: 0.8 } }}
                 exit={{ opacity: 0, transition: { duration: 0.2 } }}
               >
-                <div className="relative hidden aspect-[4/3] overflow-hidden rounded-sm lg:block">
+                <div className="relative hidden aspect-[4/3] overflow-hidden rounded-[2rem] lg:block">
                   <AnimatePresence mode="popLayout">
                     <motion.div
                       key={voce}
@@ -151,11 +175,11 @@ export default function Header() {
                 <div className="grid gap-6 text-sm sm:grid-cols-2">
                   <div>
                     <p className="etichetta mb-3 text-nebbia">Scrivici</p>
-                    <a href={SITO.telefono.href} className="block hover:text-terracotta-chiara">{SITO.telefono.numero}</a>
-                    <a href={SITO.whatsapp.href} target="_blank" rel="noopener noreferrer" className="block hover:text-terracotta-chiara">
+                    <a href={SITO.telefono.href} className="block hover:text-sole">{SITO.telefono.numero}</a>
+                    <a href={SITO.whatsapp.href} target="_blank" rel="noopener noreferrer" className="block hover:text-sole">
                       WhatsApp {SITO.whatsapp.numero}
                     </a>
-                    <a href={`mailto:${SITO.email}`} className="block break-all hover:text-terracotta-chiara">{SITO.email}</a>
+                    <a href={`mailto:${SITO.email}`} className="block break-all hover:text-sole">{SITO.email}</a>
                   </div>
                   <div>
                     <p className="etichetta mb-3 text-nebbia">Sedi</p>

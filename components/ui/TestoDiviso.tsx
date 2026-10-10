@@ -5,7 +5,7 @@ import { EASE_LUSSO } from '@/lib/animazioni'
 
 /**
  * Titolo che entra parola per parola, ognuna da sotto una "maschera".
- * Le parole tra *asterischi* vanno in corsivo terracotta.
+ * Le parole tra *asterischi* vanno in corsivo corallo.
  */
 export default function TestoDiviso({
   testo,
@@ -13,7 +13,7 @@ export default function TestoDiviso({
   as = 'h2',
   ritardo = 0,
   subito = false,
-  accento = 'text-terracotta',
+  accento = 'text-corallo',
 }: {
   testo: string
   className?: string
@@ -40,7 +40,7 @@ export default function TestoDiviso({
     <Tag className={className} aria-label={testo.replaceAll('*', '')}>
       <motion.span aria-hidden="true" initial="nascosto" {...trigger} transition={{ staggerChildren: 0.06, delayChildren: ritardo }} className="inline">
         {parole.map((p, i) => (
-          <span key={i} className="inline-block overflow-hidden pb-[0.08em] align-top">
+          <span key={i} className="inline-block overflow-hidden pb-[0.08em] align-top whitespace-nowrap">
             <motion.span
               className={`inline-block ${p.corsivo ? `italic ${accento}` : ''}`}
               variants={{ nascosto: { y: '110%', rotate: 4 }, visibile: { y: '0%', rotate: 0 } }}

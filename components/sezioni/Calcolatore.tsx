@@ -63,7 +63,7 @@ function Scelta({
   return (
     <fieldset>
       <legend className="mb-4 font-display text-2xl md:text-3xl">
-        {domanda} <span className="text-terracotta" aria-hidden="true">*</span>
+        {domanda} <span className="text-corallo" aria-hidden="true">*</span>
       </legend>
       <div className="flex flex-wrap gap-2.5">
         {opzioni.map((o) => {
@@ -71,8 +71,8 @@ function Scelta({
           return (
             <label
               key={o}
-              className={`relative cursor-pointer rounded-full border px-5 py-3 text-sm font-medium capitalize transition-all duration-300 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-terracotta ${
-                attiva ? 'border-inchiostro bg-inchiostro text-avorio' : 'border-linea hover:border-inchiostro'
+              className={`relative cursor-pointer rounded-full border px-5 py-3 text-sm font-medium capitalize transition-all duration-300 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-corallo ${
+                attiva ? 'border-inchiostro bg-inchiostro text-crema' : 'border-linea hover:border-inchiostro'
               }`}
             >
               <input type={multipla ? 'checkbox' : 'radio'} name={id} value={o} checked={attiva} onChange={() => onChange(o)} className="sr-only" />
@@ -91,7 +91,7 @@ function Cursore({ domanda, valore, onChange }: { domanda: string; valore: numbe
     <div>
       <label htmlFor={id} className="mb-4 flex items-baseline justify-between font-display text-2xl md:text-3xl">
         {domanda}
-        <span className="font-display text-4xl text-terracotta italic">{valore}</span>
+        <span className="font-display text-4xl text-corallo italic">{valore}</span>
       </label>
       <input id={id} type="range" min={0} max={10} step={1} value={valore} onChange={(e) => onChange(Number(e.target.value))} className="cursore-range w-full" />
       <div className="mt-2 flex justify-between text-xs text-pietra" aria-hidden="true">
@@ -131,7 +131,7 @@ function Campo({
         htmlFor={id}
         className="pointer-events-none absolute top-0 left-0 text-xs font-semibold tracking-[0.16em] text-pietra uppercase transition-all duration-300 peer-placeholder-shown:top-7 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-placeholder-shown:tracking-normal peer-placeholder-shown:normal-case peer-focus:top-0 peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-[0.16em] peer-focus:uppercase"
       >
-        {etichetta} <span className="text-terracotta">*</span>
+        {etichetta} <span className="text-corallo">*</span>
       </label>
     </div>
   )
@@ -191,13 +191,13 @@ export default function Calcolatore() {
   const testo = riepilogo(d)
 
   return (
-    <div className="rounded-sm border border-linea bg-avorio p-6 md:p-12">
+    <div className="rounded-[2rem] bg-white p-6 shadow-[0_30px_60px_-40px_rgba(29,34,54,0.5)] md:p-12">
       {/* Avanzamento */}
       <ol className="mb-10 grid grid-cols-3 gap-3" aria-label="Passaggi">
         {PASSI.map((p, i) => (
           <li key={p} aria-current={passo === i ? 'step' : undefined}>
             <div className="h-px w-full bg-linea">
-              <motion.div className="h-px bg-terracotta" initial={false} animate={{ width: passo >= i ? '100%' : '0%' }} transition={{ duration: 0.8, ease: EASE_LUSSO }} />
+              <motion.div className="h-px bg-corallo" initial={false} animate={{ width: passo >= i ? '100%' : '0%' }} transition={{ duration: 0.8, ease: EASE_LUSSO }} />
             </div>
             <p className={`mt-3 text-xs font-semibold tracking-[0.16em] uppercase ${passo >= i ? 'text-inchiostro' : 'text-pietra'}`}>
               <span className="font-display text-sm tracking-normal normal-case italic">0{i + 1}</span> {p}
@@ -251,7 +251,7 @@ export default function Calcolatore() {
             {passo === 3 && (
               <div>
                 <p className="font-display text-4xl leading-tight md:text-5xl">
-                  Grazie {d.nome}, ci siamo <span className="italic text-terracotta">quasi.</span>
+                  Grazie {d.nome}, ci siamo <span className="italic text-corallo">quasi.</span>
                 </p>
                 <p className="mt-4 max-w-xl text-pietra">
                   Invia la richiesta con il canale che preferisci: il messaggio è già scritto con tutte le tue risposte. Ti ricontattiamo con la stima del guadagno per il tuo appartamento.
@@ -267,7 +267,7 @@ export default function Calcolatore() {
                   </a>
                   <a
                     href={`mailto:${SITO.email}?subject=${encodeURIComponent(`Simulatore guadagno — ${d.nome} ${d.cognome}`)}&body=${encodeURIComponent(testo)}`}
-                    className="inline-flex items-center gap-3 rounded-full bg-inchiostro px-7 py-4 text-sm font-semibold text-avorio transition-transform duration-500 ease-lusso hover:-translate-y-0.5"
+                    className="inline-flex items-center gap-3 rounded-full bg-inchiostro px-7 py-4 text-sm font-semibold text-crema transition-transform duration-500 ease-lusso hover:-translate-y-0.5"
                   >
                     Invia via email
                   </a>
@@ -282,7 +282,7 @@ export default function Calcolatore() {
         </AnimatePresence>
       </div>
 
-      <p role="alert" className="mt-6 min-h-6 text-sm text-terracotta">{errore}</p>
+      <p role="alert" className="mt-6 min-h-6 text-sm text-corallo">{errore}</p>
 
       <div className="mt-4 flex items-center justify-between border-t border-linea pt-6">
         {passo > 0 ? (
@@ -296,7 +296,7 @@ export default function Calcolatore() {
           <button
             type="button"
             onClick={() => vai(passo + 1)}
-            className="group inline-flex items-center gap-3 rounded-full bg-inchiostro px-7 py-4 text-sm font-semibold text-avorio transition-colors duration-500 hover:bg-terracotta"
+            className="group inline-flex items-center gap-3 rounded-full bg-inchiostro px-7 py-4 text-sm font-semibold text-crema transition-colors duration-500 hover:bg-corallo"
           >
             {passo === 2 ? 'Prepara la richiesta' : 'Avanti'}
             <svg viewBox="0 0 24 24" className="size-4 transition-transform duration-500 ease-lusso group-hover:translate-x-1" aria-hidden="true">

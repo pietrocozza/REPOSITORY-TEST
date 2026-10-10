@@ -6,16 +6,15 @@ import type { Faq } from '@/lib/contenuti'
 import { EASE_LUSSO } from '@/lib/animazioni'
 
 /** Elenco di domande a fisarmonica: una aperta alla volta */
-export default function Domande({ domande, scuro = false }: { domande: Faq[]; scuro?: boolean }) {
-  const [aperta, setAperta] = useState<number | null>(0)
-  const bordo = scuro ? 'border-white/15' : 'border-linea'
+export default function Domande({ domande, scuro = false, chiuse = false }: { domande: Faq[]; scuro?: boolean; chiuse?: boolean }) {
+  const [aperta, setAperta] = useState<number | null>(chiuse ? null : 0)
 
   return (
-    <ul className={`border-t ${bordo}`}>
+    <ul className="space-y-3">
       {domande.map((d, i) => {
         const open = aperta === i
         return (
-          <li key={d.domanda} className={`border-b ${bordo}`}>
+          <li key={d.domanda} className={`rounded-3xl transition-colors duration-500 ${open ? (scuro ? 'bg-white/10' : 'bg-white shadow-[0_20px_40px_-30px_rgba(29,34,54,0.4)]') : scuro ? 'bg-white/5' : 'bg-sabbia'}`}>
             <h3>
               <button
                 type="button"
@@ -23,15 +22,15 @@ export default function Domande({ domande, scuro = false }: { domande: Faq[]; sc
                 aria-controls={`risposta-${i}`}
                 id={`domanda-${i}`}
                 onClick={() => setAperta(open ? null : i)}
-                className="group flex w-full items-start justify-between gap-6 py-6 text-left md:py-8"
+                className="group flex w-full items-start justify-between gap-6 p-5 text-left md:p-6"
               >
-                <span className="flex gap-5 md:gap-8">
-                  <span className={`mt-1.5 font-display text-sm italic ${scuro ? 'text-nebbia' : 'text-pietra'}`}>{String(i + 1).padStart(2, '0')}</span>
-                  <span className="font-display text-2xl leading-tight transition-colors duration-300 group-hover:text-terracotta md:text-3xl">{d.domanda}</span>
+                <span className="flex">
+                  
+                  <span className="font-display text-lg leading-snug font-semibold tracking-tight transition-colors duration-300 group-hover:text-corallo md:text-xl">{d.domanda}</span>
                 </span>
                 <span
                   aria-hidden="true"
-                  className={`relative mt-2 size-8 shrink-0 rounded-full border transition-all duration-500 ease-lusso ${bordo} ${open ? 'rotate-45 border-terracotta bg-terracotta text-avorio' : ''}`}
+                  className={`relative size-8 shrink-0 rounded-full transition-all duration-500 ease-lusso ${open ? 'rotate-45 bg-corallo text-white' : 'bg-white text-inchiostro'}`}
                 >
                   <span className="absolute top-1/2 left-1/2 h-px w-3 -translate-x-1/2 bg-current" />
                   <span className="absolute top-1/2 left-1/2 h-3 w-px -translate-y-1/2 bg-current" />
@@ -50,7 +49,7 @@ export default function Domande({ domande, scuro = false }: { domande: Faq[]; sc
                   transition={{ duration: 0.6, ease: EASE_LUSSO }}
                   className="overflow-hidden"
                 >
-                  <div className={`max-w-3xl pb-8 pl-10 md:pl-14 ${scuro ? 'text-avorio/80' : 'text-pietra'}`}>
+                  <div className={`max-w-3xl px-5 pb-6 md:px-6 ${scuro ? 'text-crema/80' : 'text-pietra'}`}>
                     <p className="leading-relaxed">{d.risposta}</p>
                     {d.punti && (
                       <ol className="mt-4 list-decimal space-y-1.5 pl-5">
