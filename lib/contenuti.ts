@@ -249,7 +249,7 @@ export const VANTAGGI_BREVI = [
   { icona: 'scudo', titolo: 'Protezione OTA', testo: 'Coperto da qualunque danno fino a 3 milioni di euro.', dato: '3 mln €', foto: '/img/case/brera-terrace.jpg' },
   { icona: 'carta', titolo: 'Pagamenti anticipati', testo: 'Gli ospiti pagano sempre prima, tramite Booking e Airbnb.', dato: 'Prima', foto: '/img/case/isola-luxe.jpg' },
   { icona: 'chiave', titolo: 'Flessibilità', testo: 'La casa è tua quando ti serve. Niente 3+2 o 4+4.', dato: 'Sempre tua', foto: '/img/case/turquoise.jpg' },
-  { icona: 'valigia', titolo: 'Gestione semplificata', testo: 'Niente inquilini problematici: ospiti turisti che arrivano e ripartono.', dato: 'Zero pensieri', foto: '/img/case/leonina-2.jpg' },
+  { icona: 'valigia', titolo: 'Gestione semplificata', testo: 'Niente inquilini problematici: ospiti turisti che arrivano e ripartono.', dato: 'Zero pensieri', foto: '/img/leonina/finestre.jpg' },
 ] as const
 
 export const SERVIZI_BREVI = [

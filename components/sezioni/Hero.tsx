@@ -15,6 +15,7 @@ const FOTO = [
   { src: '/img/roma/san-pietro-tevere.jpg', alt: 'Il Tevere, Ponte Sant’Angelo e la cupola di San Pietro' },
   { src: '/img/hero/leonina-sala.jpg', alt: 'Suite Leonina, Rione Monti' },
   { src: '/img/roma/colosseo-sera.jpg', alt: 'Il Colosseo al tramonto' },
+  { src: '/img/leonina/camera-ampia.jpg', alt: 'Una camera di Via Leonina, Rione Monti' },
   { src: '/img/hero/don-bosco.jpg', alt: 'Suite Don Bosco, Roma' },
   { src: '/img/roma/fontana-di-trevi.jpg', alt: 'Fontana di Trevi' },
 ]

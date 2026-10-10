@@ -9,8 +9,8 @@ import { RECENSIONI_AIRBNB, RECENSIONI_GOOGLE, type Recensione } from '@/lib/con
 import { EASE_LUSSO } from '@/lib/animazioni'
 
 const FONTI = {
-  google: { etichetta: 'Proprietari · Google', dati: RECENSIONI_GOOGLE, fonte: 'Google' },
-  airbnb: { etichetta: 'Ospiti · Airbnb', dati: RECENSIONI_AIRBNB, fonte: 'Airbnb' },
+  google: { etichetta: 'Proprietari', etichettaLunga: 'Proprietari su Google', dati: RECENSIONI_GOOGLE, fonte: 'Google' },
+  airbnb: { etichetta: 'Ospiti', etichettaLunga: 'Ospiti su Airbnb', dati: RECENSIONI_AIRBNB, fonte: 'Airbnb' },
 } as const
 
 type Fonte = keyof typeof FONTI
@@ -66,19 +66,20 @@ export default function Recensioni({ iniziale = 'google', numero }: { iniziale?:
             <span id="titolo-recensioni" className="sr-only">Recensioni di proprietari e ospiti</span>
           </div>
           <div className="lg:justify-self-end">
-            <div role="tablist" aria-label="Fonte delle recensioni" className="inline-flex rounded-full bg-white p-1 shadow-sm">
+            <div role="tablist" aria-label="Fonte delle recensioni" className="inline-flex rounded-full bg-white p-1.5 shadow-[0_15px_35px_-20px_rgba(29,34,54,0.45)]">
               {(Object.keys(FONTI) as Fonte[]).map((k) => (
                 <button
                   key={k}
                   role="tab"
                   aria-selected={fonte === k}
                   onClick={() => setFonte(k)}
-                  className="relative rounded-full px-5 py-2.5 text-sm font-semibold"
+                  className="relative flex items-center gap-2.5 rounded-full px-5 py-3.5 text-base font-bold md:px-8 md:py-4 md:text-lg"
                 >
                   {fonte === k && (
                     <motion.span layoutId="scheda-attiva" className="absolute inset-0 rounded-full bg-inchiostro" transition={{ duration: 0.6, ease: EASE_LUSSO }} />
                   )}
-                  <span className={`relative transition-colors duration-300 ${fonte === k ? 'text-crema' : ''}`}>{FONTI[k].etichetta}</span>
+                  <span className="relative"><LogoFonte fonte={FONTI[k].fonte} /></span>
+                  <span className={`relative whitespace-nowrap transition-colors duration-300 ${fonte === k ? 'text-crema' : ''}`}>{FONTI[k].etichetta}</span>
                 </button>
               ))}
             </div>
@@ -87,7 +88,7 @@ export default function Recensioni({ iniziale = 'google', numero }: { iniziale?:
         </div>
       </div>
 
-      <div className="group mt-12 pb-20 md:pb-28" role="tabpanel" aria-label={attiva.etichetta}>
+      <div className="group mt-12 pb-20 md:pb-28" role="tabpanel" aria-label={attiva.etichettaLunga}>
         <AnimatePresence mode="wait">
           <motion.div
             key={fonte}

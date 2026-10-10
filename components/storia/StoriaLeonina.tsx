@@ -17,8 +17,9 @@ const TAPPE: { tipo: Tipo; quando: string; titolo: string; testo: string; colore
   { tipo: 'dopo', quando: 'Oggi', titolo: 'Una casa nuova', testo: 'Più bella, con più valore. Leonardo non ha anticipato un euro e riceve un canone costante.', colore: 'bg-pesca' },
 ]
 
-const PRIMA = '/img/ristrutturazione/leonina-prima.jpg'
+const PRIMA = '/img/ristrutturazione/leonina-prima-ricostruzione.jpg'
 const DOPO = '/img/ristrutturazione/leonina-dopo.jpg'
+const DOPO_FOTO = '/img/leonina/camera-ampia.jpg'
 
 function Etichetta({ children, ritardo, className = '' }: { children: React.ReactNode; ritardo: number; className?: string }) {
   return (
@@ -39,7 +40,7 @@ function Scena({ tipo }: { tipo: Tipo }) {
     return (
       <div className="absolute inset-0">
         <motion.div className="absolute inset-0" initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 3, ease: EASE_LUSSO }}>
-          <Image src={PRIMA} alt="La camera di Via Leonina prima dei lavori" fill sizes="(min-width:1024px) 50vw, 100vw" className="object-cover saturate-[0.55] sepia-[0.25]" />
+          <Image src={PRIMA} alt="La camera di Via Leonina prima dei lavori" fill sizes="(min-width:1024px) 50vw, 100vw" className="object-cover" />
         </motion.div>
         <div className="absolute inset-0 bg-inchiostro/20" />
         <Etichetta ritardo={0.4} className="top-[14%] left-[8%] bg-white text-inchiostro">⚡ Impianti obsoleti</Etichetta>
@@ -113,7 +114,7 @@ function Scena({ tipo }: { tipo: Tipo }) {
   if (tipo === 'cantiere')
     return (
       <div className="absolute inset-0">
-        <Image src={PRIMA} alt="" fill sizes="(min-width:1024px) 50vw, 100vw" className="object-cover saturate-[0.55]" />
+        <Image src={PRIMA} alt="" fill sizes="(min-width:1024px) 50vw, 100vw" className="object-cover" />
         {/* la casa nuova "si dipinge" sopra quella vecchia */}
         <motion.div className="absolute inset-0" initial={{ clipPath: 'inset(0% 100% 0% 0%)' }} animate={{ clipPath: 'inset(0% 0% 0% 0%)' }} transition={{ duration: 2.6, ease: 'easeInOut', delay: 0.3 }}>
           <Image src={DOPO} alt="La camera durante la trasformazione" fill sizes="(min-width:1024px) 50vw, 100vw" className="object-cover" />
@@ -157,7 +158,7 @@ function Scena({ tipo }: { tipo: Tipo }) {
   return (
     <div className="absolute inset-0">
       <motion.div className="absolute inset-0" initial={{ scale: 1.15, filter: 'brightness(0.6)' }} animate={{ scale: 1, filter: 'brightness(1)' }} transition={{ duration: 1.6, ease: EASE_LUSSO }}>
-        <Image src={DOPO} alt="La camera di Via Leonina dopo i lavori" fill sizes="(min-width:1024px) 50vw, 100vw" className="object-cover" />
+        <Image src={DOPO_FOTO} alt="La camera di Via Leonina dopo i lavori" fill sizes="(min-width:1024px) 50vw, 100vw" className="object-cover" />
       </motion.div>
       <Etichetta ritardo={0.6} className="top-[10%] left-[8%] bg-white text-inchiostro">✨ Valore aumentato</Etichetta>
       <Etichetta ritardo={0.85} className="top-[30%] right-[8%] bg-sole text-inchiostro">0 € anticipati</Etichetta>

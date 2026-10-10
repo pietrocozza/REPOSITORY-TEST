@@ -14,9 +14,9 @@ import { bloccaScroll } from '@/lib/scroll'
 const FOTO_MENU: Record<string, string> = {
   '/': '/img/hero/leonina-sala.jpg',
   '/gestione': '/img/hero/don-bosco.jpg',
-  '/ristruttura-gratis': '/img/ristrutturazione/leonina-dopo.jpg',
+  '/ristruttura-gratis': '/img/leonina/letto.jpg',
   '/operazioni-immobiliari': '/img/cantieri/tempio-della-pace.jpg',
-  '/chi-siamo': '/img/team/team.jpg',
+  '/chi-siamo': '/img/leonina/finestre.jpg',
   '/domande-e-risposte': '/img/case/brera-apt.jpg',
   '/contatti': '/img/hero/villa-chiara.jpg',
   '/blog': '/img/roma/fontana-di-trevi.jpg',

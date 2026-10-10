@@ -20,7 +20,7 @@ export default function Appartamenti() {
 
       <div className="group mt-12">
         <div className="senza-barra overflow-x-auto md:overflow-visible">
-          <ul className="flex w-max gap-4 px-4 sm:px-8 md:gap-6 md:px-0 motion-safe:md:nastro md:group-hover:[animation-play-state:paused]" style={{ '--durata': '55s' } as React.CSSProperties}>
+          <ul className="flex w-max gap-4 px-4 sm:px-8 md:gap-6 md:px-0 motion-safe:md:nastro md:group-hover:[animation-play-state:paused]" style={{ '--durata': '52s' } as React.CSSProperties}>
             {[...schede, ...schede].map((a, i) => (
               <li key={`${a.nome}-${i}`} aria-hidden={i >= schede.length ? true : undefined} className={`w-[72vw] shrink-0 sm:w-[24rem] ${i >= schede.length ? 'hidden md:block' : ''}`}>
                 <figure className="group/scheda rounded-[1.75rem] bg-white p-2.5 shadow-[0_20px_50px_-25px_rgba(29,34,54,0.4)] transition-transform duration-500 hover:-translate-y-2 hover:rotate-[-1deg]" data-cursore="Vedi">

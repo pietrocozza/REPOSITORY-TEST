@@ -40,7 +40,7 @@ export default function TestoDiviso({
     <Tag className={className} aria-label={testo.replaceAll('*', '')}>
       <motion.span aria-hidden="true" initial="nascosto" {...trigger} transition={{ staggerChildren: 0.06, delayChildren: ritardo }} className="inline">
         {parole.map((p, i) => (
-          <span key={i} className="-mb-[0.12em] inline-block overflow-hidden pb-[0.2em] align-top whitespace-nowrap">
+          <span key={i} className="-mx-[0.12em] -mb-[0.12em] inline-block overflow-hidden px-[0.12em] pb-[0.2em] align-top whitespace-nowrap">
             <motion.span
               className={`inline-block ${p.corsivo ? `italic ${accento}` : ''}`}
               variants={{ nascosto: { y: '110%', rotate: 4 }, visibile: { y: '0%', rotate: 0 } }}

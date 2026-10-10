@@ -34,6 +34,7 @@ export default function IntestazioneStoria() {
             </span>
             Scorri la storia di Via Leonina
           </motion.a>
+          <p className="mt-6 text-xs text-pietra">Le immagini del “prima” sono ricostruzioni illustrative dello stato iniziale.</p>
         </div>
 
         <div className="relative h-[22rem] sm:h-[28rem]">
@@ -44,7 +45,7 @@ export default function IntestazioneStoria() {
             transition={{ duration: 1.2, ease: EASE_LUSSO, delay: 0.8 }}
           >
             <div className="relative aspect-[4/5]">
-              <Image src="/img/ristrutturazione/leonina-prima.jpg" alt="Prima" fill preload sizes="40vw" className="object-cover saturate-[0.6]" />
+              <Image src="/img/ristrutturazione/leonina-prima-ricostruzione.jpg" alt="Prima" fill preload sizes="40vw" className="object-cover" />
               <span className="absolute top-4 left-4 rounded-full bg-inchiostro/80 px-3 py-1 text-xs font-bold text-white">Prima</span>
             </div>
           </motion.div>
@@ -55,7 +56,7 @@ export default function IntestazioneStoria() {
             transition={{ duration: 1.2, ease: EASE_LUSSO, delay: 1.1 }}
           >
             <div className="relative aspect-[4/5]">
-              <Image src="/img/ristrutturazione/leonina-dopo.jpg" alt="Dopo" fill preload sizes="40vw" className="object-cover" />
+              <Image src="/img/leonina/letto.jpg" alt="Dopo" fill preload sizes="40vw" className="object-cover" />
               <span className="absolute top-4 left-4 rounded-full bg-sole px-3 py-1 text-xs font-bold text-inchiostro">Dopo</span>
             </div>
           </motion.div>

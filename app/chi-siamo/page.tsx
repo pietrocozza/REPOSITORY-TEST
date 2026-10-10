@@ -19,6 +19,7 @@ const TEAM = [
     compiti: ['Rapporti con i proprietari', 'Logistica pulizie', 'Manutenzione'],
     contatto: { label: SITO.telefono.numero, href: SITO.telefono.href },
     colore: 'bg-cielo',
+    foto: '/img/team/francesco.jpg',
   },
   {
     nome: 'Pietro Cozza',
@@ -26,6 +27,7 @@ const TEAM = [
     compiti: ['Pagamenti puntuali', 'Adempimenti normativi', 'Ospiti 24/24'],
     contatto: { label: `WhatsApp ${SITO.whatsapp.numero}`, href: SITO.whatsapp.href },
     colore: 'bg-pesca',
+    foto: '/img/team/pietro.jpg',
   },
 ]
 
@@ -42,7 +44,7 @@ export default function ChiSiamo() {
         etichetta="Chi siamo"
         titolo="Ogni casa ha la sua *identità.*"
         sottotitolo="Gestiamo affitti brevi a Roma e Milano. Ogni proprietario ha esigenze diverse: per questo lavoriamo su misura."
-        foto="/img/hero/leonina-camera.jpg"
+        foto="/img/leonina/camera-ampia.jpg"
         altFoto="Camera della Suite Leonina, Rione Monti"
       />
 
@@ -60,31 +62,29 @@ export default function ChiSiamo() {
       </section>
 
       <section aria-labelledby="titolo-team" className="bg-sabbia">
-        <div className="contenitore grid gap-10 py-20 md:py-28 lg:grid-cols-[1fr_1.1fr] lg:items-center">
-          <Rivela className="relative aspect-square overflow-hidden rounded-[2rem] md:rounded-[3rem]">
-            <Image src="/img/team/team.jpg" alt="Il team di Soluzione Affitto" fill sizes="(min-width:1024px) 45vw, 100vw" className="object-cover" />
-          </Rivela>
-          <div>
-            <h2 id="titolo-team" className="titolo-xl">
-              Il <span className="italic text-corallo">team.</span>
-            </h2>
-            <ul className="mt-10 space-y-4">
-              {TEAM.map((t, i) => (
-                <Rivela as="li" key={t.nome} ritardo={i * 0.12} className={`rounded-[2rem] p-6 md:p-8 ${t.colore}`}>
-                  <p className="text-sm font-bold text-corallo">{t.ruolo}</p>
-                  <h3 className="mt-1 font-display text-3xl font-bold tracking-tight">{t.nome}</h3>
-                  <ul className="mt-4 flex flex-wrap gap-2">
-                    {t.compiti.map((c) => (
-                      <li key={c} className="rounded-full bg-white px-3 py-1.5 text-sm font-medium">{c}</li>
-                    ))}
-                  </ul>
-                  <a href={t.contatto.href} className="mt-5 inline-block text-sm font-bold underline-offset-4 hover:text-corallo hover:underline">
-                    {t.contatto.label}
-                  </a>
-                </Rivela>
-              ))}
-            </ul>
-          </div>
+        <div className="contenitore py-20 md:py-28">
+          <h2 id="titolo-team" className="titolo-xl">
+            Il <span className="italic text-corallo">team.</span>
+          </h2>
+          <ul className="mt-12 grid gap-5 md:grid-cols-2">
+            {TEAM.map((t, i) => (
+              <Rivela as="li" key={t.nome} ritardo={i * 0.12} className={`flex flex-col items-center rounded-[2rem] p-8 text-center md:p-10 ${t.colore}`}>
+                <div className="relative size-40 overflow-hidden rounded-full border-[6px] border-white shadow-[0_20px_40px_-20px_rgba(29,34,54,0.5)] md:size-48">
+                  <Image src={t.foto} alt={`Foto di ${t.nome}`} fill sizes="192px" className="object-cover" />
+                </div>
+                <p className="mt-6 text-sm font-bold text-corallo">{t.ruolo}</p>
+                <h3 className="mt-1 font-display text-3xl font-bold tracking-tight">{t.nome}</h3>
+                <ul className="mt-5 flex flex-wrap justify-center gap-2">
+                  {t.compiti.map((c) => (
+                    <li key={c} className="rounded-full bg-white px-3 py-1.5 text-sm font-medium">{c}</li>
+                  ))}
+                </ul>
+                <a href={t.contatto.href} className="mt-6 inline-block text-sm font-bold underline-offset-4 hover:text-corallo hover:underline">
+                  {t.contatto.label}
+                </a>
+              </Rivela>
+            ))}
+          </ul>
         </div>
       </section>
 

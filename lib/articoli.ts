@@ -320,7 +320,7 @@ export const ARTICOLI: Articolo[] = [
     minuti: 4,
     blocchi: [
       { t: 'p', testo: 'L’ospite sceglie in pochi secondi, scorrendo le foto. Lo home staging serve a questo: far capire subito com’è vivere quella casa.' },
-      { t: 'prima-dopo', prima: '/img/ristrutturazione/leonina-prima.jpg', dopo: '/img/ristrutturazione/leonina-dopo.jpg', alt: 'Una camera di Via Leonina prima e dopo il nostro intervento' },
+      { t: 'prima-dopo', prima: '/img/ristrutturazione/leonina-prima-ricostruzione.jpg', dopo: '/img/ristrutturazione/leonina-dopo.jpg', alt: 'Una camera di Via Leonina prima e dopo il nostro intervento' },
       { t: 'h2', testo: 'Cinque mosse che funzionano' },
       {
         t: 'punti',
