@@ -36,6 +36,9 @@ OCCUPAZIONE_MINIMA_CENTRO_ROMA = 0.8
 # I prezzi rilevati sono per soggiorni di settembre e ottobre (alta stagione): questo fattore li riporta
 # alla tariffa media dell'anno. Tarato sui 2 camere che gestiamo nel centro storico di Roma (68–88k € l'anno).
 CORREZIONE_PREZZO = 0.88
+# Milano rende meno di quanto dicono i dati: -15% nel centro, -20% negli altri quartieri (dalle case che gestiamo)
+RIDUZIONE_MILANO_CENTRO = 0.85
+RIDUZIONE_MILANO_ALTRE = 0.80
 
 # Rioni del Municipio I: ogni annuncio va al centro più vicino
 RIONI_ROMA = {
@@ -164,6 +167,9 @@ def main():
     milano = carica('milan')
     nomi_milano = CENTRO_MILANO | ALTRI_MILANO
     milano['zona'] = milano.neighbourhood_cleansed.map(nomi_milano).fillna('Altre zone di Milano')
+    fattore = np.where(milano.zona.isin(CENTRO_MILANO.values()), RIDUZIONE_MILANO_CENTRO, RIDUZIONE_MILANO_ALTRE)
+    milano['prezzo'] = milano.prezzo * fattore
+    milano['incasso'] = milano.notti * milano.prezzo
 
     dati = {
         'rilevazione': RILEVAZIONE,
