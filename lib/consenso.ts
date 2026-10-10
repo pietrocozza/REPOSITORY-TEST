@@ -5,7 +5,7 @@ import { useSyncExternalStore } from 'react'
 // Consenso ai cookie pubblicitari (Google Ads), salvato nel browser del visitatore.
 // Senza un ID Google Ads configurato il sito non usa cookie e il banner non compare.
 
-export const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ?? ''
+export const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ?? 'AW-18505744195'
 export const GOOGLE_ADS_CONVERSIONE = process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSIONE ?? ''
 
 export type Consenso = 'si' | 'no' | null
