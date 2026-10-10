@@ -286,7 +286,7 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
               <p className="mt-2 font-display text-3xl font-bold tracking-tight">
                 {punti(alMese(s.min, completa))} – {punti(alMese(s.max, completa))} €
               </p>
-              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, prima delle tasse (che variano per ognuno). Commissione del {completa}%, che può scendere per le case più grandi.</p>
+              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, prima delle tasse (che variano per ognuno). Commissione del {completa}%, può variare in base all’immobile.</p>
             </div>
 
             <AnimatePresence initial={false}>

@@ -68,8 +68,7 @@ export const PIANI = [
 ] as const
 
 // La commissione può cambiare da casa a casa: lo diciamo in piccolo sotto il prezzo
-export const NOTA_COMMISSIONE =
-  'La commissione può variare in base all’immobile: per case grandi, come una villa con 7 camere, può scendere fino al 10%. Prendiamo in gestione solo case che rispondono ai nostri standard di qualità.'
+export const NOTA_COMMISSIONE = 'La commissione può variare in base all’immobile.'
 
 export const EXTRA = [
   'Consulenza per le strategie di prezzo e occupazione',
