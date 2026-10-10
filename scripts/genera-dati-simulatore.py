@@ -7,7 +7,8 @@ Uso:
   2. python3 scripts/genera-dati-simulatore.py <cartella-dati> <data-rilevazione AAAA-MM>
 
 Regole:
-  - solo case intere, attive (almeno 6 recensioni negli ultimi 12 mesi), prezzo sotto il 99° percentile
+  - solo case intere avviate e attive tutto l'anno (almeno 80 recensioni totali e 12 negli ultimi 12 mesi),
+    prezzo sotto il 99° percentile
   - incasso annuo = stima di Inside Airbnb (notti stimate dalle recensioni x prezzo)
   - fascia mostrata = 40° – 65° percentile (stima prudente) degli annunci simili
   - se in una zona ci sono meno di 25 annunci con quel numero di camere, si parte dal dato
@@ -72,7 +73,7 @@ ALTRI_MILANO = {
 def carica(citta):
     df = pd.read_csv(CARTELLA / f'{citta}-listings.csv.gz', low_memory=False)
     df['prezzo'] = df.price.str.replace(r'[$,]', '', regex=True).astype(float)
-    df = df[(df.room_type == 'Entire home/apt') & (df.number_of_reviews_ltm >= 6) & (df.estimated_revenue_l365d > 0)
+    df = df[(df.room_type == 'Entire home/apt') & (df.number_of_reviews >= 80) & (df.number_of_reviews_ltm >= 12) & (df.estimated_revenue_l365d > 0)
             & df.prezzo.notna() & df.bedrooms.notna()]
     df = df[df.prezzo < df.prezzo.quantile(0.99)].copy()
     df['camere'] = df.bedrooms.clip(upper=3).astype(int).astype(str)
