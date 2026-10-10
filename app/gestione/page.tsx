@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import IntestazionePagina from '@/components/sezioni/IntestazionePagina'
 import Piani from '@/components/sezioni/Piani'
 import Servizi from '@/components/sezioni/Servizi'
+import ComeLavoriamo from '@/components/sezioni/ComeLavoriamo'
 import Partner from '@/components/sezioni/Partner'
 import InvitoFinale from '@/components/sezioni/InvitoFinale'
 import Etichetta from '@/components/ui/Etichetta'
@@ -28,6 +29,7 @@ export default function Gestione() {
           <Piani />
         </div>
       </section>
+      <ComeLavoriamo />
       <Servizi />
       <Partner />
       <InvitoFinale />

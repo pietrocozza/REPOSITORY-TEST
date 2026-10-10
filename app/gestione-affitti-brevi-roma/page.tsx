@@ -3,6 +3,7 @@ import IntestazionePagina from '@/components/sezioni/IntestazionePagina'
 import Simulatore from '@/components/sezioni/Simulatore'
 import GrigliaZone from '@/components/sezioni/GrigliaZone'
 import Servizi from '@/components/sezioni/Servizi'
+import ComeLavoriamo from '@/components/sezioni/ComeLavoriamo'
 import Piani from '@/components/sezioni/Piani'
 import Recensioni from '@/components/sezioni/Recensioni'
 import Partner from '@/components/sezioni/Partner'
@@ -86,6 +87,7 @@ export default function GestioneRoma() {
       </section>
 
       <Servizi />
+      <ComeLavoriamo />
 
       <section aria-labelledby="titolo-piani" className="bg-crema">
         <div className="contenitore py-20 md:py-28">

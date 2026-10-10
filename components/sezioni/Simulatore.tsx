@@ -26,7 +26,8 @@ const MESI_ESTESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno
 const punti = (v: number) => String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 const arrotonda = (v: number, passo = 500) => Math.round(v / passo) * passo
 // Media mensile di quanto resta al proprietario dopo la nostra commissione
-const alMese = (anno: number, percentuale: number) => arrotonda((anno * (1 - percentuale / 100)) / 12, 50)
+// La commissione ha l’IVA al 22%, che il proprietario privato non può recuperare
+const alMese = (anno: number, percentuale: number) => arrotonda((anno * (1 - (percentuale / 100) * 1.22)) / 12, 50)
 // Spese medie al mese a carico del proprietario (pulizie con ditta specializzata, utenze, consumabili)
 const SPESE: Record<Camere, number> = { '0': 500, '1': 500, '2': 650, '3': 800 }
 
@@ -291,7 +292,7 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
               <p className="mt-2 font-display text-3xl font-bold tracking-tight">
                 <Numero valore={nettoMin} /> – <Numero valore={nettoMax} /> €
               </p>
-              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, prima delle tasse (che variano per ognuno). Già tolte la nostra commissione del {completa}% (può variare in base all’immobile) e le spese della casa.</p>
+              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, prima delle tasse (che variano per ognuno). Già tolte la nostra commissione del {completa}% + IVA (può variare in base all’immobile) e le spese della casa.</p>
             </div>
 
             <AnimatePresence initial={false}>

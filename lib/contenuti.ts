@@ -276,3 +276,14 @@ export const CANTIERI_BREVI: Record<string, string> = {
   'Brera — Via Pietro Maroncelli': 'Cantiere in corso: il video racconta la trasformazione, la seconda parte mostrerà il prima e il dopo.',
   'San Babila — Corso Monforte': 'Stiamo ristrutturando, prevediamo di pubblicare entro aprile 2025.',
 }
+
+// Come lavoriamo: le risposte alle domande che ogni proprietario fa al primo incontro
+export const COME_LAVORIAMO = [
+  { icona: 'documento', titolo: 'Un contratto chiaro', testo: 'La casa resta tua. Firmiamo un mandato di gestione: incassiamo noi le prenotazioni per tuo conto.' },
+  { icona: 'euro', titolo: 'Ti paghiamo ogni mese', testo: 'Bonifico mensile con il rendiconto di ogni prenotazione. Le spese le scaliamo dagli incassi: non anticipi nulla.' },
+  { icona: 'carta', titolo: 'Tasse già versate', testo: 'Facciamo noi da sostituto d’imposta: tratteniamo e versiamo il 21% e a marzo ti diamo la Certificazione Unica.' },
+  { icona: 'chiave', titolo: 'Burocrazia a carico nostro', testo: 'Alloggiati Web, imposta di soggiorno, ISTAT e CIN: ce ne occupiamo noi, tu non entri in nessun portale.' },
+  { icona: 'scudo', titolo: 'Danni e imprevisti', testo: 'Ospiti selezionati e pagamenti anticipati. Danni gestiti con i portali e copertura assicurativa, artigiani di fiducia.' },
+  { icona: 'calendario', titolo: 'La casa quando vuoi', testo: 'Ci dici le date e le blocchiamo nel calendario. Basta avvisarci per tempo.' },
+] as const
+
