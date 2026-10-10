@@ -62,7 +62,7 @@ export default function GestioneMilano() {
       <section aria-labelledby="titolo-piani" className="bg-crema">
         <div className="contenitore py-20 md:py-28">
           <h2 id="titolo-piani" className="titolo-xl mb-12">
-            Due formule, <span className="italic text-corallo">scegli tu.</span>
+            Una formula, <span className="italic text-corallo">tutto incluso.</span>
           </h2>
           <Piani conExtra={false} />
         </div>

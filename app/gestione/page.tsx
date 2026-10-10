@@ -9,7 +9,7 @@ import Etichetta from '@/components/ui/Etichetta'
 export const metadata: Metadata = {
   alternates: { canonical: '/gestione' },
   title: 'Il nostro servizio di gestione',
-  description: 'Gestione online base al 12% o gestione completa al 20% sull’affitto generato: annuncio, prezzi, ospiti, check-in, pulizie, manutenzione e burocrazia.',
+  description: 'Gestione completa al 20% sull’affitto generato: annuncio, prezzi, ospiti, check-in, pulizie, manutenzione e burocrazia. Pensiamo a tutto noi.',
 }
 
 export default function Gestione() {
@@ -18,7 +18,7 @@ export default function Gestione() {
       <IntestazionePagina
         etichetta="Il nostro servizio di gestione"
         titolo="Dimenticati e *incassa.*"
-        sottotitolo="Due formule per affidarci il tuo appartamento: una commissione in percentuale sull’affitto generato, e a tutto il resto pensiamo noi."
+        sottotitolo="Una sola formula, tutto incluso: una commissione in percentuale sull’affitto generato, e a tutto il resto pensiamo noi."
         foto="/img/hero/don-bosco.jpg"
         altFoto="Suite Don Bosco, Roma"
       />

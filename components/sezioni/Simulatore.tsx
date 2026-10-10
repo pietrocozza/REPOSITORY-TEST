@@ -94,7 +94,7 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
   const picco = Math.max(...mensili)
   const gruppi = [...new Set(c.zone.map((x) => x.gruppo))]
   const affittoMese = Number(canone.replace(/\D/g, ''))
-  const completa = PIANI[1].percentuale
+  const completa = PIANI[0].percentuale
     const nettoMese = alMese(s.max, completa)
   const volte = affittoMese > 0 ? nettoMese / affittoMese : 0
 
@@ -282,20 +282,11 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
 
             {/* Netto al mese */}
             <div className="mt-8 rounded-2xl bg-salvia p-5">
-              <p className="font-display text-lg font-bold tracking-tight">Ti restano in tasca, al mese</p>
-              <ul className="mt-3 space-y-2">
-                {PIANI.map((p) => (
-                  <li key={p.nome} className="flex flex-wrap items-baseline justify-between gap-x-4 text-sm">
-                    <span>
-                      {p.nome} <span className="text-inchiostro/60">({p.percentuale}%)</span>
-                    </span>
-                    <strong className="font-display text-xl tracking-tight">
-                      {punti(alMese(s.min, p.percentuale))} – {punti(alMese(s.max, p.percentuale))} €
-                    </strong>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, prima delle tasse (che variano per ognuno).</p>
+              <p className="font-display text-lg font-bold tracking-tight">Ti restano in tasca, al mese, con la gestione completa</p>
+              <p className="mt-2 font-display text-3xl font-bold tracking-tight">
+                {punti(alMese(s.min, completa))} – {punti(alMese(s.max, completa))} €
+              </p>
+              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, prima delle tasse (che variano per ognuno). Commissione del {completa}%, che può scendere per le case più grandi.</p>
             </div>
 
             <AnimatePresence initial={false}>

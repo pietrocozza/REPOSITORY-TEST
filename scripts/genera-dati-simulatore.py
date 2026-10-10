@@ -33,6 +33,9 @@ TETTO_OCCUPAZIONE = 0.9
 # Nel centro storico di Roma le case che gestiamo non scendono mai sotto l'80%:
 # per le stime di quelle zone l'occupazione parte da qui
 OCCUPAZIONE_MINIMA_CENTRO_ROMA = 0.8
+# I prezzi rilevati sono per soggiorni di settembre e ottobre (alta stagione): questo fattore li riporta
+# alla tariffa media dell'anno. Tarato sui 2 camere che gestiamo nel centro storico di Roma (68–88k € l'anno).
+CORREZIONE_PREZZO = 0.88
 
 # Rioni del Municipio I: ogni annuncio va al centro più vicino
 RIONI_ROMA = {
@@ -85,6 +88,7 @@ def carica(citta):
     df = df[(df.room_type == 'Entire home/apt') & (df.number_of_reviews >= 80) & (df.number_of_reviews_ltm >= 12) & (df.estimated_revenue_l365d > 0)
             & df.prezzo.notna() & df.bedrooms.notna()]
     df = df[df.prezzo < df.prezzo.quantile(0.99)].copy()
+    df['prezzo'] = df.prezzo * CORREZIONE_PREZZO
     soggiorno = np.maximum(3, df.minimum_nights.clip(upper=30))
     df['notti'] = np.minimum(df.number_of_reviews_ltm / TASSO_RECENSIONI * soggiorno, 365 * TETTO_OCCUPAZIONE)
     df['incasso'] = df.notti * df.prezzo

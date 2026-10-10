@@ -91,7 +91,7 @@ export default function GestioneRoma() {
         <div className="contenitore py-20 md:py-28">
           <Etichetta className="mb-6 text-corallo">Commissioni</Etichetta>
           <h2 id="titolo-piani" className="titolo-xl mb-12">
-            Due formule, <span className="italic text-corallo">scegli tu.</span>
+            Una formula, <span className="italic text-corallo">tutto incluso.</span>
           </h2>
           <Piani conExtra={false} />
         </div>

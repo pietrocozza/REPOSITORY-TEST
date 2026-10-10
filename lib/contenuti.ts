@@ -47,25 +47,6 @@ export const APPARTAMENTI: Appartamento[] = [
 
 export const PIANI = [
   {
-    nome: 'Gestione online base',
-    sottotitolo: 'Vuoi un avvio col botto? Lascia fare a noi.',
-    percentuale: 12,
-    voci: [
-      'Creazione annuncio SEO',
-      'Sincronizzazione dei calendari OTA',
-      'Massimizzazione tariffe',
-      'Supporto per SCIA e CIN',
-      'Servizio fotografico professionale',
-      'Comunicazioni con gli ospiti 24/24',
-      'Check-in e check-out',
-      'Logistica staff delle pulizie',
-      'Copertura assicurativa',
-      'Alloggiati Web e imposta di soggiorno',
-      'Manutenzione e riparazioni',
-      'Home staging affitti brevi',
-    ],
-  },
-  {
     nome: 'Gestione completa',
     sottotitolo: 'Tutto incluso: dimenticati e incassa.',
     percentuale: 20,
@@ -85,6 +66,10 @@ export const PIANI = [
     ],
   },
 ] as const
+
+// La commissione può cambiare da casa a casa: lo diciamo in piccolo sotto il prezzo
+export const NOTA_COMMISSIONE =
+  'La commissione può variare in base all’immobile: per case grandi, come una villa con 7 camere, può scendere fino al 10%. Prendiamo in gestione solo case che rispondono ai nostri standard di qualità.'
 
 export const EXTRA = [
   'Consulenza per le strategie di prezzo e occupazione',

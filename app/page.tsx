@@ -60,7 +60,7 @@ export default function Home() {
       <section aria-labelledby="titolo-piani" className="bg-crema">
         <div className="contenitore py-20 md:py-28">
           <Etichetta className="mb-6 text-corallo">Gestione</Etichetta>
-          <TestoDiviso as="h2" testo="Due formule, *scegli tu.*" className="titolo-xl mb-12" />
+          <TestoDiviso as="h2" testo="Una formula, *tutto incluso.*" className="titolo-xl mb-12" />
           <span id="titolo-piani" className="sr-only">
             Piani di gestione
           </span>
