@@ -41,7 +41,8 @@ export default function RistrutturaGratis() {
             <p id="titolo-confronto" className="text-pietra">Via Leonina, prima e dopo i lavori.</p>
           </div>
           <Rivela>
-            <PrimaDopo prima="/img/ristrutturazione/leonina-prima.jpg" dopo="/img/ristrutturazione/leonina-dopo.jpg" alt="Camera in Via Leonina" />
+            <PrimaDopo prima="/img/ristrutturazione/leonina-prima-ricostruzione.jpg" dopo="/img/ristrutturazione/leonina-dopo.jpg" alt="Camera in Via Leonina" />
+            <p className="mt-3 text-xs text-pietra">Il “prima” è una ricostruzione illustrativa dello stato iniziale.</p>
           </Rivela>
         </div>
       </section>

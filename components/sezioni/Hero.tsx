@@ -12,10 +12,11 @@ import { useRiduciMovimento } from '@/lib/hooks'
 
 // Foto che si alternano dietro al titolo, con un lento zoom
 const FOTO = [
+  { src: '/img/roma/san-pietro-tevere.jpg', alt: 'Il Tevere, Ponte Sant’Angelo e la cupola di San Pietro' },
   { src: '/img/hero/leonina-sala.jpg', alt: 'Suite Leonina, Rione Monti' },
+  { src: '/img/roma/colosseo-sera.jpg', alt: 'Il Colosseo al tramonto' },
   { src: '/img/hero/don-bosco.jpg', alt: 'Suite Don Bosco, Roma' },
-  { src: '/img/hero/leonina-camera.jpg', alt: 'Camera della Suite Leonina' },
-  { src: '/img/hero/villa-chiara.jpg', alt: 'Villa Chiara, Montefiascone' },
+  { src: '/img/roma/fontana-di-trevi.jpg', alt: 'Fontana di Trevi' },
 ]
 
 const NASTRO = ['Zero limiti', 'Zero rischi', 'Zero spese', 'Pagamenti anticipati', 'Protezione fino a 3 mln €', 'Roma', 'Milano']

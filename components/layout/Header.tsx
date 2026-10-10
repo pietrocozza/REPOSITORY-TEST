@@ -19,6 +19,7 @@ const FOTO_MENU: Record<string, string> = {
   '/chi-siamo': '/img/team/team.jpg',
   '/domande-e-risposte': '/img/case/brera-apt.jpg',
   '/contatti': '/img/hero/villa-chiara.jpg',
+  '/blog': '/img/roma/fontana-di-trevi.jpg',
 }
 
 export default function Header() {
@@ -69,7 +70,7 @@ export default function Header() {
         <div className={`contenitore relative flex items-center justify-between transition-[height] duration-500 ${scorso ? 'h-16 md:h-[4.5rem]' : 'h-20 md:h-24'}`}>
           <Logo onClick={chiudi} />
           <nav aria-label="Principale" className="hidden items-center gap-8 xl:flex">
-            {NAV.slice(1, 5).map((n) => (
+            {NAV.filter((n) => ['/gestione', '/ristruttura-gratis', '/chi-siamo', '/blog'].includes(n.href)).map((n) => (
               <Link key={n.href} href={n.href} className="group relative text-sm font-medium">
                 {n.label}
                 <span

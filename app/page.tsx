@@ -60,7 +60,8 @@ export default function Home() {
             </div>
           </div>
           <Rivela>
-            <PrimaDopo prima="/img/ristrutturazione/leonina-prima.jpg" dopo="/img/ristrutturazione/leonina-dopo.jpg" alt="Camera in Via Leonina, Rione Monti" />
+            <PrimaDopo prima="/img/ristrutturazione/leonina-prima-ricostruzione.jpg" dopo="/img/ristrutturazione/leonina-dopo.jpg" alt="Camera in Via Leonina, Rione Monti" />
+            <p className="mt-3 text-xs text-inchiostro/60">Il “prima” è una ricostruzione illustrativa dello stato iniziale.</p>
           </Rivela>
         </div>
       </section>

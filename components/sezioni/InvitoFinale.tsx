@@ -27,7 +27,7 @@ export default function InvitoFinale() {
             viewport={{ once: true, margin: '0px 0px -20% 0px' }}
             transition={{ duration: 1.4, ease: EASE_LUSSO }}
           >
-            <Image src="/img/roma/pantheon-alto.jpg" alt="Il Pantheon a Roma" fill sizes="(min-width:1024px) 40vw, 100vw" className="object-cover" />
+            <Image src="/img/roma/pantheon-hd.jpg" alt="Il Pantheon a Roma" fill quality={90} sizes="(min-width:1024px) 40vw, 100vw" className="object-cover" />
           </motion.div>
         </div>
       </div>

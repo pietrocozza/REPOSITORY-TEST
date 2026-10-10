@@ -30,6 +30,7 @@ export const NAV = [
   { href: '/operazioni-immobiliari', label: 'Operazioni immobiliari' },
   { href: '/chi-siamo', label: 'Chi siamo' },
   { href: '/domande-e-risposte', label: 'Domande e risposte' },
+  { href: '/blog', label: 'Blog' },
   { href: '/contatti', label: 'Contatti' },
 ] as const
 
