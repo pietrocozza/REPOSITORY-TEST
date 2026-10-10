@@ -49,4 +49,4 @@ Le recensioni di Google e Airbnb sono riportate testualmente da quelle mostrate 
 
 ## Pubblicazione
 
-Il modo più semplice è [Vercel](https://vercel.com): si importa il repository e si collega il dominio `soluzioneaffitto.com`.
+Il sito è pubblicato su [Vercel](https://vercel.com), collegato a questo repository: ogni aggiornamento del ramo principale viene rimesso online in automatico. Il dominio `soluzioneaffitto.com` resta registrato su Aruba e punta a Vercel tramite i record DNS.
