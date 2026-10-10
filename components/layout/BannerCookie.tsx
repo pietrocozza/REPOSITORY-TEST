@@ -33,7 +33,7 @@ export default function BannerCookie() {
       const link = (e.target as HTMLElement).closest('a')
       const href = link?.getAttribute('href') ?? ''
       if (/^(https:\/\/wa\.me|mailto:|tel:)/.test(href)) {
-        window.gtag?.('event', 'conversion', { send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_CONVERSIONE}` })
+        window.gtag?.('event', 'conversion', { send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_CONVERSIONE}`, value: 1.0, currency: 'EUR' })
       }
     }
     document.addEventListener('click', alClic, { capture: true })
