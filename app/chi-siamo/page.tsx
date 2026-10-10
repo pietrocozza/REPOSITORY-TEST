@@ -42,8 +42,8 @@ export default function ChiSiamo() {
         etichetta="Chi siamo"
         titolo="Ogni casa ha la sua *identità.*"
         sottotitolo="Gestiamo affitti brevi a Roma e Milano. Ogni proprietario ha esigenze diverse: per questo lavoriamo su misura."
-        foto="/img/roma/pantheon.jpg"
-        altFoto="Il Pantheon e Piazza della Rotonda a Roma"
+        foto="/img/hero/leonina-camera.jpg"
+        altFoto="Camera della Suite Leonina, Rione Monti"
       />
 
       <section className="bg-crema">

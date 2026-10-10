@@ -12,10 +12,10 @@ import { useRiduciMovimento } from '@/lib/hooks'
 
 // Foto che si alternano dietro al titolo, con un lento zoom
 const FOTO = [
-  { src: '/img/roma/panorama.jpg', alt: 'Tetti di Roma al tramonto' },
-  { src: '/img/case/terrazza.jpg', alt: 'Terrazza di un appartamento gestito' },
-  { src: '/img/roma/via-condotti.jpg', alt: 'Via Condotti e Trinità dei Monti' },
-  { src: '/img/case/leonina-2.jpg', alt: 'Interno della Suite Leonina' },
+  { src: '/img/hero/leonina-sala.jpg', alt: 'Suite Leonina, Rione Monti' },
+  { src: '/img/hero/don-bosco.jpg', alt: 'Suite Don Bosco, Roma' },
+  { src: '/img/hero/leonina-camera.jpg', alt: 'Camera della Suite Leonina' },
+  { src: '/img/hero/villa-chiara.jpg', alt: 'Villa Chiara, Montefiascone' },
 ]
 
 const NASTRO = ['Zero limiti', 'Zero rischi', 'Zero spese', 'Pagamenti anticipati', 'Protezione fino a 3 mln €', 'Roma', 'Milano']
@@ -79,7 +79,7 @@ export default function Hero() {
             exit={{ opacity: 0 }}
             transition={{ opacity: { duration: 1.4 }, scale: { duration: 7, ease: 'linear' } }}
           >
-            <Image src={FOTO[indice].src} alt={FOTO[indice].alt} fill preload={indice === 0} sizes="100vw" className="object-cover" />
+            <Image src={FOTO[indice].src} alt={FOTO[indice].alt} fill preload={indice === 0} quality={90} sizes="100vw" className="object-cover" />
           </motion.div>
         </AnimatePresence>
       </motion.div>
@@ -122,7 +122,7 @@ export default function Hero() {
           <Fluttuante className="top-0 right-6" ritardo={1.4} profondita={1}>
             <div className="w-64 rounded-3xl bg-white p-6 text-inchiostro shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)]">
               <p className="font-display text-6xl font-bold tracking-tighter text-corallo">+300%</p>
-              <p className="mt-1 text-sm font-medium text-pietra">di ricavi possibili rispetto all’affitto tradizionale</p>
+              <p className="mt-1 text-sm font-medium text-pietra">di ricavi possibili rispetto all’affitto tradizionale, nel centro storico</p>
             </div>
           </Fluttuante>
           <Fluttuante className="top-40 left-0" ritardo={1.7} profondita={2}>

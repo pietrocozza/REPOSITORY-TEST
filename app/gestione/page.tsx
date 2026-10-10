@@ -18,8 +18,8 @@ export default function Gestione() {
         etichetta="Il nostro servizio di gestione"
         titolo="Dimenticati e *incassa.*"
         sottotitolo="Due formule per affidarci il tuo appartamento: una commissione in percentuale sull’affitto generato, e a tutto il resto pensiamo noi."
-        foto="/img/case/terrazza.jpg"
-        altFoto="Terrazza arredata di un appartamento gestito"
+        foto="/img/hero/don-bosco.jpg"
+        altFoto="Suite Don Bosco, Roma"
       />
       <section aria-label="Piani" className="bg-crema">
         <div className="contenitore py-24 md:py-32">

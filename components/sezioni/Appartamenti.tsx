@@ -27,7 +27,7 @@ export default function Appartamenti() {
                   <div className="relative aspect-[4/3] overflow-hidden rounded-[1.35rem]">
                     <Image src={a.foto} alt={`${a.nome}, ${a.dettaglio}`} fill sizes="(min-width:640px) 24rem, 72vw" className="object-cover transition-transform duration-1000 ease-lusso group-hover/scheda:scale-110" />
                     {a.citta && (
-                      <span className={`absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-bold ${a.citta === 'Roma' ? 'bg-sole text-inchiostro' : 'bg-azzurro text-white'}`}>{a.citta}</span>
+                      <span className={`absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-bold ${a.citta === 'Roma' ? 'bg-sole text-inchiostro' : a.citta === 'Milano' ? 'bg-azzurro text-white' : 'bg-salvia text-inchiostro'}`}>{a.citta}</span>
                     )}
                   </div>
                   <figcaption className="px-2.5 pt-4 pb-2">

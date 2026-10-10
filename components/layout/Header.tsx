@@ -12,13 +12,13 @@ import { bloccaScroll } from '@/lib/scroll'
 
 // Foto mostrata accanto alle voci del menu al passaggio del mouse
 const FOTO_MENU: Record<string, string> = {
-  '/': '/img/roma/panorama.jpg',
-  '/gestione': '/img/case/living.jpg',
+  '/': '/img/hero/leonina-sala.jpg',
+  '/gestione': '/img/hero/don-bosco.jpg',
   '/ristruttura-gratis': '/img/ristrutturazione/leonina-dopo.jpg',
   '/operazioni-immobiliari': '/img/cantieri/tempio-della-pace.jpg',
   '/chi-siamo': '/img/team/team.jpg',
-  '/domande-e-risposte': '/img/roma/pantheon.jpg',
-  '/contatti': '/img/roma/via-condotti.jpg',
+  '/domande-e-risposte': '/img/case/brera-apt.jpg',
+  '/contatti': '/img/hero/villa-chiara.jpg',
 }
 
 export default function Header() {

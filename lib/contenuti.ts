@@ -28,13 +28,13 @@ export const SERVIZI = [
   { titolo: 'Monitoraggio', testo: 'Con un semplice smartphone puoi sapere in tempo reale chi è l’ospite del momento, attraverso quale canale ha prenotato e il prezzo pagato.' },
 ] as const
 
-export type Appartamento = { nome: string; dettaglio: string; citta: 'Roma' | 'Milano' | null; foto: string }
+export type Appartamento = { nome: string; dettaglio: string; citta: string; foto: string }
 
-// Nome e indicazione come negli annunci. La città è indicata solo quando il nome o la zona la rendono certa.
+// Nome e indicazione come negli annunci
 export const APPARTAMENTI: Appartamento[] = [
   { nome: 'Suite Leonina', dettaglio: 'Metro B Cavour · 200 m dal Colosseo', citta: 'Roma', foto: '/img/case/leonina-1.jpg' },
   { nome: 'Suite Don Bosco', dettaglio: 'Metro Giulio Agricola', citta: 'Roma', foto: '/img/case/don-bosco-1.jpg' },
-  { nome: 'Villa Chiara', dettaglio: 'Free Parking & Spa', citta: null, foto: '/img/case/villa-chiara.jpg' },
+  { nome: 'Villa Chiara', dettaglio: 'Free Parking & Spa', citta: 'Montefiascone', foto: '/img/case/villa-chiara.jpg' },
   { nome: 'Brera Apt 1 II', dettaglio: '5 min to Duomo', citta: 'Milano', foto: '/img/case/brera-apt.jpg' },
   { nome: 'Isola Luxe Apt', dettaglio: '150 m Metro Marche', citta: 'Milano', foto: '/img/case/isola-luxe.jpg' },
   { nome: 'Brera Terrace & Free Parking', dettaglio: 'Garibaldi FS', citta: 'Milano', foto: '/img/case/brera-terrace.jpg' },
@@ -245,22 +245,22 @@ export const CANTIERI = [
 // ───────── Versioni brevi per elenchi grafici (riassunti dei testi sopra, nessuna aggiunta) ─────────
 
 export const VANTAGGI_BREVI = [
-  { icona: 'grafico', titolo: 'Guadagni maggiori', testo: 'Lo stesso appartamento può rendere fino al 300% in più.', dato: '+300%', foto: '/img/case/terrazza.jpg' },
-  { icona: 'scudo', titolo: 'Protezione OTA', testo: 'Coperto da qualunque danno fino a 3 milioni di euro.', dato: '3 mln €', foto: '/img/case/living.jpg' },
-  { icona: 'carta', titolo: 'Pagamenti anticipati', testo: 'Gli ospiti pagano sempre prima, tramite Booking e Airbnb.', dato: 'Prima', foto: '/img/case/brera-terrace.jpg' },
-  { icona: 'chiave', titolo: 'Flessibilità', testo: 'La casa è tua quando ti serve. Niente 3+2 o 4+4.', dato: 'Sempre tua', foto: '/img/case/soggiorno.jpg' },
+  { icona: 'grafico', titolo: 'Guadagni maggiori', testo: 'Lo stesso appartamento può rendere fino al 300% in più.', dato: '+300%', foto: '/img/case/don-bosco-1.jpg' },
+  { icona: 'scudo', titolo: 'Protezione OTA', testo: 'Coperto da qualunque danno fino a 3 milioni di euro.', dato: '3 mln €', foto: '/img/case/brera-terrace.jpg' },
+  { icona: 'carta', titolo: 'Pagamenti anticipati', testo: 'Gli ospiti pagano sempre prima, tramite Booking e Airbnb.', dato: 'Prima', foto: '/img/case/isola-luxe.jpg' },
+  { icona: 'chiave', titolo: 'Flessibilità', testo: 'La casa è tua quando ti serve. Niente 3+2 o 4+4.', dato: 'Sempre tua', foto: '/img/case/turquoise.jpg' },
   { icona: 'valigia', titolo: 'Gestione semplificata', testo: 'Niente inquilini problematici: ospiti turisti che arrivano e ripartono.', dato: 'Zero pensieri', foto: '/img/case/leonina-2.jpg' },
 ] as const
 
 export const SERVIZI_BREVI = [
-  { icona: 'Valorizzazione', titolo: 'Valorizzazione', testo: 'Foto professionali, home staging e restyling.' },
-  { icona: 'Gestione annuncio', titolo: 'Annuncio', testo: 'Su tutti i portali, con foto e descrizione.' },
-  { icona: 'Selezione', titolo: 'Selezione ospiti', testo: 'Scegliamo noi gli ospiti e parliamo noi con loro.' },
-  { icona: 'Accoglienza', titolo: 'Accoglienza', testo: 'Check-in con personale multilingue.' },
-  { icona: 'Manutenzione', titolo: 'Manutenzione', testo: 'Un team dedicato alla tua casa.' },
-  { icona: 'Pulizia', titolo: 'Pulizia', testo: 'Casa pulita, biancheria fresca e profumata.' },
-  { icona: 'Burocrazia', titolo: 'Burocrazia', testo: 'Pratiche, CIN e keybox: tutto in regola.' },
-  { icona: 'Monitoraggio', titolo: 'Monitoraggio', testo: 'Ospiti, canali e prezzi in tempo reale sul telefono.' },
+  { icona: 'Valorizzazione', foto: '/img/servizi/valorizzazione.jpg', titolo: 'Valorizzazione', testo: 'Foto professionali, home staging e restyling.' },
+  { icona: 'Gestione annuncio', foto: '/img/servizi/annuncio.jpg', titolo: 'Annuncio', testo: 'Su tutti i portali, con foto e descrizione.' },
+  { icona: 'Selezione', foto: '/img/servizi/selezione.jpg', titolo: 'Selezione ospiti', testo: 'Scegliamo noi gli ospiti e parliamo noi con loro.' },
+  { icona: 'Accoglienza', foto: '/img/servizi/accoglienza.jpg', titolo: 'Accoglienza', testo: 'Check-in con personale multilingue.' },
+  { icona: 'Manutenzione', foto: '/img/servizi/manutenzione.jpg', titolo: 'Manutenzione', testo: 'Un team dedicato alla tua casa.' },
+  { icona: 'Pulizia', foto: '/img/servizi/pulizia.jpg', titolo: 'Pulizia', testo: 'Casa pulita, biancheria fresca e profumata.' },
+  { icona: 'Burocrazia', foto: '/img/servizi/burocrazia.jpg', titolo: 'Burocrazia', testo: 'Pratiche, CIN e keybox: tutto in regola.' },
+  { icona: 'Monitoraggio', foto: '/img/servizi/monitoraggio.jpg', titolo: 'Monitoraggio', testo: 'Ospiti, canali e prezzi in tempo reale sul telefono.' },
 ] as const
 
 export const VANTAGGI_LOCAZIONE_BREVI = [
