@@ -94,28 +94,32 @@ export const EXTRA = [
 
 // ───────── Recensioni (verificate da Trustindex sul sito attuale, tutte 5 stelle) ─────────
 
-export type Recensione = { nome: string; data: string; testo: string; lingua?: string }
+export type Recensione = { nome: string; data: string; testo: string; lingua?: string; foto?: string }
 
 export const RECENSIONI_GOOGLE: Recensione[] = [
   {
     nome: 'Giulia Greco',
+    foto: 'https://lh3.googleusercontent.com/a-/ALV-UjWWGzWyxI_sotioRBxHsQTexmHqTxzTS0ubfRg_gHtY_0tfKfU=w120-h120-c-rp-mo-br100',
     data: '2025-02-13',
     testo:
       'Dopo aver incontrato e valutato diverse agenzie, avevo deciso di affidarmi a Soluzione Affitto perché mi sembravano riuscire a combinare un approccio strutturato e professionale con uno più umano e personalizzato. Essendo una persona molto esigente, posso dire con certezza che, dopo oltre un anno di collaborazione, non avrei potuto fare una scelta migliore. I ragazzi sono sempre stati disponibili e pronti ad aiutarmi, andando spesso oltre le aspettative del loro ruolo.',
   },
   {
     nome: 'Niccolò Fabbri',
+    foto: 'https://lh3.googleusercontent.com/a-/ALV-UjVyN-3_KtbIZupR80Gh5w49dn-b0h8nv3R9CyTGiOeEDsaj6bI=w120-h120-c-rp-mo-br100',
     data: '2025-02-19',
     testo:
       'Il servizio offerto è davvero valido, essendo io proprietario di un appartamento ma fuori zona, mi sono avvalso della loro collaborazione, che consiste nella gestione della chat con gli affittuari, del check-in e della pulizia, aspetti che non avrei potuto gestire direttamente. Consigliato.',
   },
   {
     nome: 'Andreas Martin Fedrigo D’Este Vignoli Babich',
+    foto: 'https://lh3.googleusercontent.com/a-/ALV-UjUajCzdnjU9_8ayjr8nOYOP18fs5MVFuz3kpdFcArp-mzJqNR0J=w120-h120-c-rp-mo-br100',
     data: '2025-02-13',
     testo: 'Ho affidato casa mia a questa giovane realtà da oltre un anno e mi trovo veramente bene. Bravi, empatici e sempre operativi.',
   },
   {
     nome: 'Riccardo Fabbri',
+    foto: 'https://lh3.googleusercontent.com/a/ACg8ocLHoKHv8osBWf1XXsLUyKjMK8OpIf8AcjW2Hhcq7rwejSMUFQ=w120-h120-c-rp-mo-br100',
     data: '2025-02-19',
     testo:
       'Hanno gestito la mia prenotazione con grande professionalità, l’ambiente e l’arredo confortevoli, check-in fatto in modo eccellente. Molto professionali e disponibili.',
@@ -123,16 +127,16 @@ export const RECENSIONI_GOOGLE: Recensione[] = [
 ]
 
 export const RECENSIONI_AIRBNB: Recensione[] = [
-  { nome: 'Andrea', data: '2025-01-02', lingua: 'en', testo: 'The best airbnb I have ever stayed! It is located in a safe area just a few meters from Cavour station, there are also lots of restaurants and cafes nearby. The host was extremely nice and attentive, and lastly the place looked beautiful exactly like the pictures :) 10/10' },
-  { nome: 'Ines', data: '2025-02-13', lingua: 'en', testo: 'It was amazing! I recommend it to everyone. It is close to the coleseum, train station,…. The room was just like the pictures, Beautiful!' },
-  { nome: 'Mingfei', data: '2025-02-04', lingua: 'fr', testo: 'Pietro est un hôte très très serviable et même empressé à satisfaire tous nos besoins. Le logement est très bien situé, entouré par d’excellents pizzerias, fruiteries et de boutiques de mode, et, le plus important, de sites historiques (juste quelques pas à la Colisée). Nous sommes très satisfaits de ce séjour chez Pietro.' },
-  { nome: 'Dermott', data: '2025-01-08', lingua: 'en', testo: 'Pietro was a lovely host and very communicative throughout our stay. The location was absolutely amazing, right near the colosseum.' },
-  { nome: 'Lidi', data: '2025-02-11', lingua: 'pt', testo: 'igual nas fotos. muitos restaurantes próximos. dá pra conhecer todo bairro a pé, fomos até o Vaticano a pé sem saber!!! tudo é muito perto. anfitrião muito cordial / gentil e respondeu todas as msg prontamente. indico e voltaria! o barulho da rua até achamos divertidos.' },
-  { nome: 'Con', data: '2025-01-29', lingua: 'en', testo: 'Great place, location very responsive host and very helpful in every way.' },
-  { nome: 'Tessa', data: '2025-01-27', lingua: 'en', testo: 'Great location, the apartment looked just as the photos showed, it was clean and beautifully decorated. Something you have to consider before booking is the noisy surroundings because of the street but they offer solutions for that.' },
-  { nome: 'Juliette', data: '2025-01-24', lingua: 'fr', testo: 'Nous avons passé un excellent séjour chez Pietro. L’appartement était très propre et conforme aux photos. Lors de notre première soirée, le quartier était un peu bruyant, mais cela ne nous a pas surpris, ayant lu les commentaires précédents. Les autres jours de la semaine ont été relativement calmes. Merci encore, Pietro !' },
-  { nome: 'Laura', data: '2025-01-12', lingua: 'pt', testo: 'O espaço é maravilhoso e super bem localizado. Os arredores tem muitas opções de restaurantes e cafeterias e o checkin foi super tranquilo. Pierre e o cohost são muito atenciosos, recomendo.' },
-  { nome: 'Zack', data: '2024-12-26', lingua: 'en', testo: 'Pietro’s place was conveniently located just less than 5 minutes walk away from Cavour station, one stop away from Termini. The neighbourhood had plenty of amenities, and was a short walk away to Colesseum. The apartment was comfortable and kitchen was well equipped. There was one night when the street below was very noisy up until about 2 am, so we appreciate the earplugs provided by the hosts.' },
+  { nome: 'Andrea', foto: 'https://a0.muscache.com/im/pictures/user/User/original/9ccab8fe-332a-4d70-b838-c7eacb3a1ae0.jpeg?im_w=240', data: '2025-01-02', lingua: 'en', testo: 'The best airbnb I have ever stayed! It is located in a safe area just a few meters from Cavour station, there are also lots of restaurants and cafes nearby. The host was extremely nice and attentive, and lastly the place looked beautiful exactly like the pictures :) 10/10' },
+  { nome: 'Ines', foto: 'https://a0.muscache.com/im/Portrait/Avatars/messaging/b3e03835-ade9-4eb7-a0bb-2466ab9a534d.jpg?im_t=I&im_w=240&im_f=airbnb-cereal-medium.ttf&im_c=ffffff', data: '2025-02-13', lingua: 'en', testo: 'It was amazing! I recommend it to everyone. It is close to the coleseum, train station,…. The room was just like the pictures, Beautiful!' },
+  { nome: 'Mingfei', foto: 'https://a0.muscache.com/im/pictures/user/3416e6b3-6434-4880-80aa-7bde6a9f4cf5.jpg?im_w=240', data: '2025-02-04', lingua: 'fr', testo: 'Pietro est un hôte très très serviable et même empressé à satisfaire tous nos besoins. Le logement est très bien situé, entouré par d’excellents pizzerias, fruiteries et de boutiques de mode, et, le plus important, de sites historiques (juste quelques pas à la Colisée). Nous sommes très satisfaits de ce séjour chez Pietro.' },
+  { nome: 'Dermott', foto: 'https://a0.muscache.com/im/pictures/user/b3367acd-af75-4673-816e-d7c9874842b9.jpg?im_w=240', data: '2025-01-08', lingua: 'en', testo: 'Pietro was a lovely host and very communicative throughout our stay. The location was absolutely amazing, right near the colosseum.' },
+  { nome: 'Lidi', foto: 'https://a0.muscache.com/im/pictures/user/User/original/fc1a021d-158e-4ae3-8a3f-1985dd250130.jpeg?im_w=240', data: '2025-02-11', lingua: 'pt', testo: 'igual nas fotos. muitos restaurantes próximos. dá pra conhecer todo bairro a pé, fomos até o Vaticano a pé sem saber!!! tudo é muito perto. anfitrião muito cordial / gentil e respondeu todas as msg prontamente. indico e voltaria! o barulho da rua até achamos divertidos.' },
+  { nome: 'Con', foto: 'https://a0.muscache.com/im/pictures/user/88cd1ec1-b81e-42f5-ad41-e39240f76be8.jpg?im_w=240', data: '2025-01-29', lingua: 'en', testo: 'Great place, location very responsive host and very helpful in every way.' },
+  { nome: 'Tessa', foto: 'https://a0.muscache.com/im/pictures/user/User/original/1cdf21e0-b9b7-4957-9dc5-4f8ece1faf46.jpeg?im_w=240', data: '2025-01-27', lingua: 'en', testo: 'Great location, the apartment looked just as the photos showed, it was clean and beautifully decorated. Something you have to consider before booking is the noisy surroundings because of the street but they offer solutions for that.' },
+  { nome: 'Juliette', foto: 'https://a0.muscache.com/im/pictures/user/f72fcc14-57f5-483d-a189-b4f397febd5a.jpg?im_w=240', data: '2025-01-24', lingua: 'fr', testo: 'Nous avons passé un excellent séjour chez Pietro. L’appartement était très propre et conforme aux photos. Lors de notre première soirée, le quartier était un peu bruyant, mais cela ne nous a pas surpris, ayant lu les commentaires précédents. Les autres jours de la semaine ont été relativement calmes. Merci encore, Pietro !' },
+  { nome: 'Laura', foto: 'https://a0.muscache.com/im/users/10569081/profile_pic/1386789725/original.jpg?im_w=240', data: '2025-01-12', lingua: 'pt', testo: 'O espaço é maravilhoso e super bem localizado. Os arredores tem muitas opções de restaurantes e cafeterias e o checkin foi super tranquilo. Pierre e o cohost são muito atenciosos, recomendo.' },
+  { nome: 'Zack', foto: 'https://a0.muscache.com/im/pictures/user/f0aca53e-bd53-4d3d-9762-d9988499d2eb.jpg?im_w=240', data: '2024-12-26', lingua: 'en', testo: 'Pietro’s place was conveniently located just less than 5 minutes walk away from Cavour station, one stop away from Termini. The neighbourhood had plenty of amenities, and was a short walk away to Colesseum. The apartment was comfortable and kitchen was well equipped. There was one night when the street below was very noisy up until about 2 am, so we appreciate the earplugs provided by the hosts.' },
 ]
 
 // Testimonianze dei proprietari (pagina "Vantaggi locazione")
