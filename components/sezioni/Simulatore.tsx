@@ -105,9 +105,9 @@ export default function Simulatore({ vetrina = false }: { vetrina?: boolean }) {
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr] lg:gap-12">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-12">
       {/* Domande */}
-      <div className="space-y-10">
+      <div className="min-w-0 space-y-10">
         <Domanda numero={1} titolo="Dove si trova la casa?">
           <div className="inline-flex rounded-full bg-sabbia p-1.5" role="group" aria-label="Città">
             {(Object.keys(DATI.citta) as Citta[]).map((k) => (
@@ -187,9 +187,9 @@ export default function Simulatore({ vetrina = false }: { vetrina?: boolean }) {
       </div>
 
       {/* Risultato */}
-      <div className="lg:sticky lg:top-28 lg:self-start">
+      <div className="min-w-0 lg:sticky lg:top-28 lg:self-start">
         <div className="overflow-hidden rounded-[2rem] bg-white shadow-[0_30px_60px_-40px_rgba(29,34,54,0.5)]" aria-live="polite">
-          <div className="bg-sole p-6 md:p-8">
+          <div className="bg-sole p-5 sm:p-6 md:p-8">
             <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/60 px-3 py-1.5 text-xs font-bold">
               <span className="size-2 rounded-full bg-[#1f7a4d]" aria-hidden="true" />
               Dati reali di {punti(c.annunci)} annunci Airbnb · {MESI_ESTESI[Number(DATI.rilevazione.slice(5)) - 1]} {DATI.rilevazione.slice(0, 4)}
@@ -198,15 +198,15 @@ export default function Simulatore({ vetrina = false }: { vetrina?: boolean }) {
               {CAMERE.find((k) => k.id === camere)?.nome} · {z.nome}, {c.nome}
             </p>
             <p className="mt-3 text-sm font-semibold text-inchiostro/70">Incasso lordo stimato in un anno</p>
-            <p className="mt-1 font-display text-[clamp(2.4rem,6vw,4rem)] leading-none font-bold tracking-tighter">
+            <p className="mt-1 font-display text-[clamp(1.9rem,8.5vw,4rem)] leading-none font-bold tracking-tighter whitespace-nowrap">
               <Numero valore={s.min} />
-              <span className="mx-2 text-inchiostro/40">–</span>
+              <span className="mx-[0.15em] text-inchiostro/40">–</span>
               <Numero valore={s.max} /> €
             </p>
           </div>
 
-          <div className="p-6 md:p-8">
-            <dl className="grid grid-cols-3 gap-3">
+          <div className="p-5 sm:p-6 md:p-8">
+            <dl className="grid grid-cols-3 gap-2 sm:gap-3">
               {[
                 { v: s.tariffa, p: '', u: '€', e: 'tariffa media a notte' },
                 {
@@ -217,8 +217,8 @@ export default function Simulatore({ vetrina = false }: { vetrina?: boolean }) {
                 },
                 { v: z.n, p: '', u: '', e: 'case analizzate in zona' },
               ].map((x) => (
-                <div key={x.e} className="rounded-2xl bg-crema p-3 text-center md:p-4">
-                  <dd className="font-display text-2xl font-bold tracking-tight text-corallo md:text-3xl">
+                <div key={x.e} className="min-w-0 rounded-2xl bg-crema px-1.5 py-3 text-center sm:p-3 md:p-4">
+                  <dd className="font-display text-xl font-bold tracking-tight text-corallo sm:text-2xl md:text-3xl">
                     <Numero valore={x.v} />
                     {x.u && <span className="text-lg"> {x.u}</span>}
                   </dd>
