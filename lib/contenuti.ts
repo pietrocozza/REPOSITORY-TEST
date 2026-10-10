@@ -247,7 +247,7 @@ export const SERVIZI_BREVI = [
   { icona: 'Accoglienza', foto: '/img/servizi/accoglienza.jpg', titolo: 'Accoglienza', testo: 'Check-in con personale multilingue.' },
   { icona: 'Manutenzione', foto: '/img/servizi/manutenzione.jpg', titolo: 'Manutenzione', testo: 'Un team dedicato alla tua casa.' },
   { icona: 'Pulizia', foto: '/img/servizi/pulizia.jpg', titolo: 'Pulizia', testo: 'Casa pulita, biancheria fresca e profumata.' },
-  { icona: 'Burocrazia', foto: '/img/servizi/burocrazia.jpg', titolo: 'Burocrazia', testo: 'Pratiche, CIN e keybox: tutto in regola.' },
+  { icona: 'Burocrazia', foto: '/img/servizi/burocrazia.jpg', titolo: 'Burocrazia', testo: 'SUAR, CIR, CIN e Alloggiati Web: tutto in regola.' },
   { icona: 'Monitoraggio', foto: '/img/servizi/monitoraggio.jpg', titolo: 'Monitoraggio', testo: 'Ospiti, canali e prezzi in tempo reale sul telefono.' },
 ] as const
 
@@ -280,9 +280,9 @@ export const CANTIERI_BREVI: Record<string, string> = {
 // Come lavoriamo: le risposte alle domande che ogni proprietario fa al primo incontro
 export const COME_LAVORIAMO = [
   { icona: 'documento', titolo: 'Un contratto chiaro', testo: 'La casa resta tua. Firmiamo un mandato di gestione: incassiamo noi le prenotazioni per tuo conto.' },
-  { icona: 'euro', titolo: 'Ti paghiamo ogni mese', testo: 'Bonifico mensile con il rendiconto di ogni prenotazione. Le spese le scaliamo dagli incassi: non anticipi nulla.' },
+  { icona: 'euro', titolo: 'Ti paghiamo ogni mese', testo: 'Bonifico mensile con un report chiaro: prenotazioni, incassi, spese e recensioni. Le spese le scaliamo dagli incassi: non anticipi nulla.' },
   { icona: 'carta', titolo: 'Tasse già versate', testo: 'Facciamo noi da sostituto d’imposta: tratteniamo e versiamo il 21% e a marzo ti diamo la Certificazione Unica.' },
-  { icona: 'chiave', titolo: 'Burocrazia a carico nostro', testo: 'Alloggiati Web, imposta di soggiorno, ISTAT e CIN: ce ne occupiamo noi, tu non entri in nessun portale.' },
+  { icona: 'chiave', titolo: 'Burocrazia a carico nostro', testo: 'SUAR, CIR e CIN per partire. Poi Alloggiati Web, imposta di soggiorno e ISTAT: ce ne occupiamo noi, tu non entri in nessun portale.' },
   { icona: 'scudo', titolo: 'Danni e imprevisti', testo: 'Ospiti selezionati e pagamenti anticipati. Danni gestiti con i portali e copertura assicurativa, artigiani di fiducia.' },
   { icona: 'calendario', titolo: 'La casa quando vuoi', testo: 'Ci dici le date e le blocchiamo nel calendario. Basta avvisarci per tempo.' },
 ] as const
