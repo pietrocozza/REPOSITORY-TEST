@@ -27,6 +27,8 @@ const punti = (v: number) => String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))
 const arrotonda = (v: number, passo = 500) => Math.round(v / passo) * passo
 // Media mensile di quanto resta al proprietario dopo la nostra commissione
 const alMese = (anno: number, percentuale: number) => arrotonda((anno * (1 - percentuale / 100)) / 12, 50)
+// Spese al mese a carico del proprietario (pulizie con ditta specializzata, utenze, consumabili): minimo e massimo
+const SPESE: Record<Camere, [number, number]> = { '0': [400, 600], '1': [400, 600], '2': [400, 700], '3': [600, 1000] }
 
 /** Numero che scorre dal valore precedente al nuovo */
 function Numero({ valore }: { valore: number }) {
@@ -95,7 +97,10 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
   const gruppi = [...new Set(c.zone.map((x) => x.gruppo))]
   const affittoMese = Number(canone.replace(/\D/g, ''))
   const completa = PIANI[0].percentuale
-    const nettoMese = alMese(s.max, completa)
+  const spese = SPESE[camere]
+  const nettoMin = Math.max(0, alMese(s.min, completa) - spese[1])
+  const nettoMax = alMese(s.max, completa) - spese[0]
+  const nettoMese = nettoMax
   const volte = affittoMese > 0 ? nettoMese / affittoMese : 0
 
   const cambiaCitta = (k: Citta) => {
@@ -284,9 +289,9 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
             <div className="mt-8 rounded-2xl bg-salvia p-5">
               <p className="font-display text-lg font-bold tracking-tight">Ti restano in tasca, al mese, con la gestione completa</p>
               <p className="mt-2 font-display text-3xl font-bold tracking-tight">
-                {punti(alMese(s.min, completa))} – {punti(alMese(s.max, completa))} €
+                <Numero valore={nettoMin} /> – <Numero valore={nettoMax} /> €
               </p>
-              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, prima delle tasse (che variano per ognuno). Commissione del {completa}%, può variare in base all’immobile.</p>
+              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, prima delle tasse (che variano per ognuno). Già tolte la nostra commissione del {completa}% (può variare in base all’immobile) e le spese di pulizie, utenze e consumabili: circa {punti(spese[0])}–{punti(spese[1])} € al mese.</p>
             </div>
 
             <AnimatePresence initial={false}>
