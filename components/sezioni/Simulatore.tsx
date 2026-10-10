@@ -334,7 +334,7 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
         </div>
 
         <p className="mt-4 px-2 text-xs leading-relaxed text-pietra">
-          Stima, non garanzia di guadagno: incassi lordi prima di tasse e commissioni dei portali. Stima prudente, sulla fascia centrale delle case intere attive in zona
+          Stima, non garanzia di guadagno: incassi lordi prima di tasse e commissioni dei portali. {citta === 'roma' && 'Nel centro storico l’occupazione parte dall’80%, il minimo delle case che gestiamo. '}Stima prudente, sulla fascia centrale delle case intere attive in zona
           avviate e attive tutto l’anno (almeno 80 recensioni, 12 nell’ultimo anno), {punti(c.annunci)} annunci a {c.nome}. Dati{' '}
           <a href="https://insideairbnb.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
             Inside Airbnb

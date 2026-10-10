@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { NAV, SITO } from '@/lib/site'
 import { ZONE_ROMA } from '@/lib/zone'
 import { Capitello } from './Logo'
+import PreferenzeCookie from './PreferenzeCookie'
 import Pulsante from '@/components/ui/Pulsante'
 import TestoDiviso from '@/components/ui/TestoDiviso'
 
@@ -81,6 +82,7 @@ export default function Footer() {
             © {new Date().getFullYear()} Soluzione Affitto · P.IVA {SITO.piva} ·{' '}
             <Link href="/privacy" className="hover:text-sole">Privacy</Link> ·{' '}
             <Link href="/cookie" className="hover:text-sole">Cookie</Link>
+            <PreferenzeCookie className="hover:text-sole" />
           </p>
           <p>Gestione affitti brevi a Roma e Milano</p>
         </div>

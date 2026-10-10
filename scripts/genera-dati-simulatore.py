@@ -30,6 +30,9 @@ USCITA = Path(__file__).resolve().parent.parent / 'lib' / 'simulatore-dati.json'
 MINIMO = 25
 TASSO_RECENSIONI = 0.4  # 1 recensione ogni 2,5 soggiorni
 TETTO_OCCUPAZIONE = 0.9
+# Nel centro storico di Roma le case che gestiamo non scendono mai sotto l'80%:
+# per le stime di quelle zone l'occupazione parte da qui
+OCCUPAZIONE_MINIMA_CENTRO_ROMA = 0.8
 
 # Rioni del Municipio I: ogni annuncio va al centro più vicino
 RIONI_ROMA = {
@@ -150,6 +153,9 @@ def main():
             return min(RIONI_ROMA, key=lambda k: km(r.latitude, r.longitude, *RIONI_ROMA[k]))
         return MUNICIPI_ROMA.get(r.neighbourhood_cleansed, r.neighbourhood_cleansed)
     roma['zona'] = roma.apply(zona_roma, axis=1)
+    centro = roma.zona.isin(RIONI_ROMA.keys())
+    roma.loc[centro, 'notti'] = roma.loc[centro, 'notti'].clip(lower=365 * OCCUPAZIONE_MINIMA_CENTRO_ROMA)
+    roma['incasso'] = roma.notti * roma.prezzo
 
     milano = carica('milan')
     nomi_milano = CENTRO_MILANO | ALTRI_MILANO

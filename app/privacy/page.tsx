@@ -26,6 +26,7 @@ export default function Privacy() {
           punti: [
             'Dati di navigazione: quando visiti il sito, il servizio di hosting (Vercel) registra dati tecnici come indirizzo IP, tipo di browser e pagine richieste, per far funzionare il sito e proteggerlo da abusi.',
             'Statistiche di visita: usiamo Vercel Web Analytics, che conta le visite in forma aggregata e anonima, senza cookie e senza identificarti.',
+            'Pubblicità: solo se accetti i cookie dal banner, Google Ads (Google Ireland Ltd.) raccoglie dati sulla tua visita per misurare i nostri annunci e mostrarti pubblicità pertinente (consenso, art. 6.1.a GDPR). Puoi ritirare il consenso quando vuoi dal link “Preferenze cookie”.',
             'Dati che ci invii tu: nome, cognome, telefono, email, indirizzo e caratteristiche dell’immobile che inserisci nel simulatore o ci scrivi su WhatsApp, per email o al telefono.',
           ],
         },
@@ -36,7 +37,7 @@ export default function Privacy() {
             'Per gestire il rapporto, se diventi nostro cliente (esecuzione del contratto, art. 6.1.b GDPR) e per gli obblighi di legge (art. 6.1.c GDPR).',
             'Per far funzionare il sito in sicurezza e capire, in forma anonima, quali pagine sono più utili (legittimo interesse, art. 6.1.f GDPR).',
           ],
-          testo: ['Non usiamo i tuoi dati per profilazione e non li vendiamo a nessuno.'],
+          testo: ['Non vendiamo i tuoi dati a nessuno. La profilazione pubblicitaria avviene solo tramite Google Ads e solo con il tuo consenso.'],
         },
         {
           titolo: 'Come ci arrivano i tuoi messaggi',

@@ -6,6 +6,7 @@ import Footer from '@/components/layout/Footer'
 import WhatsAppFisso from '@/components/layout/WhatsAppFisso'
 import Cursore from '@/components/layout/Cursore'
 import Grana from '@/components/layout/Grana'
+import BannerCookie from '@/components/layout/BannerCookie'
 import { Analytics } from '@vercel/analytics/next'
 import { SITO } from '@/lib/site'
 import './globals.css'
@@ -87,6 +88,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           <WhatsAppFisso />
           <Cursore />
           <Grana />
+          <BannerCookie />
         </Providers>
         <Analytics />
       </body>
