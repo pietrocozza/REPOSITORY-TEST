@@ -20,7 +20,7 @@ const FOTO = [
   { src: '/img/roma/fontana-di-trevi.jpg', alt: 'Fontana di Trevi' },
 ]
 
-const NASTRO = ['Zero limiti', 'Zero rischi', 'Zero spese', 'Pagamenti anticipati', 'Protezione fino a 3 mln €', 'Roma', 'Milano']
+const NASTRO = ['Zero limiti', 'Zero rischi', 'Zero anticipi', 'Pagamenti anticipati', 'Protezione fino a 3 mln €', 'Roma', 'Milano']
 
 /** Scheda in vetro che fluttua e segue un po' il mouse */
 function Fluttuante({ children, className, ritardo, profondita }: { children: React.ReactNode; className: string; ritardo: number; profondita: number }) {

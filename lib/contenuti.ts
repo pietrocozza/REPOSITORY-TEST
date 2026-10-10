@@ -14,7 +14,7 @@ export const VANTAGGI = [
 export const ZERO = [
   { titolo: 'Limiti', testo: 'Massima flessibilità: puoi decidere come e quando utilizzare il tuo appartamento senza vincoli.' },
   { titolo: 'Rischi', testo: 'Nessun rischio di morosità. Gli ospiti pagano sempre in anticipo prima di soggiornare nel tuo appartamento. Avrai un’assicurazione per ogni problema.' },
-  { titolo: 'Spese', testo: 'Ogni spesa per le utenze, le pulizie, il cambio biancheria, ecc. è a completo carico degli ospiti. Non dovrai anticipare nulla.' },
+  { titolo: 'Anticipi', testo: 'Non anticipi nulla: le spese della casa le scaliamo direttamente dagli incassi.' },
 ] as const
 
 export const SERVIZI = [

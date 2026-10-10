@@ -27,8 +27,8 @@ const punti = (v: number) => String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))
 const arrotonda = (v: number, passo = 500) => Math.round(v / passo) * passo
 // Media mensile di quanto resta al proprietario dopo la nostra commissione
 const alMese = (anno: number, percentuale: number) => arrotonda((anno * (1 - percentuale / 100)) / 12, 50)
-// Spese al mese a carico del proprietario (pulizie con ditta specializzata, utenze, consumabili): minimo e massimo
-const SPESE: Record<Camere, [number, number]> = { '0': [400, 600], '1': [400, 600], '2': [400, 700], '3': [600, 1000] }
+// Spese medie al mese a carico del proprietario (pulizie con ditta specializzata, utenze, consumabili)
+const SPESE: Record<Camere, number> = { '0': 500, '1': 500, '2': 650, '3': 800 }
 
 /** Numero che scorre dal valore precedente al nuovo */
 function Numero({ valore }: { valore: number }) {
@@ -98,8 +98,8 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
   const affittoMese = Number(canone.replace(/\D/g, ''))
   const completa = PIANI[0].percentuale
   const spese = SPESE[camere]
-  const nettoMin = Math.max(0, alMese(s.min, completa) - spese[1])
-  const nettoMax = alMese(s.max, completa) - spese[0]
+  const nettoMin = Math.max(0, alMese(s.min, completa) - spese)
+  const nettoMax = alMese(s.max, completa) - spese
   const nettoMese = nettoMax
   const volte = affittoMese > 0 ? nettoMese / affittoMese : 0
 
@@ -291,7 +291,7 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
               <p className="mt-2 font-display text-3xl font-bold tracking-tight">
                 <Numero valore={nettoMin} /> – <Numero valore={nettoMax} /> €
               </p>
-              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, prima delle tasse (che variano per ognuno). Già tolte la nostra commissione del {completa}% (può variare in base all’immobile) e le spese di pulizie, utenze e consumabili: circa {punti(spese[0])}–{punti(spese[1])} € al mese.</p>
+              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, prima delle tasse (che variano per ognuno). Già tolte la nostra commissione del {completa}% (può variare in base all’immobile) e le spese della casa.</p>
             </div>
 
             <AnimatePresence initial={false}>
