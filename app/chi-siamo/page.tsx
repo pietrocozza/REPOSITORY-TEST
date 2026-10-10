@@ -15,20 +15,20 @@ export const metadata: Metadata = {
 
 const TEAM = [
   {
-    nome: 'Francesco Ignoti',
-    ruolo: 'Responsabile proprietari',
-    compiti: ['Rapporti con i proprietari', 'Logistica pulizie', 'Manutenzione'],
-    contatto: { label: SITO.telefono.numero, href: SITO.telefono.href },
-    colore: 'bg-cielo',
-    foto: '/img/team/francesco.jpg',
-  },
-  {
     nome: 'Pietro Cozza',
     ruolo: 'Amministrazione',
     compiti: ['Pagamenti puntuali', 'Adempimenti normativi', 'Ospiti 24/24'],
     contatto: { label: `WhatsApp ${SITO.whatsapp.numero}`, href: SITO.whatsapp.href },
     colore: 'bg-pesca',
     foto: '/img/team/pietro.jpg',
+  },
+  {
+    nome: 'Francesco Ignoti',
+    ruolo: 'Responsabile proprietari',
+    compiti: ['Rapporti con i proprietari', 'Logistica pulizie', 'Manutenzione'],
+    contatto: { label: SITO.telefono.numero, href: SITO.telefono.href },
+    colore: 'bg-cielo',
+    foto: '/img/team/francesco.jpg',
   },
 ]
 
