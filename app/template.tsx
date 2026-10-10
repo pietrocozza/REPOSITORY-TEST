@@ -1,11 +1,10 @@
 'use client'
 
 import { useLayoutEffect } from 'react'
-import { motion } from 'motion/react'
-import { EASE_SIPARIO } from '@/lib/animazioni'
 import { scrollInCima } from '@/lib/scroll'
 
 // Transizione tra le pagine: un sipario corallo si ritira verso l'alto e svela la nuova pagina.
+// L'animazione è in CSS: la pagina si scopre anche se il JavaScript arriva tardi.
 // Ogni pagina nuova riparte sempre dall'inizio.
 export default function Template({ children }: { children: React.ReactNode }) {
   useLayoutEffect(() => {
@@ -15,13 +14,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <motion.div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 z-[60] bg-corallo"
-        initial={{ clipPath: 'inset(0% 0% 0% 0%)' }}
-        animate={{ clipPath: 'inset(0% 0% 100% 0%)' }}
-        transition={{ duration: 0.8, ease: EASE_SIPARIO, delay: 0.05 }}
-      />
+      <div aria-hidden="true" className="sipario pointer-events-none fixed inset-0 z-[60] bg-corallo" />
       {children}
     </>
   )
