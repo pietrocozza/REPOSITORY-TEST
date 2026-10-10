@@ -11,7 +11,7 @@ export default function GrigliaZone({ zone, base }: { zone: (DatiZona & { slug?:
         const contenuto = (
           <>
             <span className="block font-display text-xl font-bold tracking-tight">{z.nome}</span>
-            <span className="mt-1 block text-sm text-pietra">2 camere, incasso lordo annuo</span>
+            <span className="mt-1 block text-sm text-pietra">2 camere, incasso annuo</span>
             <span className="mt-3 block font-display text-2xl font-bold tracking-tight text-corallo">
               {migliaia(d.min)} – {migliaia(d.max)} €
             </span>

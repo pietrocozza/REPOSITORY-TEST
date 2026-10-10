@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: PageProps<'/gestione-affitti-
   const due = z.camere['2']
   return {
     title: { absolute: `Gestione affitti brevi ${z.nome}, Roma | Soluzione Affitto` },
-    description: `Affitti brevi a ${z.nome}: un 2 camere incassa ${migliaia(due.min)}–${migliaia(due.max)} € lordi l’anno. Gestiamo tutto noi: ospiti, pulizie, prezzi e burocrazia.`,
+    description: `Affitti brevi a ${z.nome}: un 2 camere incassa ${migliaia(due.min)}–${migliaia(due.max)} € l’anno. Gestiamo tutto noi: ospiti, pulizie, prezzi e burocrazia.`,
     alternates: { canonical: `${BASE}/${z.slug}` },
   }
 }
@@ -68,13 +68,13 @@ export default async function ZonaRoma({ params }: PageProps<'/gestione-affitti-
                     {migliaia(d.min)} – {migliaia(d.max)} €
                   </p>
                   <p className="mt-1 text-sm text-pietra">
-                    lordi l’anno · {d.tariffa} € a notte · {Math.round((d.notti / 365) * 100)}% di occupazione
+                    l’anno · {d.tariffa} € a notte · {Math.round((d.notti / 365) * 100)}% di occupazione
                   </p>
                 </li>
               )
             })}
           </ul>
-          <p className="mt-4 text-xs text-pietra">Stime prudenti sulle case intere attive tutto l’anno in zona ({migliaia(z.n)} annunci analizzati), prima di tasse e commissioni.</p>
+          <p className="mt-4 text-xs text-pietra">Stime prudenti sulle case intere attive tutto l’anno in zona ({migliaia(z.n)} annunci analizzati), al netto delle commissioni dei portali, prima delle tasse.</p>
         </div>
       </section>
 

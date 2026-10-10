@@ -39,6 +39,9 @@ CORREZIONE_PREZZO = 0.88
 # Milano rende meno di quanto dicono i dati: -15% nel centro, -20% negli altri quartieri (dalle case che gestiamo)
 RIDUZIONE_MILANO_CENTRO = 0.85
 RIDUZIONE_MILANO_ALTRE = 0.80
+# Monolocali e bilocali (0–1 camere) a Roma: tarati sul nostro bilocale di Via Leonina (Monti),
+# 48k € l'anno al netto delle commissioni Airbnb, tra i migliori della zona
+RIDUZIONE_ROMA_PICCOLI = 0.73
 
 # Rioni del Municipio I: ogni annuncio va al centro più vicino
 RIONI_ROMA = {
@@ -162,6 +165,7 @@ def main():
     roma['zona'] = roma.apply(zona_roma, axis=1)
     centro = roma.zona.isin(RIONI_ROMA.keys())
     roma.loc[centro, 'notti'] = roma.loc[centro, 'notti'].clip(lower=365 * OCCUPAZIONE_MINIMA_CENTRO_ROMA)
+    roma['prezzo'] = np.where(roma.camere.isin(['0', '1']), roma.prezzo * RIDUZIONE_ROMA_PICCOLI, roma.prezzo)
     roma['incasso'] = roma.notti * roma.prezzo
 
     milano = carica('milan')
