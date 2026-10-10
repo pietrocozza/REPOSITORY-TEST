@@ -14,7 +14,7 @@ export default function Footer() {
             <TestoDiviso as="p" testo="Senza nessun *pensiero.*" className="titolo-xl" accento="text-sole" />
           </div>
           <div className="flex flex-wrap gap-4 lg:justify-end">
-            <Pulsante href="/calcola-guadagno" variante="chiaro">Calcola il guadagno</Pulsante>
+            <Pulsante href="/calcola-guadagno" variante="chiaro">Prova il simulatore</Pulsante>
             <Pulsante href={SITO.whatsapp.href} esterno variante="contorno" className="text-crema">
               Scrivici su WhatsApp
             </Pulsante>

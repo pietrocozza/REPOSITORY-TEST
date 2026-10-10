@@ -17,7 +17,7 @@ export default function InvitoFinale() {
             <TestoDiviso as="h2" testo="Quanto può *rendere* la tua casa?" className="titolo-xl max-w-xl" accento="text-corallo" />
             <p className="mt-5 max-w-md text-lg text-inchiostro/80">Rispondi a poche domande: ti mandiamo la stima del guadagno.</p>
             <div className="mt-8">
-              <Pulsante href="/calcola-guadagno" variante="pieno">Calcola il guadagno</Pulsante>
+              <Pulsante href="/calcola-guadagno" variante="pieno">Prova il simulatore</Pulsante>
             </div>
           </div>
           <motion.div

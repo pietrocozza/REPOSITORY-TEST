@@ -114,7 +114,7 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: EASE_LUSSO, delay: 1.5 }}
           >
-            <Pulsante href="/calcola-guadagno" variante="corallo">Calcola il guadagno</Pulsante>
+            <Pulsante href="/calcola-guadagno" variante="corallo">Prova il simulatore</Pulsante>
             <Pulsante href="/gestione" variante="vetro">Come funziona</Pulsante>
           </motion.div>
         </div>

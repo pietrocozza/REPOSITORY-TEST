@@ -25,6 +25,7 @@ export const SITO = {
 
 export const NAV = [
   { href: '/', label: 'Home' },
+  { href: '/calcola-guadagno', label: 'Simulatore guadagno' },
   { href: '/gestione', label: 'Gestione' },
   { href: '/ristruttura-gratis', label: 'Ristruttura gratis' },
   { href: '/operazioni-immobiliari', label: 'Operazioni immobiliari' },
