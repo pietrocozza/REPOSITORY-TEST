@@ -114,13 +114,14 @@ export default function Header() {
             role="dialog"
             aria-modal="true"
             aria-label="Menu"
-            className="fixed inset-0 z-40 overflow-y-auto bg-notte text-crema"
+            data-lenis-prevent
+            className="fixed inset-0 z-40 overflow-y-auto overscroll-contain bg-notte text-crema"
             initial={{ clipPath: 'inset(0% 0% 100% 0%)' }}
             animate={{ clipPath: 'inset(0% 0% 0% 0%)' }}
             exit={{ clipPath: 'inset(100% 0% 0% 0%)' }}
             transition={{ duration: 0.9, ease: EASE_SIPARIO }}
           >
-            <div className="contenitore grid min-h-full grid-cols-1 gap-10 pt-28 pb-10 lg:grid-cols-[1.3fr_1fr] lg:pt-32">
+            <div className="contenitore grid min-h-full grid-cols-1 gap-10 pt-24 pb-10 lg:grid-cols-[1.3fr_1fr] lg:pt-28">
               <nav aria-label="Menu completo">
                 <ul>
                   {NAV.map((n, i) => (
@@ -136,11 +137,11 @@ export default function Header() {
                           onClick={chiudi}
                           onPointerEnter={() => setVoce(n.href)}
                           onFocus={() => setVoce(n.href)}
-                          className="group flex items-baseline gap-5 py-3 md:py-4"
+                          className="group flex items-baseline gap-5 py-[min(0.75rem,1.4vh)] md:py-[min(1rem,1.6vh)]"
                         >
                           <span className="font-display text-sm text-nebbia italic">0{i + 1}</span>
                           <span
-                            className={`font-display text-[clamp(2.1rem,5.4vw,4.6rem)] leading-none transition-all duration-500 ease-lusso group-hover:translate-x-3 group-hover:italic group-hover:text-sole ${
+                            className={`font-display text-[clamp(1.7rem,min(5.4vw,6.2vh),4.6rem)] leading-none transition-all duration-500 ease-lusso group-hover:translate-x-3 group-hover:italic group-hover:text-sole ${
                               pathname === n.href ? 'italic text-sole' : ''
                             }`}
                           >
