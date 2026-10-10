@@ -8,6 +8,7 @@ import Icona from '@/components/ui/Icona'
 import { SITO } from '@/lib/site'
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/chi-siamo' },
   title: 'Chi siamo',
   description: 'Soluzione Affitto è un’azienda specializzata nella gestione di affitti a breve termine, principalmente a Roma e Milano.',
 }

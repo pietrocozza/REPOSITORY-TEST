@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { NAV, SITO } from '@/lib/site'
+import { ZONE_ROMA } from '@/lib/zone'
 import { Capitello } from './Logo'
 import Pulsante from '@/components/ui/Pulsante'
 import TestoDiviso from '@/components/ui/TestoDiviso'
@@ -51,6 +52,23 @@ export default function Footer() {
           </nav>
         </div>
 
+        <nav aria-label="Gestione affitti brevi per zona" className="mt-14 border-t border-white/10 pt-10 text-sm">
+          <p className="etichetta mb-4 text-nebbia">Gestione affitti brevi</p>
+          <ul className="flex flex-wrap gap-x-5 gap-y-2">
+            <li>
+              <Link href="/gestione-affitti-brevi-roma" className="font-semibold hover:text-sole">Roma</Link>
+            </li>
+            {ZONE_ROMA.filter((z) => z.gruppo === 'Centro storico').map((z) => (
+              <li key={z.slug}>
+                <Link href={`/gestione-affitti-brevi-roma/${z.slug}`} className="text-nebbia hover:text-sole">{z.nome}</Link>
+              </li>
+            ))}
+            <li>
+              <Link href="/gestione-affitti-brevi-milano" className="font-semibold hover:text-sole">Milano</Link>
+            </li>
+          </ul>
+        </nav>
+
         <div aria-hidden="true" className="mt-20 flex items-end gap-[2vw] select-none">
           <Capitello className="size-[10vw] text-crema/90" />
           <p className="font-display text-[10.5vw] leading-[0.8] font-bold tracking-tighter whitespace-nowrap">
@@ -59,7 +77,11 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 flex flex-col justify-between gap-2 border-t border-white/10 pt-6 text-xs text-nebbia sm:flex-row">
-          <p>© {new Date().getFullYear()} Soluzione Affitto · P.IVA {SITO.piva}</p>
+          <p>
+            © {new Date().getFullYear()} Soluzione Affitto · P.IVA {SITO.piva} ·{' '}
+            <Link href="/privacy" className="hover:text-sole">Privacy</Link> ·{' '}
+            <Link href="/cookie" className="hover:text-sole">Cookie</Link>
+          </p>
           <p>Gestione affitti brevi a Roma e Milano</p>
         </div>
       </div>

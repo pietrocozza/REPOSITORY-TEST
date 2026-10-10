@@ -7,6 +7,7 @@ import InvitoFinale from '@/components/sezioni/InvitoFinale'
 import Etichetta from '@/components/ui/Etichetta'
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/gestione' },
   title: 'Il nostro servizio di gestione',
   description: 'Gestione online base al 12% o gestione completa al 20% sull’affitto generato: annuncio, prezzi, ospiti, check-in, pulizie, manutenzione e burocrazia.',
 }

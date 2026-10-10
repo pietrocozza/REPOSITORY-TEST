@@ -77,10 +77,10 @@ function Domanda({ numero, titolo, children }: { numero: number; titolo: string;
 }
 
 /** Simulatore di guadagno. In vetrina (home) mostra solo le domande essenziali e porta alla pagina completa */
-export default function Simulatore({ vetrina = false }: { vetrina?: boolean }) {
+export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zonaIniziale }: { vetrina?: boolean; cittaIniziale?: Citta; zonaIniziale?: string }) {
   const idCanone = useId()
-  const [citta, setCitta] = useState<Citta>('roma')
-  const [zona, setZona] = useState(ZONA_INIZIALE.roma)
+  const [citta, setCitta] = useState<Citta>(cittaIniziale)
+  const [zona, setZona] = useState(zonaIniziale ?? ZONA_INIZIALE[cittaIniziale])
   const [camere, setCamere] = useState<Camere>('1')
   const [altre, setAltre] = useState(false)
   const [canone, setCanone] = useState('')

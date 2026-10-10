@@ -7,6 +7,7 @@ import Rivela from '@/components/ui/Rivela'
 import { SITO } from '@/lib/site'
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/contatti' },
   title: 'Contattaci',
   description: 'Telefono, WhatsApp ed email di Soluzione Affitto. Sedi a Roma (Via Leonina 21) e Milano (Via Macedonio Melloni 17), su appuntamento.',
 }

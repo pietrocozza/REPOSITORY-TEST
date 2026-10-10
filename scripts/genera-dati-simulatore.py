@@ -9,7 +9,11 @@ Uso:
 Regole:
   - solo case intere avviate e attive tutto l'anno (almeno 80 recensioni totali e 12 negli ultimi 12 mesi),
     prezzo sotto il 99° percentile
-  - incasso annuo = stima di Inside Airbnb (notti stimate dalle recensioni x prezzo)
+  - notti prenotate = recensioni dell'ultimo anno / TASSO_RECENSIONI x durata media del soggiorno
+    (3 notti, o il minimo richiesto se più alto), con un massimo del TETTO_OCCUPAZIONE.
+    È il metodo di Inside Airbnb, che però usa 1 recensione ogni 2 soggiorni e un tetto del 70%:
+    qui il tasso e il tetto sono tarati sulle case che gestiamo nel centro di Roma.
+  - incasso annuo = notti prenotate x prezzo a notte
   - fascia mostrata = 40° – 65° percentile (stima prudente) degli annunci simili
   - se in una zona ci sono meno di 25 annunci con quel numero di camere, si parte dal dato
     di tutta la zona e si applica il rapporto camere/tutti misurato sull'intera città
@@ -24,6 +28,8 @@ CARTELLA = Path(sys.argv[1])
 RILEVAZIONE = sys.argv[2]
 USCITA = Path(__file__).resolve().parent.parent / 'lib' / 'simulatore-dati.json'
 MINIMO = 25
+TASSO_RECENSIONI = 0.4  # 1 recensione ogni 2,5 soggiorni
+TETTO_OCCUPAZIONE = 0.9
 
 # Rioni del Municipio I: ogni annuncio va al centro più vicino
 RIONI_ROMA = {
@@ -76,6 +82,9 @@ def carica(citta):
     df = df[(df.room_type == 'Entire home/apt') & (df.number_of_reviews >= 80) & (df.number_of_reviews_ltm >= 12) & (df.estimated_revenue_l365d > 0)
             & df.prezzo.notna() & df.bedrooms.notna()]
     df = df[df.prezzo < df.prezzo.quantile(0.99)].copy()
+    soggiorno = np.maximum(3, df.minimum_nights.clip(upper=30))
+    df['notti'] = np.minimum(df.number_of_reviews_ltm / TASSO_RECENSIONI * soggiorno, 365 * TETTO_OCCUPAZIONE)
+    df['incasso'] = df.notti * df.prezzo
     df['camere'] = df.bedrooms.clip(upper=3).astype(int).astype(str)
     return df
 
@@ -96,10 +105,10 @@ def arrotonda(v, passo):
 def statistiche(s):
     return {
         'n': int(len(s)),
-        'min': arrotonda(s.estimated_revenue_l365d.quantile(0.40), 500),
-        'max': arrotonda(s.estimated_revenue_l365d.quantile(0.65), 500),
+        'min': arrotonda(s.incasso.quantile(0.40), 500),
+        'max': arrotonda(s.incasso.quantile(0.65), 500),
         'tariffa': arrotonda(s.prezzo.median(), 5),
-        'notti': int(round(s.estimated_occupancy_l365d.median())),
+        'notti': int(round(s.notti.median())),
     }
 
 

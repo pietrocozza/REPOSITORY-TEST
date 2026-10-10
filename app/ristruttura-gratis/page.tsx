@@ -14,6 +14,7 @@ import Icona from '@/components/ui/Icona'
 import { FAQ_LOCAZIONE, PASSI_LOCAZIONE, TESTIMONIANZE_PROPRIETARI, VANTAGGI_LOCAZIONE_BREVI } from '@/lib/contenuti'
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/ristruttura-gratis' },
   title: 'Ristruttura gratis',
   description:
     'Hai una casa a Roma in zona centrale da ristrutturare? La rinnoviamo a nostre spese, la prendiamo in locazione a lungo termine e ti paghiamo l’affitto in anticipo.',

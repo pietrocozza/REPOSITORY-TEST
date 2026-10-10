@@ -5,6 +5,7 @@ import InvitoFinale from '@/components/sezioni/InvitoFinale'
 import { ARTICOLI } from '@/lib/articoli'
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/blog' },
   title: 'Blog',
   description: 'Guide, normativa e numeri sugli affitti brevi a Roma: cedolare secca, CIN, contributo di soggiorno, prezzi dinamici e molto altro.',
 }

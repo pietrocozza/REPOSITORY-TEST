@@ -4,6 +4,7 @@ import Simulatore from '@/components/sezioni/Simulatore'
 import Calcolatore from '@/components/sezioni/Calcolatore'
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/calcola-guadagno' },
   title: 'Simulatore di guadagno online',
   description: 'Scopri quanto incassano con gli affitti brevi le case come la tua, zona per zona, a Roma e Milano.',
 }

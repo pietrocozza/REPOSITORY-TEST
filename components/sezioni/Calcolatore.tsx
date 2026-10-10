@@ -272,6 +272,10 @@ export default function Calcolatore() {
                     Invia via email
                   </a>
                 </div>
+                <p className="mt-4 text-xs text-pietra">
+                  Useremo i tuoi dati solo per risponderti e prepararti la stima.{' '}
+                  <a href="/privacy" className="underline underline-offset-2">Informativa privacy</a>
+                </p>
                 <details className="mt-8 text-sm text-pietra">
                   <summary className="cursor-pointer font-semibold text-inchiostro">Rivedi le tue risposte</summary>
                   <pre className="mt-4 font-sans whitespace-pre-wrap">{testo}</pre>

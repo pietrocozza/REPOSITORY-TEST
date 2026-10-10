@@ -7,6 +7,7 @@ import { FAQ_GESTIONE } from '@/lib/contenuti'
 import { SITO } from '@/lib/site'
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/domande-e-risposte' },
   title: 'Domande e risposte',
   description: 'Commissioni, pagamenti, danni, tariffe, portali e utenze: tutte le risposte sulla gestione del tuo appartamento in affitto breve.',
 }

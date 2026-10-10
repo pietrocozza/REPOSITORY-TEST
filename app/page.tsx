@@ -1,3 +1,5 @@
+import type { Metadata } from 'next'
+import Link from 'next/link'
 import Hero from '@/components/sezioni/Hero'
 import Partner from '@/components/sezioni/Partner'
 import Vantaggi from '@/components/sezioni/Vantaggi'
@@ -13,6 +15,10 @@ import TestoDiviso from '@/components/ui/TestoDiviso'
 import Rivela from '@/components/ui/Rivela'
 import Pulsante from '@/components/ui/Pulsante'
 import Icona from '@/components/ui/Icona'
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+}
 
 const RISULTATI = [
   { icona: 'euro', testo: '0 € anticipati' },
@@ -36,6 +42,14 @@ export default function Home() {
           </span>
           <p className="mb-12 max-w-xl text-lg text-inchiostro/75">Zona per zona, camera per camera: i numeri veri degli annunci Airbnb di Roma e Milano.</p>
           <Simulatore vetrina />
+          <p className="mt-10 flex flex-wrap gap-x-6 gap-y-2 font-semibold">
+            <Link href="/gestione-affitti-brevi-roma" className="underline underline-offset-4 hover:text-corallo">
+              Gestione affitti brevi a Roma, zona per zona →
+            </Link>
+            <Link href="/gestione-affitti-brevi-milano" className="underline underline-offset-4 hover:text-corallo">
+              Gestione affitti brevi a Milano →
+            </Link>
+          </p>
         </div>
       </section>
       <Vantaggi />

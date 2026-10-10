@@ -6,6 +6,7 @@ import InvitoFinale from '@/components/sezioni/InvitoFinale'
 import { CANTIERI, CANTIERI_BREVI } from '@/lib/contenuti'
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/operazioni-immobiliari' },
   title: 'Operazioni immobiliari',
   description: 'Le nostre ristrutturazioni a Roma (Rione Monti) e Milano (Brera, San Babila): appartamenti trasformati e valorizzati.',
 }

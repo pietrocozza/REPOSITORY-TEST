@@ -90,16 +90,16 @@ export default function Hero() {
 
       <motion.div style={{ y: yTesto }} className="contenitore relative grid flex-1 items-end gap-10 pt-32 pb-12 lg:grid-cols-[1.25fr_1fr] lg:items-center lg:pb-20">
         <div>
-          <motion.p
+          <motion.h1
             className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold tracking-wide backdrop-blur-md"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: EASE_LUSSO, delay: 0.5 }}
           >
             <span className="size-2 animate-pulse rounded-full bg-sole" />
-            Gestione affitti brevi · Roma e Milano
-          </motion.p>
-          <TestoDiviso as="h1" subito ritardo={0.6} testo="Hai una casa nella *città più bella* del mondo?" className="titolo-hero max-w-[14ch]" accento="text-sole" />
+            Gestione affitti brevi a Roma e Milano
+          </motion.h1>
+          <TestoDiviso as="p" subito ritardo={0.6} testo="Hai una casa nella *città più bella* del mondo?" className="titolo-hero max-w-[14ch]" accento="text-sole" />
           <motion.p
             className="mt-7 max-w-md text-lg text-crema/90"
             initial={{ opacity: 0, y: 20 }}

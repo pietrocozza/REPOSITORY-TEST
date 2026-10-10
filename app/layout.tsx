@@ -6,6 +6,7 @@ import Footer from '@/components/layout/Footer'
 import WhatsAppFisso from '@/components/layout/WhatsAppFisso'
 import Cursore from '@/components/layout/Cursore'
 import Grana from '@/components/layout/Grana'
+import { Analytics } from '@vercel/analytics/next'
 import { SITO } from '@/lib/site'
 import './globals.css'
 
@@ -31,13 +32,12 @@ const testo = Manrope({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? SITO.url),
   title: {
-    default: 'Soluzione Affitto — Gestione affitti brevi a Roma e Milano',
+    default: 'Gestione affitti brevi a Roma e Milano | Soluzione Affitto',
     template: '%s · Soluzione Affitto',
   },
   description: SITO.descrizione,
-  keywords: ['gestione affitti brevi Roma', 'property manager Roma', 'affitti turistici Roma', 'gestione Airbnb Roma', 'affitti brevi Milano', 'ristrutturazione gratuita'],
-  openGraph: {
-    title: 'Soluzione Affitto — Gestione affitti brevi a Roma e Milano',
+    openGraph: {
+    title: 'Gestione affitti brevi a Roma e Milano | Soluzione Affitto',
     description: SITO.descrizione,
     locale: 'it_IT',
     type: 'website',
@@ -59,7 +59,13 @@ const JSON_LD = {
   email: SITO.email,
   telephone: SITO.telefono.numero.replaceAll(' ', ''),
   vatID: SITO.piva,
-  areaServed: ['Roma', 'Milano'],
+  areaServed: [
+    { '@type': 'City', name: 'Roma' },
+    { '@type': 'City', name: 'Milano' },
+  ],
+  image: `${SITO.url}/opengraph-image.jpg`,
+  logo: `${SITO.url}/icon.png`,
+  description: SITO.descrizione,
   address: [
     { '@type': 'PostalAddress', streetAddress: 'Via Leonina 21', postalCode: '00184', addressLocality: 'Roma', addressRegion: 'RM', addressCountry: 'IT' },
     { '@type': 'PostalAddress', streetAddress: 'Via Macedonio Melloni 17', postalCode: '20129', addressLocality: 'Milano', addressRegion: 'MI', addressCountry: 'IT' },
@@ -82,6 +88,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           <Cursore />
           <Grana />
         </Providers>
+        <Analytics />
       </body>
     </html>
   )
