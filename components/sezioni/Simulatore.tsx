@@ -334,7 +334,7 @@ export default function Simulatore({ vetrina = false }: { vetrina?: boolean }) {
         </div>
 
         <p className="mt-4 px-2 text-xs leading-relaxed text-pietra">
-          Stima, non garanzia di guadagno: incassi lordi prima di tasse e commissioni dei portali. Fascia tra il valore mediano e il 25% migliore delle case intere attive in zona
+          Stima, non garanzia di guadagno: incassi lordi prima di tasse e commissioni dei portali. Stima prudente, sulla fascia centrale delle case intere attive in zona
           (almeno 6 recensioni negli ultimi 12 mesi), {punti(c.annunci)} annunci a {c.nome}. Dati{' '}
           <a href="https://insideairbnb.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
             Inside Airbnb

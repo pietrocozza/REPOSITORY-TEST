@@ -9,7 +9,7 @@ Uso:
 Regole:
   - solo case intere, attive (almeno 6 recensioni negli ultimi 12 mesi), prezzo sotto il 99° percentile
   - incasso annuo = stima di Inside Airbnb (notti stimate dalle recensioni x prezzo)
-  - fascia mostrata = mediana – 75° percentile degli annunci simili
+  - fascia mostrata = 40° – 65° percentile (stima prudente) degli annunci simili
   - se in una zona ci sono meno di 25 annunci con quel numero di camere, si parte dal dato
     di tutta la zona e si applica il rapporto camere/tutti misurato sull'intera città
   - stagionalità = quota di recensioni lasciate in ogni mese negli ultimi 24 mesi completi
@@ -95,8 +95,8 @@ def arrotonda(v, passo):
 def statistiche(s):
     return {
         'n': int(len(s)),
-        'min': arrotonda(s.estimated_revenue_l365d.median(), 500),
-        'max': arrotonda(s.estimated_revenue_l365d.quantile(0.75), 500),
+        'min': arrotonda(s.estimated_revenue_l365d.quantile(0.40), 500),
+        'max': arrotonda(s.estimated_revenue_l365d.quantile(0.65), 500),
         'tariffa': arrotonda(s.prezzo.median(), 5),
         'notti': int(round(s.estimated_occupancy_l365d.median())),
     }
