@@ -70,7 +70,7 @@ export default function ChiSiamo() {
             {TEAM.map((t, i) => (
               <Rivela as="li" key={t.nome} ritardo={i * 0.12} className={`flex flex-col items-center rounded-[2rem] p-8 text-center md:p-10 ${t.colore}`}>
                 <div className="relative size-40 overflow-hidden rounded-full border-[6px] border-white shadow-[0_20px_40px_-20px_rgba(29,34,54,0.5)] md:size-48">
-                  <Image src={t.foto} alt={`Foto di ${t.nome}`} fill sizes="192px" className="object-cover" />
+                  <Image src={t.foto} alt={`Foto di ${t.nome}`} fill sizes="192px" quality={90} className="object-cover" />
                 </div>
                 <p className="mt-6 text-sm font-bold text-corallo">{t.ruolo}</p>
                 <h3 className="mt-1 font-display text-3xl font-bold tracking-tight">{t.nome}</h3>
