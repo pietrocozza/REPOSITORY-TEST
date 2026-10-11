@@ -30,8 +30,8 @@ const CEDOLARE = 0.21
 // Media mensile di quanto resta al proprietario dopo la nostra commissione e le tasse
 // La commissione ha l’IVA al 22%, che il proprietario privato non può recuperare
 const alMese = (anno: number, percentuale: number) => arrotonda((anno * (1 - (percentuale / 100) * 1.22 - CEDOLARE)) / 12, 50)
-// Spese medie al mese a carico del proprietario (pulizie con ditta specializzata, utenze, consumabili)
-const SPESE: Record<Camere, number> = { '0': 500, '1': 500, '2': 650, '3': 800 }
+// Spese medie al mese a carico del proprietario (utenze, internet, consumabili): le pulizie le pagano gli ospiti
+const SPESE: Record<Camere, number> = { '0': 300, '1': 300, '2': 350, '3': 450 }
 
 /** Numero che scorre dal valore precedente al nuovo */
 function Numero({ valore }: { valore: number }) {
@@ -295,7 +295,7 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
               <p className="mt-2 font-display text-3xl font-bold tracking-tight">
                 <Numero valore={nettoMin} /> – <Numero valore={nettoMax} /> €
               </p>
-              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, già tolte le tasse, la nostra commissione del {completa}% + IVA (può variare in base all’immobile) e le spese della casa.</p>
+              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, già tolte le tasse, la nostra commissione del {completa}% + IVA (può variare in base all’immobile) e le spese della casa. Le pulizie le pagano gli ospiti: non sono a carico tuo.</p>
               <p className="mt-2 text-xs text-inchiostro/65">Tasse calcolate con la cedolare secca al 21% sull’incasso degli affitti. Per chi affitta più case l’aliquota può essere diversa: per la tua situazione senti il tuo commercialista.</p>
             </div>
 
