@@ -25,13 +25,20 @@ const MESI_ESTESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno
 // Formato italiano scritto a mano: identico sul server e nel browser (12.500)
 const punti = (v: number) => String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 const arrotonda = (v: number, passo = 500) => Math.round(v / passo) * passo
-// Cedolare secca sugli affitti brevi: si paga sull’incasso, le spese non si scalano
+// Calcolo prudente, come prevede la norma per il proprietario privato in cedolare secca:
+// il 21% si paga su tutto quello che l’ospite versa per il soggiorno, senza scalare nessun costo
 const CEDOLARE = 0.21
-// Media mensile di quanto resta al proprietario dopo la nostra commissione e le tasse
-// La commissione ha l’IVA al 22%, che il proprietario privato non può recuperare
-const alMese = (anno: number, percentuale: number) => arrotonda((anno * (1 - (percentuale / 100) * 1.22 - CEDOLARE)) / 12, 50)
-// Spese medie al mese a carico del proprietario (utenze, internet, consumabili): le pulizie le pagano gli ospiti
+// Commissione media dei portali: l’incasso dei dati è già al netto, ma le tasse si pagano sul lordo
+const COMMISSIONE_PORTALI = 0.15
+// Pulizie pagate dagli ospiti nella prenotazione: le giriamo alla ditta, ma per il fisco sono affitto del proprietario
+const PULIZIE: Record<Camere, number> = { '0': 200, '1': 200, '2': 300, '3': 350 }
+// Spese medie al mese a carico del proprietario (utenze, internet, consumabili)
 const SPESE: Record<Camere, number> = { '0': 300, '1': 300, '2': 350, '3': 450 }
+// Quanto resta in tasca al mese: incasso – nostra commissione con IVA (non recuperabile) – tasse – spese
+const nettoAlMese = (anno: number, percentuale: number, camere: Camere) => {
+  const tasse = CEDOLARE * (anno / (1 - COMMISSIONE_PORTALI) + PULIZIE[camere] * 12)
+  return arrotonda((anno * (1 - (percentuale / 100) * 1.22) - tasse) / 12 - SPESE[camere], 50)
+}
 
 /** Numero che scorre dal valore precedente al nuovo */
 function Numero({ valore }: { valore: number }) {
@@ -101,9 +108,8 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
   // Anche l’affitto tradizionale paga la cedolare al 21%: confrontiamo netto con netto
   const affittoMese = arrotonda(Number(canone.replace(/\D/g, '')) * (1 - CEDOLARE), 50)
   const completa = PIANI[0].percentuale
-  const spese = SPESE[camere]
-  const nettoMin = Math.max(0, alMese(s.min, completa) - spese)
-  const nettoMax = alMese(s.max, completa) - spese
+  const nettoMin = Math.max(0, nettoAlMese(s.min, completa, camere))
+  const nettoMax = nettoAlMese(s.max, completa, camere)
   const nettoMese = nettoMax
   const volte = affittoMese > 0 ? nettoMese / affittoMese : 0
 
@@ -295,8 +301,8 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
               <p className="mt-2 font-display text-3xl font-bold tracking-tight">
                 <Numero valore={nettoMin} /> – <Numero valore={nettoMax} /> €
               </p>
-              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, già tolte le tasse, la nostra commissione del {completa}% + IVA (può variare in base all’immobile) e le spese della casa. Le pulizie le pagano gli ospiti: non sono a carico tuo.</p>
-              <p className="mt-2 text-xs text-inchiostro/65">Tasse calcolate con la cedolare secca al 21% sull’incasso degli affitti. Per chi affitta più case l’aliquota può essere diversa: per la tua situazione senti il tuo commercialista.</p>
+              <p className="mt-3 text-xs text-inchiostro/65">Quello che ti metti in tasca: media dell’anno, già tolte le tasse, la nostra commissione del {completa}% + IVA (può variare in base all’immobile) e le spese della casa. Le pulizie le pagano gli ospiti.</p>
+              <p className="mt-2 text-xs text-inchiostro/65">Tasse calcolate nel modo più prudente: cedolare secca al 21% su tutto quello che l’ospite paga per il soggiorno, pulizie e commissioni dei portali comprese, come prevede la norma per chi affitta senza partita IVA. Per chi affitta più case l’aliquota può essere diversa: per la tua situazione senti il tuo commercialista.</p>
             </div>
 
             <AnimatePresence initial={false}>
