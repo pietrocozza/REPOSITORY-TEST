@@ -83,7 +83,7 @@ export const ARTICOLI: Articolo[] = [
       },
       { t: 'h2', testo: 'Quando conviene fare da sé' },
       { t: 'p', testo: 'Se abiti a due passi dalla casa, hai tempo libero, parli inglese e non ti pesa rispondere a un ospite di sera, gestire da solo può avere senso. Se invece lavori, vivi fuori Roma o vuoi semplicemente non pensarci, la commissione si ripaga con l’incasso in più e con il tempo che ti resta.' },
-      { t: 'nota', testo: 'Vuoi un numero sulla tua casa? Il nostro simulatore ti dice quanto incassano le case come la tua nella tua zona e quanto ti resta in tasca al mese, già tolte commissione e spese.' },
+      { t: 'nota', testo: 'Vuoi un numero sulla tua casa? Il nostro simulatore ti dice quanto incassano le case come la tua nella tua zona e quanto ti resta in tasca al mese, già tolte commissione, spese e tasse.' },
     ],
   },
   {

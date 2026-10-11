@@ -25,9 +25,11 @@ const MESI_ESTESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno
 // Formato italiano scritto a mano: identico sul server e nel browser (12.500)
 const punti = (v: number) => String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 const arrotonda = (v: number, passo = 500) => Math.round(v / passo) * passo
-// Media mensile di quanto resta al proprietario dopo la nostra commissione
+// Cedolare secca sugli affitti brevi: si paga sull’incasso, le spese non si scalano
+const CEDOLARE = 0.21
+// Media mensile di quanto resta al proprietario dopo la nostra commissione e le tasse
 // La commissione ha l’IVA al 22%, che il proprietario privato non può recuperare
-const alMese = (anno: number, percentuale: number) => arrotonda((anno * (1 - (percentuale / 100) * 1.22)) / 12, 50)
+const alMese = (anno: number, percentuale: number) => arrotonda((anno * (1 - (percentuale / 100) * 1.22 - CEDOLARE)) / 12, 50)
 // Spese medie al mese a carico del proprietario (pulizie con ditta specializzata, utenze, consumabili)
 const SPESE: Record<Camere, number> = { '0': 500, '1': 500, '2': 650, '3': 800 }
 
@@ -96,7 +98,8 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
   const mensili = c.stagionalita.map((q) => medio * q)
   const picco = Math.max(...mensili)
   const gruppi = [...new Set(c.zone.map((x) => x.gruppo))]
-  const affittoMese = Number(canone.replace(/\D/g, ''))
+  // Anche l’affitto tradizionale paga la cedolare al 21%: confrontiamo netto con netto
+  const affittoMese = arrotonda(Number(canone.replace(/\D/g, '')) * (1 - CEDOLARE), 50)
   const completa = PIANI[0].percentuale
   const spese = SPESE[camere]
   const nettoMin = Math.max(0, alMese(s.min, completa) - spese)
@@ -292,7 +295,8 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
               <p className="mt-2 font-display text-3xl font-bold tracking-tight">
                 <Numero valore={nettoMin} /> – <Numero valore={nettoMax} /> €
               </p>
-              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, prima delle tasse (che variano per ognuno). Già tolte la nostra commissione del {completa}% + IVA (può variare in base all’immobile) e le spese della casa.</p>
+              <p className="mt-3 text-xs text-inchiostro/65">Media dell’anno, già tolte le tasse, la nostra commissione del {completa}% + IVA (può variare in base all’immobile) e le spese della casa.</p>
+              <p className="mt-2 text-xs text-inchiostro/65">Tasse calcolate con la cedolare secca al 21% sull’incasso degli affitti. Per chi affitta più case l’aliquota può essere diversa: per la tua situazione senti il tuo commercialista.</p>
             </div>
 
             <AnimatePresence initial={false}>
@@ -308,8 +312,8 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
                     <p className="font-display text-4xl font-bold tracking-tighter text-inchiostro">{volte >= 1 ? `×${volte.toFixed(1).replace('.', ',')}` : '–'}</p>
                     <p className="text-sm">
                       {volte >= 1
-                        ? `Fino a ${punti(nettoMese)} € al mese con la gestione completa, contro ${punti(affittoMese)} € dell’affitto tradizionale.`
-                        : `In questa zona l’affitto tradizionale (${punti(affittoMese)} € al mese) rende già bene: parliamone per una valutazione su misura.`}
+                        ? `Fino a ${punti(nettoMese)} € al mese con la gestione completa, contro ${punti(affittoMese)} € netti dell’affitto tradizionale.`
+                        : `In questa zona l’affitto tradizionale (${punti(affittoMese)} € netti al mese) rende già bene: parliamone per una valutazione su misura.`}
                     </p>
                   </div>
                 </motion.div>
@@ -331,7 +335,7 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
         </div>
 
         <p className="mt-4 px-2 text-xs leading-relaxed text-pietra">
-          Stima, non garanzia di guadagno: incassi al netto delle commissioni dei portali, prima delle tasse. {citta === 'roma' && 'Nel centro storico l’occupazione parte dall’80%, il minimo delle case che gestiamo. '}Stima prudente, sulla fascia centrale delle case intere attive in zona
+          Stima, non garanzia di guadagno: incassi al netto delle commissioni dei portali; il netto in tasca è già tassato con la cedolare al 21%. {citta === 'roma' && 'Nel centro storico l’occupazione parte dall’80%, il minimo delle case che gestiamo. '}Stima prudente, sulla fascia centrale delle case intere attive in zona
           avviate e attive tutto l’anno (almeno 80 recensioni, 12 nell’ultimo anno), {punti(c.annunci)} annunci a {c.nome}. Dati{' '}
           <a href="https://insideairbnb.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
             Inside Airbnb
