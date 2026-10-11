@@ -31,7 +31,7 @@ const CEDOLARE = 0.21
 // Commissione media dei portali: l’incasso dei dati è già al netto, ma le tasse si pagano sul lordo
 const COMMISSIONE_PORTALI = 0.15
 // Pulizie pagate dagli ospiti nella prenotazione: le giriamo alla ditta, ma per il fisco sono affitto del proprietario
-const PULIZIE: Record<Camere, number> = { '0': 200, '1': 200, '2': 300, '3': 350 }
+const PULIZIE: Record<Camere, number> = { '0': 450, '1': 450, '2': 600, '3': 800 }
 // Spese medie al mese a carico del proprietario (utenze, internet, consumabili)
 const SPESE: Record<Camere, number> = { '0': 300, '1': 300, '2': 350, '3': 450 }
 // Quanto resta in tasca al mese: incasso – nostra commissione con IVA (non recuperabile) – tasse – spese
