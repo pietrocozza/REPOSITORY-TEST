@@ -28,6 +28,8 @@ const arrotonda = (v: number, passo = 500) => Math.round(v / passo) * passo
 // Calcolo prudente, come prevede la norma per il proprietario privato in cedolare secca:
 // il 21% si paga su tutto quello che l’ospite versa per il soggiorno, senza scalare nessun costo
 const CEDOLARE = 0.21
+// Cedolare sul canone concordato (3+2) a Roma e Milano
+const CEDOLARE_CONCORDATO = 0.1
 // Commissione media dei portali: l’incasso dei dati è già al netto, ma le tasse si pagano sul lordo
 const COMMISSIONE_PORTALI = 0.15
 // Pulizie pagate dagli ospiti nella prenotazione: le giriamo alla ditta, ma per il fisco sono affitto del proprietario
@@ -105,8 +107,8 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
   const mensili = c.stagionalita.map((q) => medio * q)
   const picco = Math.max(...mensili)
   const gruppi = [...new Set(c.zone.map((x) => x.gruppo))]
-  // Anche l’affitto tradizionale paga la cedolare al 21%: confrontiamo netto con netto
-  const affittoMese = arrotonda(Number(canone.replace(/\D/g, '')) * (1 - CEDOLARE), 50)
+  // L’affitto tradizionale oggi è quasi sempre a canone concordato 3+2, con cedolare al 10%: confrontiamo netto con netto
+  const affittoMese = arrotonda(Number(canone.replace(/\D/g, '')) * (1 - CEDOLARE_CONCORDATO), 50)
   const completa = PIANI[0].percentuale
   const nettoMin = Math.max(0, nettoAlMese(s.min, completa, camere))
   const nettoMax = nettoAlMese(s.max, completa, camere)
@@ -318,7 +320,7 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
                     <p className="font-display text-4xl font-bold tracking-tighter text-inchiostro">{volte >= 1 ? `×${volte.toFixed(1).replace('.', ',')}` : '–'}</p>
                     <p className="text-sm">
                       {volte >= 1
-                        ? `Fino a ${punti(nettoMese)} € al mese con la gestione completa, contro ${punti(affittoMese)} € netti dell’affitto tradizionale.`
+                        ? `Fino a ${punti(nettoMese)} € al mese con la gestione completa, contro ${punti(affittoMese)} € netti dell’affitto tradizionale (canone concordato 3+2, cedolare al 10%).`
                         : `In questa zona l’affitto tradizionale (${punti(affittoMese)} € netti al mese) rende già bene: parliamone per una valutazione su misura.`}
                     </p>
                   </div>
