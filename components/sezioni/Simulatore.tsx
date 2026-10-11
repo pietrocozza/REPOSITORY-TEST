@@ -33,7 +33,7 @@ const COMMISSIONE_PORTALI = 0.15
 // Pulizie pagate dagli ospiti nella prenotazione: le giriamo alla ditta, ma per il fisco sono affitto del proprietario
 const PULIZIE: Record<Camere, number> = { '0': 450, '1': 450, '2': 600, '3': 800 }
 // Spese medie al mese a carico del proprietario (utenze, internet, consumabili)
-const SPESE: Record<Camere, number> = { '0': 300, '1': 300, '2': 350, '3': 450 }
+const SPESE: Record<Camere, number> = { '0': 100, '1': 100, '2': 100, '3': 100 }
 // Quanto resta in tasca al mese: incasso – nostra commissione con IVA (non recuperabile) – tasse – spese
 const nettoAlMese = (anno: number, percentuale: number, camere: Camere) => {
   const tasse = CEDOLARE * (anno / (1 - COMMISSIONE_PORTALI) + PULIZIE[camere] * 12)
