@@ -84,7 +84,16 @@ export default function ListaConImmagine({ voci }: { voci: readonly VoceLista[] 
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.6, ease: EASE_LUSSO }}
                 >
-                  <p className="font-display text-5xl font-bold tracking-tighter text-corallo">{v.dato}</p>
+                  <p className="font-display text-5xl font-bold tracking-tighter text-corallo">
+                    {v.dato.startsWith('Fino a ') ? (
+                      <>
+                        <span className="block text-lg tracking-tight">Fino a</span>
+                        {v.dato.slice(7)}
+                      </>
+                    ) : (
+                      v.dato
+                    )}
+                  </p>
                   <p className="text-sm font-semibold text-pietra">{v.titolo}</p>
                 </motion.div>
               )}

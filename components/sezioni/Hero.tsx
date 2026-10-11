@@ -123,6 +123,7 @@ export default function Hero() {
         <motion.div style={{ x: xSchede, y: ySchede }} className="relative hidden h-[26rem] lg:block" aria-hidden="true">
           <Fluttuante className="top-0 right-6" ritardo={1.4} profondita={1}>
             <div className="w-64 rounded-3xl bg-white p-6 text-inchiostro shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)]">
+              <p className="text-sm font-semibold text-pietra">Fino a</p>
               <p className="font-display text-6xl font-bold tracking-tighter text-corallo">+300%</p>
               <p className="mt-1 text-sm font-medium text-pietra">di ricavi possibili rispetto all’affitto tradizionale, nel centro storico</p>
             </div>
