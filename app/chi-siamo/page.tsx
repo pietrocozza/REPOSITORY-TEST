@@ -38,7 +38,7 @@ const STORIA = [
   'Siamo Pietro e Francesco. Quattro anni fa abbiamo trasformato l’interesse e la passione per l’immobiliare in un mestiere.',
   'Siamo giovani, e si vede: usiamo gli strumenti più nuovi per prezzi, prenotazioni e check-in.',
   'Ma prima della tecnologia vengono le persone. Ci piace conoscere chi ci affida la casa, ascoltare e spiegare tutto con parole semplici. E trattiamo ogni appartamento come se fosse nostro.',
-  'Vuoi conoscerci? Passa a trovarci a Roma o a Milano, su appuntamento: il caffè lo offriamo noi.',
+  'Vuoi conoscerci? Passa a trovarci a Roma o a Milano: il caffè lo offriamo noi.',
 ]
 const STORIA_DATI = ['4 anni di attività', 'Roma e Milano', 'Rispondiamo di persona']
 
