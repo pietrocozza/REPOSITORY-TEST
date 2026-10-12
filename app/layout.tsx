@@ -9,7 +9,7 @@ import Grana from '@/components/layout/Grana'
 import BannerCookie from '@/components/layout/BannerCookie'
 import BarraScorrimento from '@/components/layout/BarraScorrimento'
 import { Analytics } from '@vercel/analytics/next'
-import { SITO } from '@/lib/site'
+import { SITO, SOCIAL } from '@/lib/site'
 import './globals.css'
 
 // Bricolage Grotesque: sans moderno e con carattere, per i titoli
@@ -68,6 +68,7 @@ const JSON_LD = {
   image: `${SITO.url}/opengraph-image.jpg`,
   logo: `${SITO.url}/icon.png`,
   description: SITO.descrizione,
+  sameAs: SOCIAL.map((s) => s.href),
   address: [
     { '@type': 'PostalAddress', streetAddress: 'Via Leonina 21', postalCode: '00184', addressLocality: 'Roma', addressRegion: 'RM', addressCountry: 'IT' },
     { '@type': 'PostalAddress', streetAddress: 'Via Macedonio Melloni 17', postalCode: '20129', addressLocality: 'Milano', addressRegion: 'MI', addressCountry: 'IT' },

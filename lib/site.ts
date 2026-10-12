@@ -3,8 +3,7 @@
 export const SITO = {
   nome: 'Soluzione Affitto',
   url: 'https://www.soluzioneaffitto.com',
-  descrizione:
-    'Gestione di affitti brevi a Roma e Milano. Ottieni il massimo rendimento dal tuo appartamento: ci occupiamo noi di tutto, tu ricevi solo i profitti.',
+  descrizione: 'Gestione di affitti brevi a Roma e Milano. Ottieni il massimo rendimento dal tuo appartamento: ci occupiamo noi di tutto, tu ricevi solo i profitti.',
   piva: '02492970567',
   email: 'info.soluzioneaffitto@gmail.com',
   telefono: { numero: '+39 371 489 7435', href: 'tel:+393714897435', referente: 'Francesco Ignoti' },
@@ -22,6 +21,13 @@ export const SITO = {
     },
   ],
 } as const
+
+// Profili social mostrati in fondo al sito. Un profilo senza link resta nascosto finché non lo aggiungiamo
+export const SOCIAL: { nome: 'Instagram' | 'YouTube' | 'Facebook'; href: string }[] = [
+  { nome: 'Instagram', href: 'https://www.instagram.com/_pietrocozza_/' },
+  { nome: 'YouTube', href: '' },
+  { nome: 'Facebook', href: '' },
+].filter((x): x is { nome: 'Instagram' | 'YouTube' | 'Facebook'; href: string } => x.href !== '')
 
 export const NAV = [
   { href: '/', label: 'Home' },

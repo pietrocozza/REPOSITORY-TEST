@@ -3,6 +3,7 @@ import { NAV, SITO } from '@/lib/site'
 import { ZONE_ROMA } from '@/lib/zone'
 import { Capitello } from './Logo'
 import PreferenzeCookie from './PreferenzeCookie'
+import Social from './Social'
 import Pulsante from '@/components/ui/Pulsante'
 import TestoDiviso from '@/components/ui/TestoDiviso'
 
@@ -33,6 +34,8 @@ export default function Footer() {
               {SITO.whatsapp.numero}
             </a>
             <a href={`mailto:${SITO.email}`} className="block break-all hover:text-sole">{SITO.email}</a>
+            <p className="etichetta mt-8 mb-4 text-nebbia">Seguici</p>
+            <Social />
           </div>
           {SITO.sedi.map((s) => (
             <div key={s.citta}>
