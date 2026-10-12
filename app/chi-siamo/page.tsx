@@ -4,6 +4,8 @@ import IntestazionePagina from '@/components/sezioni/IntestazionePagina'
 import Recensioni from '@/components/sezioni/Recensioni'
 import InvitoFinale from '@/components/sezioni/InvitoFinale'
 import Rivela from '@/components/ui/Rivela'
+import Etichetta from '@/components/ui/Etichetta'
+import TestoDiviso from '@/components/ui/TestoDiviso'
 import Icona from '@/components/ui/Icona'
 import { SITO } from '@/lib/site'
 
@@ -32,6 +34,14 @@ const TEAM = [
   },
 ]
 
+const STORIA = [
+  'Siamo Pietro e Francesco. Quattro anni fa abbiamo trasformato una passione in un lavoro: far rendere al meglio le case dei proprietari, senza che debbano pensarci loro.',
+  'Siamo giovani e non lo nascondiamo, anzi: è la nostra forza. Usiamo le tecnologie più nuove per prezzi, prenotazioni e check-in, così la tua casa lavora sempre al massimo.',
+  'Ma la tecnologia da sola non basta. Ci piace conoscere chi ci affida la casa, ascoltare e spiegare tutto con parole semplici. Trattiamo ogni appartamento come se fosse nostro, e quando un ospite lascia cinque stelle siamo contenti quanto te.',
+  'Vuoi conoscerci? Passa a trovarci a Roma o a Milano, su appuntamento: il caffè lo offriamo noi.',
+]
+const STORIA_DATI = ['4 anni di attività', 'Roma e Milano', 'Rispondiamo di persona']
+
 const VALORI = [
   { icona: 'casa', testo: 'Esperienza maturata con le nostre strutture' },
   { icona: 'occhio', testo: 'Sappiamo ascoltare' },
@@ -48,6 +58,31 @@ export default function ChiSiamo() {
         foto="/img/leonina/camera-ampia.jpg"
         altFoto="Camera della Suite Leonina, Rione Monti"
       />
+
+      {/* La nostra storia: chi siamo davvero, in parole semplici */}
+      <section aria-labelledby="titolo-storia" className="bg-crema">
+        <div className="contenitore grid gap-10 pt-20 md:pt-28 lg:grid-cols-[1fr_1.3fr] lg:gap-16">
+          <div>
+            <Etichetta className="mb-6 text-corallo">La nostra storia</Etichetta>
+            <TestoDiviso as="h2" testo="Due ragazzi, *una passione.*" className="titolo-xl" />
+            <span id="titolo-storia" className="sr-only">
+              La nostra storia
+            </span>
+            <ul className="mt-8 flex flex-wrap gap-2">
+              {STORIA_DATI.map((d) => (
+                <li key={d} className="rounded-full bg-pesca px-4 py-2 text-sm font-bold">
+                  {d}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <Rivela className="space-y-5 text-lg leading-relaxed text-inchiostro/85">
+            {STORIA.map((t) => (
+              <p key={t}>{t}</p>
+            ))}
+          </Rivela>
+        </div>
+      </section>
 
       <section className="bg-crema">
         <ul className="contenitore grid gap-3 py-16 sm:grid-cols-3">
