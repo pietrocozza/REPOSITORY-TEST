@@ -21,7 +21,7 @@ export default function IntestazioneStoria() {
           </motion.p>
           <TestoDiviso as="h1" subito ritardo={0.6} testo="E se la ristrutturazione *la facessimo noi?*" className="titolo-hero max-w-[12ch] max-sm:text-[2.35rem]" />
           <motion.a
-            href="#storia"
+            href="#lavori"
             className="group mt-10 inline-flex items-center gap-3 font-semibold"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -32,7 +32,7 @@ export default function IntestazioneStoria() {
                 <path d="M12 4v15m-6-6 6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </motion.svg>
             </span>
-            Scorri la storia di Via Leonina
+            Guarda i lavori che facciamo
           </motion.a>
           <p className="mt-6 text-xs text-pietra">Le immagini del “prima” sono ricostruzioni illustrative dello stato iniziale.</p>
         </div>

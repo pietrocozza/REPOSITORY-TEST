@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
-import StoriaLeonina from '@/components/storia/StoriaLeonina'
 import IntestazioneStoria from '@/components/storia/IntestazioneStoria'
 import PrimaDopo from '@/components/sezioni/PrimaDopo'
 import InvitoFinale from '@/components/sezioni/InvitoFinale'
@@ -11,7 +10,7 @@ import Rivela from '@/components/ui/Rivela'
 import TestoDiviso from '@/components/ui/TestoDiviso'
 import Pulsante from '@/components/ui/Pulsante'
 import Icona from '@/components/ui/Icona'
-import { CANTIERI_BREVI, FAQ_LOCAZIONE, PASSI_LOCAZIONE, TESTIMONIANZE_PROPRIETARI, VANTAGGI_LOCAZIONE_BREVI } from '@/lib/contenuti'
+import { CANTIERI_BREVI, FAQ_LOCAZIONE, LAVORI_RISTRUTTURAZIONE, PASSI_LOCAZIONE, VANTAGGI_LOCAZIONE_BREVI } from '@/lib/contenuti'
 
 export const metadata: Metadata = {
   alternates: { canonical: '/ristruttura-gratis' },
@@ -27,71 +26,32 @@ export default function RistrutturaGratis() {
     <>
       <IntestazioneStoria />
 
-      {/* Prove */}
-      <section aria-labelledby="titolo-prove" className="overflow-hidden bg-pesca">
-        <div className="contenitore grid gap-12 py-20 md:py-28 lg:grid-cols-[1fr_1fr] lg:items-center">
+      {/* I lavori che facciamo */}
+      <section id="lavori" aria-labelledby="titolo-lavori" className="scroll-mt-24 bg-crema">
+        <div className="contenitore grid gap-12 py-20 md:py-28 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
-            <Etichetta className="mb-6 text-corallo">Chi ci ha già scelto</Etichetta>
-            <h2 id="titolo-prove" className="titolo-xl">
-              Lo dicono <span className="italic text-corallo">i proprietari.</span>
+            <Etichetta className="mb-6 text-corallo">I lavori</Etichetta>
+            <h2 id="titolo-lavori" className="titolo-xl">
+              Cosa rifacciamo, <span className="italic text-corallo">a spese nostre.</span>
             </h2>
-            <p className="mt-5 max-w-md text-inchiostro/75">
-              Dopo più di un anno, Leonardo ci ha scritto una referenza. Qui sotto le parole degli altri proprietari che ci hanno affidato casa.
-            </p>
-            <p className="mt-8 text-sm font-bold">Alcuni nostri progetti</p>
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {Object.keys(CANTIERI_BREVI).map((c) => (
-                <li key={c} className="rounded-full bg-white px-4 py-2 text-sm font-semibold">
-                  {c}
+            <p className="mt-5 max-w-md text-lg text-pietra">Seguiamo noi tutto il cantiere, con un designer. Tu non anticipi nulla e non cerchi nessuna ditta.</p>
+            <ul className="mt-8 grid gap-3 sm:grid-cols-2">
+              {LAVORI_RISTRUTTURAZIONE.map((l) => (
+                <li key={l.titolo} className="flex items-start gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-pesca text-corallo">
+                    <Icona nome={l.icona} className="size-5" />
+                  </span>
+                  <span>
+                    <span className="block font-display text-lg leading-tight font-bold tracking-tight">{l.titolo}</span>
+                    <span className="text-sm text-pietra">{l.testo}</span>
+                  </span>
                 </li>
               ))}
             </ul>
           </div>
-          <Rivela className="mx-auto w-full max-w-md rotate-[-3deg] rounded-3xl bg-white p-4 shadow-[0_40px_80px_-30px_rgba(29,34,54,0.45)] transition-transform duration-700 ease-lusso hover:rotate-0">
-            <Image
-              src="/img/ristrutturazione/referenza-leonardo.png"
-              alt="Lettera di referenza firmata dal proprietario dell’immobile di Via Leonina"
-              width={716}
-              height={624}
-              className="h-auto w-full rounded-2xl"
-            />
-          </Rivela>
-        </div>
-
-        <div className="group pb-20 md:pb-28">
-          <ul className="flex w-max gap-4 motion-safe:nastro group-hover:[animation-play-state:paused]" style={{ '--durata': '60s' } as React.CSSProperties}>
-            {[...TESTIMONIANZE_PROPRIETARI, ...TESTIMONIANZE_PROPRIETARI].map((t, i) => (
-              <li key={`${t.nome}-${i}`} aria-hidden={i >= TESTIMONIANZE_PROPRIETARI.length ? true : undefined} className="w-[80vw] shrink-0 rounded-3xl bg-white p-6 sm:w-[22rem]">
-                <p className="line-clamp-4 text-inchiostro/85">“{t.testo}”</p>
-                <p className="mt-4 flex items-center justify-between text-sm">
-                  <span className="font-bold">{t.nome}</span>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${t.citta === 'Roma' ? 'bg-sole' : 'bg-cielo'}`}>{t.citta}</span>
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* La storia a tappe */}
-      <section id="storia" aria-label="La storia di Via Leonina" className="bg-crema">
-        <div className="contenitore py-16 md:py-24">
-          <StoriaLeonina />
-        </div>
-      </section>
-
-      {/* Prima e dopo */}
-      <section aria-labelledby="titolo-confronto" className="bg-sabbia">
-        <div className="contenitore py-20 md:py-28">
-          <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <TestoDiviso as="h2" testo="Trascina e *guarda tu.*" className="titolo-xl" />
-            <p id="titolo-confronto" className="text-pietra">
-              Via Leonina, prima e dopo i lavori.
-            </p>
-          </div>
           <Rivela>
             <PrimaDopo prima="/img/ristrutturazione/leonina-prima-ricostruzione.jpg" dopo="/img/ristrutturazione/leonina-dopo.jpg" alt="Camera in Via Leonina" />
-            <p className="mt-3 text-xs text-pietra">Il “prima” è una ricostruzione illustrativa dello stato iniziale.</p>
+            <p className="mt-3 text-xs text-pietra">Via Leonina, prima e dopo: trascina per confrontare. Il “prima” è una ricostruzione illustrativa dello stato iniziale.</p>
           </Rivela>
         </div>
       </section>
@@ -116,6 +76,52 @@ export default function RistrutturaGratis() {
         </div>
       </section>
 
+      {/* Prove */}
+      <section aria-labelledby="titolo-prove" className="overflow-hidden bg-pesca">
+        <div className="contenitore grid gap-12 py-20 md:py-28 lg:grid-cols-[1fr_1fr] lg:items-center">
+          <div>
+            <Etichetta className="mb-6 text-corallo">Chi ci ha già scelto</Etichetta>
+            <h2 id="titolo-prove" className="titolo-xl">
+              Lo dicono <span className="italic text-corallo">i proprietari.</span>
+            </h2>
+            <p className="mt-5 max-w-md text-inchiostro/75">Dopo più di un anno, Leonardo ci ha scritto una referenza.</p>
+            <p className="mt-8 text-sm font-bold">Alcuni nostri progetti</p>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {Object.keys(CANTIERI_BREVI).map((c) => (
+                <li key={c} className="rounded-full bg-white px-4 py-2 text-sm font-semibold">
+                  {c}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <Rivela className="mx-auto w-full max-w-md rotate-[-3deg] rounded-3xl bg-white p-4 shadow-[0_40px_80px_-30px_rgba(29,34,54,0.45)] transition-transform duration-700 ease-lusso hover:rotate-0">
+            <Image
+              src="/img/ristrutturazione/referenza-leonardo.png"
+              alt="Lettera di referenza firmata dal proprietario dell’immobile di Via Leonina"
+              width={716}
+              height={624}
+              className="h-auto w-full rounded-2xl"
+            />
+          </Rivela>
+        </div>
+      </section>
+
+      {/* Proponi la tua casa */}
+      <section id="proponi" aria-labelledby="titolo-proponi" className="scroll-mt-24 bg-sabbia">
+        <div className="contenitore grid gap-10 py-20 md:py-28 lg:grid-cols-[1fr_1.4fr] lg:items-start">
+          <div>
+            <Etichetta className="mb-6 text-corallo">Proponi la tua casa</Etichetta>
+            <h2 id="titolo-proponi" className="titolo-xl">
+              Hai una casa da <span className="italic text-corallo">sistemare?</span>
+            </h2>
+            <p className="mt-6 max-w-md text-lg text-pietra">
+              Raccontaci com’è in un minuto. Non tutte le case sono adatte agli affitti brevi: lo valutiamo insieme, poi organizziamo un sopralluogo gratuito.
+            </p>
+          </div>
+          <PropostaImmobile />
+        </div>
+      </section>
+
       {/* Vantaggi in pillole */}
       <section aria-labelledby="titolo-guadagni" className="bg-corallo text-white">
         <div className="contenitore py-20 md:py-28">
@@ -135,22 +141,6 @@ export default function RistrutturaGratis() {
               </Rivela>
             ))}
           </ul>
-        </div>
-      </section>
-
-      {/* Proponi la tua casa */}
-      <section id="proponi" aria-labelledby="titolo-proponi" className="scroll-mt-24 bg-sabbia">
-        <div className="contenitore grid gap-10 py-20 md:py-28 lg:grid-cols-[1fr_1.4fr] lg:items-start">
-          <div>
-            <Etichetta className="mb-6 text-corallo">Proponi la tua casa</Etichetta>
-            <h2 id="titolo-proponi" className="titolo-xl">
-              Hai una casa da <span className="italic text-corallo">sistemare?</span>
-            </h2>
-            <p className="mt-6 max-w-md text-lg text-pietra">
-              Raccontaci com’è in un minuto. Non tutte le case sono adatte agli affitti brevi: lo valutiamo insieme, poi organizziamo un sopralluogo gratuito.
-            </p>
-          </div>
-          <PropostaImmobile />
         </div>
       </section>
 

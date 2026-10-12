@@ -245,6 +245,16 @@ export const SERVIZI_BREVI = [
   { icona: 'Monitoraggio', titolo: 'Monitoraggio', testo: 'Ospiti, canali e prezzi in tempo reale sul telefono.' },
 ] as const
 
+// I lavori della ristrutturazione gratuita, come a Via Leonina
+export const LAVORI_RISTRUTTURAZIONE = [
+  { icona: 'bagno', titolo: 'Bagni rifatti', testo: 'Sanitari, rivestimenti e doccia nuovi.' },
+  { icona: 'casa', titolo: 'Cucina nuova', testo: 'Attrezzata e pronta per gli ospiti.' },
+  { icona: 'gru', titolo: 'Impianti', testo: 'Li sistemiamo e li mettiamo a norma dove serve.' },
+  { icona: 'pennello', titolo: 'Pareti e soffitti', testo: 'Tinteggiatura e ripristini, salvando i dettagli d’epoca.' },
+  { icona: 'neve', titolo: 'Aria condizionata', testo: 'Indispensabile per gli ospiti d’estate.' },
+  { icona: 'divano', titolo: 'Arredi nuovi', testo: 'Arredamento completo scelto con il designer.' },
+] as const
+
 export const VANTAGGI_LOCAZIONE_BREVI = [
   { icona: 'casa', titolo: 'Casa rivalutata', testo: 'La rinnoviamo con un designer, senza spese per te.' },
   { icona: 'grafico', titolo: 'Canone più alto', testo: 'Valutiamo di aumentarlo rispetto a quello di oggi.' },
