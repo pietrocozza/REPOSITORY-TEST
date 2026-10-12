@@ -89,6 +89,9 @@ export default function Footer() {
           </p>
           <p>Gestione affitti brevi a Roma e Milano</p>
         </div>
+        <p className="mt-3 text-xs text-nebbia/80">
+          Tutti i diritti riservati. Testi, foto e grafica di questo sito appartengono a Soluzione Affitto e non possono essere copiati o riprodotti senza autorizzazione scritta.
+        </p>
       </div>
     </footer>
   )

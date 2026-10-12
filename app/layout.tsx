@@ -4,6 +4,7 @@ import Providers from '@/components/Providers'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import WhatsAppFisso from '@/components/layout/WhatsAppFisso'
+import ProteggiFoto from '@/components/layout/ProteggiFoto'
 import Cursore from '@/components/layout/Cursore'
 import Grana from '@/components/layout/Grana'
 import BannerCookie from '@/components/layout/BannerCookie'
@@ -95,6 +96,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           <Cursore />
           <Grana />
           <BannerCookie />
+          <ProteggiFoto />
         </Providers>
         <Analytics />
       </body>

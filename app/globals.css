@@ -85,6 +85,12 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Foto non trascinabili e senza menu "Salva" su iPhone (la parte di tasto destro è in ProteggiFoto) */
+img {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+
 ::selection {
   background: var(--color-corallo);
   color: var(--color-crema);
