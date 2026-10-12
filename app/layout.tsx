@@ -7,7 +7,6 @@ import WhatsAppFisso from '@/components/layout/WhatsAppFisso'
 import Cursore from '@/components/layout/Cursore'
 import Grana from '@/components/layout/Grana'
 import BannerCookie from '@/components/layout/BannerCookie'
-import Caricamento from '@/components/layout/Caricamento'
 import BarraScorrimento from '@/components/layout/BarraScorrimento'
 import { Analytics } from '@vercel/analytics/next'
 import { SITO } from '@/lib/site'
@@ -79,13 +78,6 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="it" className={`${display.variable} ${accento.variable} ${testo.variable} antialiased`}>
       <body>
-        {/* Chi ha già visto la schermata di caricamento in questa visita non la rivede */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "try{if(sessionStorage.getItem('caricamento-visto')==='1'||matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('senza-caricamento')}catch(e){}",
-          }}
-        />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
         <a
           href="#contenuto"
@@ -102,7 +94,6 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           <Cursore />
           <Grana />
           <BannerCookie />
-          <Caricamento />
         </Providers>
         <Analytics />
       </body>
