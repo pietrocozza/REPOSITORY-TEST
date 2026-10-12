@@ -8,6 +8,7 @@ import Cursore from '@/components/layout/Cursore'
 import Grana from '@/components/layout/Grana'
 import BannerCookie from '@/components/layout/BannerCookie'
 import Caricamento from '@/components/layout/Caricamento'
+import BarraScorrimento from '@/components/layout/BarraScorrimento'
 import { Analytics } from '@vercel/analytics/next'
 import { SITO } from '@/lib/site'
 import './globals.css'
@@ -93,6 +94,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           Vai al contenuto
         </a>
         <Providers>
+          <BarraScorrimento />
           <Header />
           <main id="contenuto">{children}</main>
           <Footer />

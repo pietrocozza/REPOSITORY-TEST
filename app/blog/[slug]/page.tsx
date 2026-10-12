@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Blocchi from '@/components/blog/Blocchi'
 import { Scheda } from '@/components/blog/ElencoArticoli'
-import BarraLettura from '@/components/blog/BarraLettura'
 import InvitoFinale from '@/components/sezioni/InvitoFinale'
 import TestoDiviso from '@/components/ui/TestoDiviso'
 import { ARTICOLI, articoloDa, formattaData } from '@/lib/articoli'
@@ -48,7 +47,6 @@ export default async function PaginaArticolo({ params }: PageProps<'/blog/[slug]
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <BarraLettura />
       <article className="bg-crema">
         <header className="contenitore pt-32 md:pt-40">
           <div className="mx-auto max-w-3xl">
