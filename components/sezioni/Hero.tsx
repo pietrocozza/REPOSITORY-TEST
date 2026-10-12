@@ -16,24 +16,30 @@ const FOTO = [
     src: '/img/hero/roma/colosseo-tramonto.jpg',
     w: 2400,
     h: 1794,
-    verticale: '/img/hero/roma/colosseo-tramonto-verticale.jpg',
+    verticale: { src: '/img/hero/roma/colosseo-tramonto-verticale.jpg', w: 1080, h: 1920 },
     alt: 'Il Colosseo al tramonto',
   },
   {
     src: '/img/hero/roma/san-pietro-cupola.jpg',
     w: 2400,
     h: 1596,
-    verticale: '/img/hero/roma/san-pietro-basilica-verticale.jpg',
-    alt: 'La cupola di San Pietro sopra i tetti di Roma',
+    verticale: { src: '/img/hero/roma/san-pietro-basilica-verticale.jpg', w: 1200, h: 1932 },
+    alt: 'San Pietro, la cupola e l’interno della basilica',
   },
   {
     src: '/img/hero/roma/fontana-di-trevi.jpg',
     w: 2400,
     h: 1601,
-    verticale: '/img/hero/roma/fontana-di-trevi-verticale.jpg',
-    alt: 'Fontana di Trevi',
+    verticale: { src: '/img/hero/roma/vicolo-verticale.jpg', w: 1200, h: 1600 },
+    alt: 'La Fontana di Trevi e un vicolo del centro di Roma',
   },
-  { src: '/img/roma/pantheon-hd.jpg', w: 2400, h: 1600, verticale: '/img/hero/roma/vicolo-verticale.jpg', alt: 'Il Pantheon e i vicoli del centro di Roma' },
+  {
+    src: '/img/roma/pantheon-hd.jpg',
+    w: 2400,
+    h: 1600,
+    verticale: { src: '/img/hero/roma/colosseo-alto-verticale.jpg', w: 1200, h: 1500 },
+    alt: 'Il Pantheon e il Colosseo visto dall’alto',
+  },
 ]
 
 /** Una foto in due versioni: il browser scarica solo quella adatta allo schermo */
@@ -44,7 +50,7 @@ function FotoHero({ foto, prima }: { foto: (typeof FOTO)[number]; prima: boolean
   } = getImageProps({ ...comune, src: foto.src, width: foto.w, height: foto.h })
   const {
     props: { srcSet: verticale, ...resto },
-  } = getImageProps({ ...comune, src: foto.verticale, width: 1080, height: 1920 })
+  } = getImageProps({ ...comune, src: foto.verticale.src, width: foto.verticale.w, height: foto.verticale.h })
   return (
     <picture>
       <source media="(min-width: 768px)" srcSet={orizzontale} sizes="100vw" />
