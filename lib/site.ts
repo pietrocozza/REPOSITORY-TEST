@@ -13,12 +13,12 @@ export const SITO = {
     {
       citta: 'Roma',
       indirizzo: 'Via Leonina 21, 00184 Roma RM',
-      mappa: 'https://www.google.com/maps/search/?api=1&query=Via+Leonina+21+00184+Roma',
+      mappa: 'https://www.google.com/maps/search/?api=1&query=Soluzione+Affitto+Via+Leonina+21+Roma',
     },
     {
       citta: 'Milano',
       indirizzo: 'Via Macedonio Melloni 17, 20129 Milano MI',
-      mappa: 'https://www.google.com/maps/search/?api=1&query=Via+Macedonio+Melloni+17+20129+Milano',
+      mappa: 'https://www.google.com/maps/search/?api=1&query=Soluzione+Affitto+Via+Macedonio+Melloni+17+Milano',
     },
   ],
 } as const

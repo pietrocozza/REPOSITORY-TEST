@@ -10,7 +10,7 @@ import Rivela from '@/components/ui/Rivela'
 import TestoDiviso from '@/components/ui/TestoDiviso'
 import Pulsante from '@/components/ui/Pulsante'
 import Icona from '@/components/ui/Icona'
-import { CANTIERI_BREVI, FAQ_LOCAZIONE, LAVORI_RISTRUTTURAZIONE, PASSI_LOCAZIONE, VANTAGGI_LOCAZIONE_BREVI } from '@/lib/contenuti'
+import { CANTIERI_BREVI, FAQ_LOCAZIONE, LAVORI_RISTRUTTURAZIONE, VANTAGGI_LOCAZIONE_BREVI } from '@/lib/contenuti'
 
 export const metadata: Metadata = {
   alternates: { canonical: '/ristruttura-gratis' },
@@ -19,7 +19,6 @@ export const metadata: Metadata = {
     'Hai una casa a Roma in zona centrale da ristrutturare? La rinnoviamo a nostre spese, la prendiamo in locazione a lungo termine e ti paghiamo l’affitto in anticipo.',
 }
 
-const COLORI = ['bg-pesca', 'bg-cielo', 'bg-limone', 'bg-salvia']
 
 export default function RistrutturaGratis() {
   return (
@@ -56,26 +55,6 @@ export default function RistrutturaGratis() {
         </div>
       </section>
 
-      {/* Come funziona */}
-      <section aria-labelledby="titolo-passi" className="bg-crema">
-        <div className="contenitore py-20 md:py-28">
-          <Etichetta className="mb-6 text-corallo">Come funziona</Etichetta>
-          <TestoDiviso as="h2" testo="Quattro passi, *zero spese.*" className="titolo-xl" />
-          <span id="titolo-passi" className="sr-only">
-            Come funziona la ristrutturazione gratuita
-          </span>
-          <ol className="relative mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-            {PASSI_LOCAZIONE.map((p, i) => (
-              <Rivela as="li" key={p.titolo} ritardo={i * 0.12} className={`relative rounded-[2rem] p-7 ${COLORI[i % COLORI.length]}`}>
-                <span className="font-display text-6xl font-bold tracking-tighter text-inchiostro/20">{i + 1}</span>
-                <h3 className="mt-6 font-display text-2xl font-bold tracking-tight">{p.titolo}</h3>
-                <p className="mt-2 text-inchiostro/75">{p.testo}</p>
-              </Rivela>
-            ))}
-          </ol>
-        </div>
-      </section>
-
       {/* Prove */}
       <section aria-labelledby="titolo-prove" className="overflow-hidden bg-pesca">
         <div className="contenitore grid gap-12 py-20 md:py-28 lg:grid-cols-[1fr_1fr] lg:items-center">
@@ -106,22 +85,6 @@ export default function RistrutturaGratis() {
         </div>
       </section>
 
-      {/* Proponi la tua casa */}
-      <section id="proponi" aria-labelledby="titolo-proponi" className="scroll-mt-24 bg-sabbia">
-        <div className="contenitore grid gap-10 py-20 md:py-28 lg:grid-cols-[1fr_1.4fr] lg:items-start">
-          <div>
-            <Etichetta className="mb-6 text-corallo">Proponi la tua casa</Etichetta>
-            <h2 id="titolo-proponi" className="titolo-xl">
-              Hai una casa da <span className="italic text-corallo">sistemare?</span>
-            </h2>
-            <p className="mt-6 max-w-md text-lg text-pietra">
-              Raccontaci com’è in un minuto. Non tutte le case sono adatte agli affitti brevi: lo valutiamo insieme, poi organizziamo un sopralluogo gratuito.
-            </p>
-          </div>
-          <PropostaImmobile />
-        </div>
-      </section>
-
       {/* Vantaggi in pillole */}
       <section aria-labelledby="titolo-guadagni" className="bg-corallo text-white">
         <div className="contenitore py-20 md:py-28">
@@ -136,11 +99,27 @@ export default function RistrutturaGratis() {
                 <span className="flex size-12 items-center justify-center rounded-2xl bg-sole text-inchiostro transition-transform duration-500 group-hover:rotate-[-8deg]">
                   <Icona nome={v.icona} className="size-6" />
                 </span>
-                <h3 className="mt-6 font-display text-xl font-bold tracking-tight">{v.titolo}</h3>
+                <h3 className="mt-6 font-display text-[clamp(1rem,4.4vw,1.25rem)] font-bold tracking-tight break-words hyphens-auto">{v.titolo}</h3>
                 <p className="mt-1.5 text-sm text-white/80">{v.testo}</p>
               </Rivela>
             ))}
           </ul>
+        </div>
+      </section>
+
+      {/* Proponi la tua casa */}
+      <section id="proponi" aria-labelledby="titolo-proponi" className="scroll-mt-24 bg-sabbia">
+        <div className="contenitore grid gap-10 py-20 md:py-28 lg:grid-cols-[1fr_1.4fr] lg:items-start">
+          <div>
+            <Etichetta className="mb-6 text-corallo">Proponi la tua casa</Etichetta>
+            <h2 id="titolo-proponi" className="titolo-xl">
+              Hai una casa da <span className="italic text-corallo">sistemare?</span>
+            </h2>
+            <p className="mt-6 max-w-md text-lg text-pietra">
+              Raccontaci com’è in un minuto. Non tutte le case sono adatte agli affitti brevi: lo valutiamo insieme, poi organizziamo un sopralluogo gratuito.
+            </p>
+          </div>
+          <PropostaImmobile />
         </div>
       </section>
 
