@@ -16,7 +16,6 @@ export const metadata: Metadata = {
 const TEAM = [
   {
     nome: 'Pietro Cozza',
-    ruolo: 'Amministrazione',
     compiti: ['Pagamenti puntuali', 'Adempimenti normativi', 'Ospiti 24/24'],
     contatto: { label: `WhatsApp ${SITO.whatsapp.numero}`, href: SITO.whatsapp.href },
     colore: 'bg-pesca',
@@ -25,7 +24,6 @@ const TEAM = [
   },
   {
     nome: 'Francesco Ignoti',
-    ruolo: 'Responsabile proprietari',
     compiti: ['Rapporti con i proprietari', 'Logistica pulizie', 'Manutenzione'],
     contatto: { label: SITO.telefono.numero, href: SITO.telefono.href },
     colore: 'bg-cielo',
@@ -75,15 +73,14 @@ export default function ChiSiamo() {
                 <div className="relative size-40 overflow-hidden rounded-full border-[6px] border-white shadow-[0_20px_40px_-20px_rgba(29,34,54,0.5)] md:size-48">
                   <Image src={t.foto} alt={`Foto di ${t.nome}`} fill sizes="192px" quality={90} className="object-cover" />
                 </div>
-                <p className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-sm font-bold text-inchiostro shadow-sm">
+                <h3 className="mt-5 font-display text-3xl font-bold tracking-tight">{t.nome}</h3>
+                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-sm font-bold text-inchiostro shadow-sm">
                   <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
                     <path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z" fill="currentColor" />
                     <circle cx="12" cy="9.5" r="2.5" fill="white" />
                   </svg>
                   Lavora a {t.citta}
                 </p>
-                <p className="mt-4 text-sm font-bold text-corallo">{t.ruolo}</p>
-                <h3 className="mt-1 font-display text-3xl font-bold tracking-tight">{t.nome}</h3>
                 <ul className="mt-5 flex flex-wrap justify-center gap-2">
                   {t.compiti.map((c) => (
                     <li key={c} className="rounded-full bg-white px-3 py-1.5 text-sm font-medium">
