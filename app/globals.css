@@ -175,3 +175,19 @@ input[type="range"].cursore-range::-moz-range-thumb {
     display: none;
   }
 }
+
+/* Luce che passa sui badge dei portali, ogni pochi secondi */
+@keyframes badge-luce {
+  0%,
+  70% {
+    transform: translateX(0) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(450%) skewX(-12deg);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .badge-luce {
+    animation: badge-luce 4.5s ease-in-out infinite;
+  }
+}
