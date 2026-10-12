@@ -37,7 +37,7 @@ export default function IntestazioneStoria() {
           <p className="mt-6 text-xs text-pietra">Le immagini del “prima” sono ricostruzioni illustrative dello stato iniziale.</p>
         </div>
 
-        <div className="relative h-[22rem] sm:h-[28rem]">
+        <div className="relative h-[22rem] max-lg:hidden sm:h-[28rem]">
           <motion.div
             className="absolute top-0 left-0 w-[62%] overflow-hidden rounded-[2rem] shadow-2xl"
             initial={{ opacity: 0, rotate: 0, x: 60 }}

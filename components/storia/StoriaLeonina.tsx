@@ -215,7 +215,6 @@ function Scena({ tipo }: { tipo: Tipo }) {
 function Tappa({ t, i, onAttiva }: { t: (typeof TAPPE)[number]; i: number; onAttiva: (i: number) => void }) {
   const ref = useRef<HTMLLIElement>(null)
   const centrale = useInView(ref, { margin: '-45% 0px -45% 0px' })
-  const visto = useInView(ref, { once: true, margin: '0px 0px -25% 0px' })
   useEffect(() => {
     if (centrale) onAttiva(i)
   }, [centrale, i, onAttiva])
@@ -223,10 +222,6 @@ function Tappa({ t, i, onAttiva }: { t: (typeof TAPPE)[number]; i: number; onAtt
   return (
     <li ref={ref} className="lg:flex lg:min-h-[78vh] lg:items-center">
       <div className="w-full">
-        {/* su telefono la scena sta sopra il testo */}
-        <div className={`relative mb-6 overflow-hidden rounded-[2rem] lg:hidden ${t.tipo === 'chat' || t.tipo === 'accordo' ? 'min-h-[24rem]' : 'aspect-[4/5] sm:aspect-[4/3]'}`}>
-          {visto && <Scena tipo={t.tipo} />}
-        </div>
         <span className={`inline-flex items-center gap-3 rounded-full px-4 py-1.5 text-sm font-bold ${t.colore}`}>
           <span className="font-display">{String(i + 1).padStart(2, '0')}</span>
           {t.quando}

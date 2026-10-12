@@ -9,10 +9,9 @@ import Domande from '@/components/ui/Domande'
 import Etichetta from '@/components/ui/Etichetta'
 import Rivela from '@/components/ui/Rivela'
 import TestoDiviso from '@/components/ui/TestoDiviso'
-import Contatore from '@/components/ui/Contatore'
 import Pulsante from '@/components/ui/Pulsante'
 import Icona from '@/components/ui/Icona'
-import { FAQ_LOCAZIONE, PASSI_LOCAZIONE, TESTIMONIANZE_PROPRIETARI, VANTAGGI_LOCAZIONE_BREVI } from '@/lib/contenuti'
+import { CANTIERI_BREVI, FAQ_LOCAZIONE, PASSI_LOCAZIONE, TESTIMONIANZE_PROPRIETARI, VANTAGGI_LOCAZIONE_BREVI } from '@/lib/contenuti'
 
 export const metadata: Metadata = {
   alternates: { canonical: '/ristruttura-gratis' },
@@ -27,6 +26,52 @@ export default function RistrutturaGratis() {
   return (
     <>
       <IntestazioneStoria />
+
+      {/* Prove */}
+      <section aria-labelledby="titolo-prove" className="overflow-hidden bg-pesca">
+        <div className="contenitore grid gap-12 py-20 md:py-28 lg:grid-cols-[1fr_1fr] lg:items-center">
+          <div>
+            <Etichetta className="mb-6 text-corallo">Chi ci ha già scelto</Etichetta>
+            <h2 id="titolo-prove" className="titolo-xl">
+              Lo dicono <span className="italic text-corallo">i proprietari.</span>
+            </h2>
+            <p className="mt-5 max-w-md text-inchiostro/75">
+              Dopo più di un anno, Leonardo ci ha scritto una referenza. Qui sotto le parole degli altri proprietari che ci hanno affidato casa.
+            </p>
+            <p className="mt-8 text-sm font-bold">Alcuni nostri progetti</p>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {Object.keys(CANTIERI_BREVI).map((c) => (
+                <li key={c} className="rounded-full bg-white px-4 py-2 text-sm font-semibold">
+                  {c}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <Rivela className="mx-auto w-full max-w-md rotate-[-3deg] rounded-3xl bg-white p-4 shadow-[0_40px_80px_-30px_rgba(29,34,54,0.45)] transition-transform duration-700 ease-lusso hover:rotate-0">
+            <Image
+              src="/img/ristrutturazione/referenza-leonardo.png"
+              alt="Lettera di referenza firmata dal proprietario dell’immobile di Via Leonina"
+              width={716}
+              height={624}
+              className="h-auto w-full rounded-2xl"
+            />
+          </Rivela>
+        </div>
+
+        <div className="group pb-20 md:pb-28">
+          <ul className="flex w-max gap-4 motion-safe:nastro group-hover:[animation-play-state:paused]" style={{ '--durata': '60s' } as React.CSSProperties}>
+            {[...TESTIMONIANZE_PROPRIETARI, ...TESTIMONIANZE_PROPRIETARI].map((t, i) => (
+              <li key={`${t.nome}-${i}`} aria-hidden={i >= TESTIMONIANZE_PROPRIETARI.length ? true : undefined} className="w-[80vw] shrink-0 rounded-3xl bg-white p-6 sm:w-[22rem]">
+                <p className="line-clamp-4 text-inchiostro/85">“{t.testo}”</p>
+                <p className="mt-4 flex items-center justify-between text-sm">
+                  <span className="font-bold">{t.nome}</span>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${t.citta === 'Roma' ? 'bg-sole' : 'bg-cielo'}`}>{t.citta}</span>
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
       {/* La storia a tappe */}
       <section id="storia" aria-label="La storia di Via Leonina" className="bg-crema">
@@ -88,46 +133,6 @@ export default function RistrutturaGratis() {
                 <h3 className="mt-6 font-display text-xl font-bold tracking-tight">{v.titolo}</h3>
                 <p className="mt-1.5 text-sm text-white/80">{v.testo}</p>
               </Rivela>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* Prove */}
-      <section aria-labelledby="titolo-prove" className="overflow-hidden bg-pesca">
-        <div className="contenitore grid gap-12 py-20 md:py-28 lg:grid-cols-[1fr_1fr] lg:items-center">
-          <div>
-            <p className="font-display text-[clamp(5rem,13vw,10rem)] leading-[0.85] font-bold tracking-tighter text-corallo">
-              <Contatore a={23} prefisso="+" />
-            </p>
-            <h2 id="titolo-prove" className="mt-3 font-display text-3xl font-bold tracking-tight md:text-4xl">
-              proprietari soddisfatti
-            </h2>
-            <p className="mt-4 max-w-md text-inchiostro/75">
-              Dopo più di un anno, Leonardo ci ha scritto una referenza. Qualche mese dopo abbiamo fatto lo stesso con la casa di Riccardo.
-            </p>
-          </div>
-          <Rivela className="mx-auto w-full max-w-md rotate-[-3deg] rounded-3xl bg-white p-4 shadow-[0_40px_80px_-30px_rgba(29,34,54,0.45)] transition-transform duration-700 ease-lusso hover:rotate-0">
-            <Image
-              src="/img/ristrutturazione/referenza-leonardo.png"
-              alt="Lettera di referenza firmata dal proprietario dell’immobile di Via Leonina"
-              width={716}
-              height={624}
-              className="h-auto w-full rounded-2xl"
-            />
-          </Rivela>
-        </div>
-
-        <div className="group pb-20 md:pb-28">
-          <ul className="flex w-max gap-4 motion-safe:nastro group-hover:[animation-play-state:paused]" style={{ '--durata': '60s' } as React.CSSProperties}>
-            {[...TESTIMONIANZE_PROPRIETARI, ...TESTIMONIANZE_PROPRIETARI].map((t, i) => (
-              <li key={`${t.nome}-${i}`} aria-hidden={i >= TESTIMONIANZE_PROPRIETARI.length ? true : undefined} className="w-[80vw] shrink-0 rounded-3xl bg-white p-6 sm:w-[22rem]">
-                <p className="line-clamp-4 text-inchiostro/85">“{t.testo}”</p>
-                <p className="mt-4 flex items-center justify-between text-sm">
-                  <span className="font-bold">{t.nome}</span>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${t.citta === 'Roma' ? 'bg-sole' : 'bg-cielo'}`}>{t.citta}</span>
-                </p>
-              </li>
             ))}
           </ul>
         </div>
