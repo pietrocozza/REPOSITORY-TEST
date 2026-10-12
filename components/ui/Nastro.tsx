@@ -1,8 +1,12 @@
+// Secondi per ogni carattere: tutti i nastri del sito scorrono alla stessa velocità, qualunque sia la lunghezza
+const SECONDI_PER_CARATTERE = 0.27
+
 /** Fascia con parole che scorrono all'infinito */
-export default function Nastro({ voci, className = '', durata = 32 }: { voci: readonly string[]; className?: string; durata?: number }) {
+export default function Nastro({ voci, className = '', durata }: { voci: readonly string[]; className?: string; durata?: number }) {
+  const secondi = durata ?? Math.round(voci.reduce((n, v) => n + v.length + 4, 0) * SECONDI_PER_CARATTERE)
   return (
     <div className={`overflow-hidden py-4 ${className}`} aria-label={voci.join(', ')}>
-      <div aria-hidden="true" className="flex w-max motion-safe:nastro" style={{ '--durata': `${durata}s` } as React.CSSProperties}>
+      <div aria-hidden="true" className="flex w-max motion-safe:nastro" style={{ '--durata': `${secondi}s` } as React.CSSProperties}>
         {[0, 1].map((k) => (
           <div key={k} className="flex shrink-0">
             {[...voci, ...voci].map((v, i) => (

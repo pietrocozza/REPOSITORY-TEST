@@ -235,14 +235,14 @@ export const VANTAGGI_BREVI = [
 ] as const
 
 export const SERVIZI_BREVI = [
-  { icona: 'Valorizzazione', foto: '/img/servizi/valorizzazione.jpg', titolo: 'Valorizzazione', testo: 'Foto professionali, home staging e restyling.' },
-  { icona: 'Gestione annuncio', foto: '/img/servizi/annuncio.jpg', titolo: 'Annuncio', testo: 'Su tutti i portali, con foto e descrizione.' },
-  { icona: 'Selezione', foto: '/img/servizi/selezione.jpg', titolo: 'Selezione ospiti', testo: 'Scegliamo noi gli ospiti e parliamo noi con loro.' },
-  { icona: 'Accoglienza', foto: '/img/servizi/accoglienza.jpg', titolo: 'Accoglienza', testo: 'Check-in con personale multilingue.' },
-  { icona: 'Manutenzione', foto: '/img/servizi/manutenzione.jpg', titolo: 'Manutenzione', testo: 'Un team dedicato alla tua casa.' },
-  { icona: 'Pulizia', foto: '/img/servizi/pulizia.jpg', titolo: 'Pulizia', testo: 'Casa pulita, biancheria fresca e profumata.' },
-  { icona: 'Burocrazia', foto: '/img/servizi/burocrazia.jpg', titolo: 'Burocrazia', testo: 'SUAR, CIR, CIN e Alloggiati Web: tutto in regola.' },
-  { icona: 'Monitoraggio', foto: '/img/servizi/monitoraggio.jpg', titolo: 'Monitoraggio', testo: 'Ospiti, canali e prezzi in tempo reale sul telefono.' },
+  { icona: 'Valorizzazione', titolo: 'Valorizzazione', testo: 'Foto professionali, home staging e restyling.' },
+  { icona: 'Gestione annuncio', titolo: 'Annuncio', testo: 'Su tutti i portali, con foto e descrizione.' },
+  { icona: 'Selezione', titolo: 'Selezione ospiti', testo: 'Scegliamo noi gli ospiti e parliamo noi con loro.' },
+  { icona: 'Accoglienza', titolo: 'Accoglienza', testo: 'Check-in con personale multilingue.' },
+  { icona: 'Manutenzione', titolo: 'Manutenzione', testo: 'Un team dedicato alla tua casa.' },
+  { icona: 'Pulizia', titolo: 'Pulizia', testo: 'Casa pulita, biancheria fresca e profumata.' },
+  { icona: 'Burocrazia', titolo: 'Burocrazia', testo: 'SUAR, CIR, CIN e Alloggiati Web: tutto in regola.' },
+  { icona: 'Monitoraggio', titolo: 'Monitoraggio', testo: 'Ospiti, canali e prezzi in tempo reale sul telefono.' },
 ] as const
 
 export const VANTAGGI_LOCAZIONE_BREVI = [
