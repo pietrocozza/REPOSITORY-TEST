@@ -5,7 +5,7 @@ import { motion } from 'motion/react'
 import TestoDiviso from '@/components/ui/TestoDiviso'
 import { EASE_LUSSO } from '@/lib/animazioni'
 
-/** Apertura della storia: titolo e due foto (prima/dopo) che si sovrappongono */
+/** Apertura della storia: titolo e due foto vere della stessa cucina (prima/dopo) che si sovrappongono */
 export default function IntestazioneStoria() {
   return (
     <section className="overflow-hidden bg-crema">
@@ -34,7 +34,6 @@ export default function IntestazioneStoria() {
             </span>
             Guarda i lavori che facciamo
           </motion.a>
-          <p className="mt-6 text-xs text-pietra max-lg:hidden">Le immagini del “prima” sono ricostruzioni illustrative dello stato iniziale.</p>
         </div>
 
         <div className="relative h-[22rem] max-lg:hidden sm:h-[28rem]">
@@ -45,7 +44,7 @@ export default function IntestazioneStoria() {
             transition={{ duration: 1.2, ease: EASE_LUSSO, delay: 0.8 }}
           >
             <div className="relative aspect-[4/5]">
-              <Image src="/img/ristrutturazione/leonina-prima-ricostruzione.jpg" alt="Prima" fill preload sizes="40vw" className="object-cover" />
+              <Image src="/img/ristrutturazione/cucina-prima.jpg" alt="Cucina prima della ristrutturazione" fill preload sizes="40vw" className="object-cover" />
               <span className="absolute top-4 left-4 rounded-full bg-inchiostro/80 px-3 py-1 text-xs font-bold text-white">Prima</span>
             </div>
           </motion.div>
@@ -56,7 +55,7 @@ export default function IntestazioneStoria() {
             transition={{ duration: 1.2, ease: EASE_LUSSO, delay: 1.1 }}
           >
             <div className="relative aspect-[4/5]">
-              <Image src="/img/leonina/letto.jpg" alt="Dopo" fill preload sizes="40vw" className="object-cover" />
+              <Image src="/img/ristrutturazione/cucina-dopo.jpg" alt="La stessa cucina dopo la ristrutturazione" fill preload sizes="40vw" className="object-cover" />
               <span className="absolute top-4 left-4 rounded-full bg-sole px-3 py-1 text-xs font-bold text-inchiostro">Dopo</span>
             </div>
           </motion.div>
