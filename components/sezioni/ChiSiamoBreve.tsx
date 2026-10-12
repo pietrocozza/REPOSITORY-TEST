@@ -30,7 +30,10 @@ export default function ChiSiamoBreve() {
           ))}
         </ul>
         <div className="mx-auto mt-10 max-w-2xl text-center md:mt-12">
-          <p className="text-lg text-inchiostro/80">
+          <h2 className="font-display text-[clamp(1.6rem,6vw,2.75rem)] leading-tight font-bold tracking-tight">
+            Piacere, siamo <span className="italic text-corallo">Pietro e Francesco.</span>
+          </h2>
+          <p className="mt-4 text-lg text-inchiostro/80">
             Due ragazzi che da quattro anni hanno fatto della passione per l’immobiliare un mestiere. Ci piace conoscere chi ci affida la casa, parlare chiaro e trattare ogni
             appartamento come se fosse nostro.{' '}
             <Link href="/chi-siamo" className="font-semibold text-corallo underline underline-offset-4">
