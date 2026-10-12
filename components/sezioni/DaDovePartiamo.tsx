@@ -6,7 +6,7 @@ export default function DaDovePartiamo() {
     <nav aria-label="Da dove partiamo" className="flex flex-wrap items-center gap-x-5 gap-y-3">
       <Link
         href="/ristruttura-gratis"
-        className="group inline-flex items-center gap-3 rounded-full bg-[#1f7a4d] py-2.5 pr-5 pl-2.5 font-semibold text-white shadow-[0_12px_30px_-10px_rgba(31,122,77,0.8)] transition-transform duration-300 hover:-translate-y-0.5"
+        className="group luce relative inline-flex items-center gap-3 overflow-hidden rounded-full bg-[#1f7a4d] py-2.5 pr-5 pl-2.5 font-semibold text-white shadow-[0_12px_30px_-10px_rgba(31,122,77,0.8)] transition-transform duration-300 hover:-translate-y-0.5"
       >
         <span className="relative flex size-9 items-center justify-center rounded-full bg-white/20">
           <span className="absolute inset-0 animate-ping rounded-full bg-white/25 motion-reduce:hidden" aria-hidden="true" />

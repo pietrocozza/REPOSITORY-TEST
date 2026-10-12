@@ -353,7 +353,7 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
 
             <a
               href={vetrina ? '/calcola-guadagno#richiesta' : '#richiesta'}
-              className="group mt-6 flex items-center justify-between gap-3 rounded-full bg-corallo px-7 py-4 text-sm font-semibold text-white transition-transform duration-500 ease-lusso hover:-translate-y-0.5"
+              className="group luce relative mt-6 flex items-center justify-between gap-3 overflow-hidden rounded-full bg-corallo px-7 py-4 text-sm font-semibold text-white transition-transform duration-500 ease-lusso hover:-translate-y-0.5"
             >
               Voglio la stima precisa per la mia casa
               <svg viewBox="0 0 24 24" className="size-4 transition-transform duration-500 ease-lusso group-hover:translate-y-0.5" aria-hidden="true">
@@ -364,7 +364,8 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
               href={linkWhatsApp(messaggio)}
               target="_blank"
               rel="noopener noreferrer"
-              className="group mt-3 flex items-center justify-between gap-3 rounded-full bg-[#1f7a4d] px-7 py-4 text-sm font-semibold text-white transition-transform duration-500 ease-lusso hover:-translate-y-0.5"
+              className="group luce relative mt-3 flex items-center justify-between gap-3 overflow-hidden rounded-full bg-[#1f7a4d] px-7 py-4 text-sm font-semibold text-white transition-transform duration-500 ease-lusso hover:-translate-y-0.5"
+              style={{ '--luce-ritardo': '1.2s' } as React.CSSProperties}
             >
               Mandaci questa stima su WhatsApp
               <svg viewBox="0 0 32 32" className="size-6 shrink-0" aria-hidden="true">

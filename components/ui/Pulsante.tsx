@@ -35,7 +35,7 @@ export default function Pulsante({
 }) {
   const classi = `group relative inline-flex items-center gap-3 overflow-hidden rounded-full px-7 py-4 text-sm font-semibold tracking-wide transition-colors duration-500 ${STILI[variante]} ${
     variante === 'contorno' ? 'hover:text-crema hover:border-inchiostro' : ''
-  } ${className}`
+  } ${variante === 'corallo' || variante === 'pieno' ? 'luce' : ''} ${className}`
 
   const interno = (
     <>

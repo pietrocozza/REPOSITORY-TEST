@@ -191,3 +191,31 @@ input[type="range"].cursore-range::-moz-range-thumb {
     animation: badge-luce 4.5s ease-in-out infinite;
   }
 }
+
+/* Lo stesso riflesso, ogni tanto, sui pezzi importanti (pulsanti principali, foto delle case).
+   L’elemento deve essere relative e overflow-hidden; --luce-ritardo sfalsa i passaggi */
+@keyframes luce {
+  0%,
+  82% {
+    transform: translateX(0) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(480%) skewX(-12deg);
+  }
+}
+.luce::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -45%;
+  width: 32%;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgb(255 255 255 / 0), rgb(255 255 255 / 0.45), rgb(255 255 255 / 0));
+  transform: translateX(0) skewX(-12deg);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .luce::after {
+    animation: luce 7s ease-in-out var(--luce-ritardo, 0s) infinite;
+  }
+}
