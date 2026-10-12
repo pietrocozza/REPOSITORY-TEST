@@ -11,7 +11,7 @@ const PERSONE = [
 export default function ChiSiamoBreve() {
   return (
     <section aria-label="Chi siamo" className="bg-sabbia">
-      <div className="contenitore pt-6 pb-16 md:pt-8 md:pb-20">
+      <div className="contenitore pt-6 pb-10 md:pt-8 md:pb-12">
         <ul className="mx-auto grid max-w-3xl grid-cols-2 gap-4 lg:max-w-5xl lg:gap-6">
           {PERSONE.map((p, i) => (
             <Rivela as="li" key={p.nome} ritardo={i * 0.12} className={`flex flex-col items-center rounded-[2rem] p-5 text-center md:p-8 ${p.colore}`}>
@@ -29,10 +29,10 @@ export default function ChiSiamoBreve() {
             </Rivela>
           ))}
         </ul>
-        <div className="mx-auto mt-10 max-w-2xl text-center md:mt-12">
-          <Link href="/chi-siamo" className="group font-display text-[clamp(1.35rem,5vw,2.25rem)] leading-tight font-bold tracking-tight">
+        <div className="mx-auto mt-5 max-w-2xl text-center">
+          <Link href="/chi-siamo" className="group text-base font-semibold text-inchiostro/80 hover:text-inchiostro md:text-lg">
             Ciao! Siamo <span className="italic text-corallo">Pietro e Francesco</span>, due amici che…
-            <span aria-hidden="true" className="ml-2 inline-block text-corallo transition-transform duration-300 group-hover:translate-x-1">
+            <span aria-hidden="true" className="ml-1.5 inline-block text-corallo transition-transform duration-300 group-hover:translate-x-1">
               →
             </span>
           </Link>
