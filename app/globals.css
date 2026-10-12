@@ -214,8 +214,21 @@ input[type="range"].cursore-range::-moz-range-thumb {
   background: linear-gradient(90deg, rgb(255 255 255 / 0), rgb(255 255 255 / 0.45), rgb(255 255 255 / 0));
   transform: translateX(0) skewX(-12deg);
 }
+/* Variante più frequente (schede della hero): passa appena la scheda compare, poi ogni 3 secondi */
+@keyframes luce-subito {
+  0% {
+    transform: translateX(0) skewX(-12deg);
+  }
+  25%,
+  100% {
+    transform: translateX(480%) skewX(-12deg);
+  }
+}
 @media (prefers-reduced-motion: no-preference) {
   .luce::after {
     animation: luce 7s ease-in-out var(--luce-ritardo, 0s) infinite;
+  }
+  .luce-3s::after {
+    animation: luce-subito 3s ease-in-out var(--luce-ritardo, 0s) infinite;
   }
 }

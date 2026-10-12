@@ -19,7 +19,6 @@ export const metadata: Metadata = {
     'Hai una casa a Roma in zona centrale da ristrutturare? La rinnoviamo a nostre spese, la prendiamo in locazione a lungo termine e ti paghiamo l’affitto in anticipo.',
 }
 
-
 export default function RistrutturaGratis() {
   return (
     <>
@@ -49,8 +48,8 @@ export default function RistrutturaGratis() {
             </ul>
           </div>
           <Rivela>
-            <PrimaDopo prima="/img/ristrutturazione/leonina-prima-ricostruzione.jpg" dopo="/img/ristrutturazione/leonina-dopo.jpg" alt="Camera in Via Leonina" />
-            <p className="mt-3 text-xs text-pietra">Via Leonina, prima e dopo: trascina per confrontare. Il “prima” è una ricostruzione illustrativa dello stato iniziale.</p>
+            <PrimaDopo prima="/img/ristrutturazione/cucina-prima-confronto.jpg" dopo="/img/ristrutturazione/cucina-dopo-confronto.jpg" alt="Una cucina che abbiamo ristrutturato" />
+            <p className="mt-3 text-xs text-pietra">Foto reali, prima e dopo: trascina per confrontare.</p>
           </Rivela>
         </div>
       </section>

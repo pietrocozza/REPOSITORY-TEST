@@ -73,7 +73,7 @@ export default function Blocchi({ blocchi }: { blocchi: Blocco[] }) {
             return (
               <div key={i} className="my-10">
                 <PrimaDopo prima={b.prima} dopo={b.dopo} alt={b.alt} />
-                <p className="mt-3 text-xs text-pietra">Il “prima” è una ricostruzione illustrativa dello stato iniziale.</p>
+                <p className="mt-3 text-xs text-pietra">Foto reali, prima e dopo: trascina per confrontare.</p>
               </div>
             )
           case 'citazione':

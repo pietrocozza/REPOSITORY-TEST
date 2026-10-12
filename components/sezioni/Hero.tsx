@@ -7,6 +7,7 @@ import TestoDiviso from '@/components/ui/TestoDiviso'
 import Pulsante from '@/components/ui/Pulsante'
 import Stelle from '@/components/ui/Stelle'
 import Nastro from '@/components/ui/Nastro'
+import { RILIEVO } from '@/components/sezioni/Partner'
 import { EASE_LUSSO } from '@/lib/animazioni'
 import { useRiduciMovimento } from '@/lib/hooks'
 
@@ -168,7 +169,10 @@ export default function Hero() {
         {/* Schede fluttuanti */}
         <motion.div style={{ x: xSchede, y: ySchede }} className="relative hidden h-[26rem] lg:block" aria-hidden="true">
           <Fluttuante className="top-0 right-6" ritardo={1.4} profondita={1}>
-            <div className="luce relative w-64 overflow-hidden rounded-3xl bg-white p-6 text-inchiostro shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)]">
+            <div
+              style={{ boxShadow: RILIEVO, '--luce-ritardo': '1.6s' } as React.CSSProperties}
+              className="luce luce-3s relative w-64 overflow-hidden rounded-3xl bg-white p-6 text-inchiostro"
+            >
               <p className="text-sm font-semibold text-pietra">Fino a</p>
               <p className="font-display text-6xl font-bold tracking-tighter text-corallo">+300%</p>
               <p className="mt-1 text-sm font-medium text-pietra">di ricavi possibili rispetto all’affitto tradizionale, nel centro storico</p>
@@ -176,8 +180,8 @@ export default function Hero() {
           </Fluttuante>
           <Fluttuante className="top-40 left-0" ritardo={1.7} profondita={2}>
             <div
-              style={{ '--luce-ritardo': '1.4s' } as React.CSSProperties}
-              className="luce relative flex items-center gap-4 overflow-hidden rounded-3xl bg-sole p-5 pr-7 text-inchiostro shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)]"
+              style={{ boxShadow: RILIEVO, '--luce-ritardo': '1.9s' } as React.CSSProperties}
+              className="luce luce-3s relative flex items-center gap-4 overflow-hidden rounded-3xl bg-sole p-5 pr-7 text-inchiostro"
             >
               <span className="flex size-12 items-center justify-center rounded-2xl bg-white/70 font-display text-xl font-bold">G</span>
               <div>
@@ -187,11 +191,8 @@ export default function Hero() {
             </div>
           </Fluttuante>
           <Fluttuante className="right-0 bottom-0" ritardo={2} profondita={1.5}>
-            <div
-              style={{ '--luce-ritardo': '2.8s' } as React.CSSProperties}
-              className="luce relative overflow-hidden rounded-3xl bg-white/90 p-4 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] backdrop-blur"
-            >
-              <Image src="/img/partner/airbnb-superhost.png" alt="" width={190} height={87} />
+            <div style={{ boxShadow: RILIEVO, '--luce-ritardo': '2.2s' } as React.CSSProperties} className="luce luce-3s relative overflow-hidden rounded-3xl bg-white p-4">
+              <Image src="/img/partner/airbnb-superhost@3x.png" alt="" width={190} height={87} sizes="190px" />
             </div>
           </Fluttuante>
         </motion.div>
