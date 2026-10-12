@@ -35,9 +35,9 @@ const TEAM = [
 ]
 
 const STORIA = [
-  'Siamo Pietro e Francesco. Quattro anni fa abbiamo trasformato una passione in un lavoro: far rendere al meglio le case dei proprietari, senza che debbano pensarci loro.',
-  'Siamo giovani e non lo nascondiamo, anzi: è la nostra forza. Usiamo le tecnologie più nuove per prezzi, prenotazioni e check-in, così la tua casa lavora sempre al massimo.',
-  'Ma la tecnologia da sola non basta. Ci piace conoscere chi ci affida la casa, ascoltare e spiegare tutto con parole semplici. Trattiamo ogni appartamento come se fosse nostro, e quando un ospite lascia cinque stelle siamo contenti quanto te.',
+  'Siamo Pietro e Francesco. Quattro anni fa abbiamo trasformato l’interesse e la passione per l’immobiliare in un mestiere.',
+  'Siamo giovani, e si vede: usiamo gli strumenti più nuovi per prezzi, prenotazioni e check-in.',
+  'Ma prima della tecnologia vengono le persone. Ci piace conoscere chi ci affida la casa, ascoltare e spiegare tutto con parole semplici. E trattiamo ogni appartamento come se fosse nostro.',
   'Vuoi conoscerci? Passa a trovarci a Roma o a Milano, su appuntamento: il caffè lo offriamo noi.',
 ]
 const STORIA_DATI = ['4 anni di attività', 'Roma e Milano', 'Rispondiamo di persona']
@@ -64,7 +64,7 @@ export default function ChiSiamo() {
         <div className="contenitore grid gap-10 pt-20 md:pt-28 lg:grid-cols-[1fr_1.3fr] lg:gap-16">
           <div>
             <Etichetta className="mb-6 text-corallo">La nostra storia</Etichetta>
-            <TestoDiviso as="h2" testo="Due ragazzi, *una passione.*" className="titolo-xl" />
+            <TestoDiviso as="h2" testo="Due ragazzi e la passione *per l’immobiliare.*" className="titolo-xl" />
             <span id="titolo-storia" className="sr-only">
               La nostra storia
             </span>
