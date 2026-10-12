@@ -18,7 +18,7 @@ export const SITO = {
     {
       citta: 'Milano',
       indirizzo: 'Via Macedonio Melloni 17, 20129 Milano MI',
-      mappa: 'https://www.google.com/maps/search/?api=1&query=Soluzione+Affitto+Via+Macedonio+Melloni+17+Milano',
+      mappa: 'https://share.google/QUoinKJ634Aqr5M7J',
     },
   ],
 } as const
