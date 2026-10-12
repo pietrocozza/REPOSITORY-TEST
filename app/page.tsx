@@ -3,7 +3,6 @@ import Link from 'next/link'
 import Hero from '@/components/sezioni/Hero'
 import Partner from '@/components/sezioni/Partner'
 import ChiSiamoBreve from '@/components/sezioni/ChiSiamoBreve'
-import DaDovePartiamo from '@/components/sezioni/DaDovePartiamo'
 import Vantaggi from '@/components/sezioni/Vantaggi'
 import Servizi from '@/components/sezioni/Servizi'
 import Appartamenti from '@/components/sezioni/Appartamenti'
@@ -34,7 +33,6 @@ export default function Home() {
       <Hero />
       <Partner />
       <ChiSiamoBreve />
-      <DaDovePartiamo />
 
       {/* Simulatore di guadagno */}
       <section id="simulatore" aria-labelledby="titolo-simulatore" className="scroll-mt-20 bg-pesca">

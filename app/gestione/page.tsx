@@ -5,7 +5,7 @@ import Servizi from '@/components/sezioni/Servizi'
 import ComeLavoriamo from '@/components/sezioni/ComeLavoriamo'
 import Partner from '@/components/sezioni/Partner'
 import InvitoFinale from '@/components/sezioni/InvitoFinale'
-import Etichetta from '@/components/ui/Etichetta'
+import DaDovePartiamo from '@/components/sezioni/DaDovePartiamo'
 
 export const metadata: Metadata = {
   alternates: { canonical: '/gestione' },
@@ -20,12 +20,12 @@ export default function Gestione() {
         etichetta="Il nostro servizio di gestione"
         titolo="Dimenticati e *incassa.*"
         sottotitolo="Una sola formula, tutto incluso: una commissione in percentuale sull’affitto generato, e a tutto il resto pensiamo noi."
-        foto="/img/hero/don-bosco.jpg"
-        altFoto="Suite Don Bosco, Roma"
       />
-      <section aria-label="Piani" className="bg-crema">
-        <div className="contenitore py-24 md:py-32">
-          <Etichetta numero="01" className="mb-12 text-pietra">Piani e commissioni</Etichetta>
+      <section id="formula" aria-label="La formula di gestione" className="scroll-mt-24 bg-crema">
+        <div className="contenitore pb-20 md:pb-28">
+          <div className="mb-6">
+            <DaDovePartiamo />
+          </div>
           <Piani />
         </div>
       </section>
