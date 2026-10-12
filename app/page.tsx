@@ -11,6 +11,7 @@ import Piani from '@/components/sezioni/Piani'
 import PrimaDopo from '@/components/sezioni/PrimaDopo'
 import Simulatore from '@/components/sezioni/Simulatore'
 import InvitoFinale from '@/components/sezioni/InvitoFinale'
+import TornaSu from '@/components/ui/TornaSu'
 import Etichetta from '@/components/ui/Etichetta'
 import TestoDiviso from '@/components/ui/TestoDiviso'
 import Rivela from '@/components/ui/Rivela'
@@ -104,6 +105,7 @@ export default function Home() {
       </section>
 
       <InvitoFinale />
+      <TornaSu />
     </>
   )
 }
