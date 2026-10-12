@@ -6,33 +6,30 @@ const CHIAVE = 'caricamento-visto'
 const DURATA_MINIMA = 1100
 const DURATA_MASSIMA = 2600
 
-/** Gattino romano che spinge la barra: disegno originale, zampe animate con CSS */
-function Gattino() {
+/** Gabbiano romano che spinge la barra col becco: disegno originale, zampe e ala animate con CSS */
+function Gabbiano() {
   return (
-    <svg viewBox="0 0 64 48" className="h-16 w-[5.3rem]" aria-hidden="true">
-      <g className="caricamento-zampe-dietro" fill="#1d2236">
-        <rect x="14" y="34" width="5" height="10" rx="2.5" />
-        <rect x="24" y="34" width="5" height="10" rx="2.5" />
+    <svg viewBox="0 0 80 64" className="h-[4.5rem] w-[5.6rem]" aria-hidden="true">
+      <g stroke="#e8892b" strokeWidth="3" strokeLinecap="round" fill="none">
+        <path className="caricamento-zampe-dietro" d="M28 50l-3 12h-4" />
+        <path className="caricamento-zampe-avanti" d="M40 50l3 12h4" />
       </g>
-      <path d="M8 26c-6-2-8-10-3-14" fill="none" stroke="#1d2236" strokeWidth="4" strokeLinecap="round" className="caricamento-coda" />
-      <ellipse cx="26" cy="28" rx="18" ry="11" fill="#f7b538" />
-      <path d="M18 20c2 3 2 8 0 12M26 18c2 4 2 10 0 15" fill="none" stroke="#e09a1f" strokeWidth="2.5" strokeLinecap="round" />
-      <g className="caricamento-zampe-avanti" fill="#1d2236">
-        <rect x="36" y="34" width="5" height="10" rx="2.5" />
-      </g>
-      <circle cx="44" cy="20" r="11" fill="#f7b538" />
-      <path d="M36 13l2-9 6 6zM50 10l4-7 1 10z" fill="#f7b538" />
-      <path d="M38 10l1-4 3 3zM51 8l2-3 0 5z" fill="#d9481f" />
-      <rect x="53" y="22" width="9" height="5" rx="2.5" fill="#1d2236" />
-      <circle cx="47" cy="18" r="1.8" fill="#1d2236" />
-      <circle cx="41" cy="18" r="1.8" fill="#1d2236" />
-      <path d="M43 23q1 1.5 2 0" fill="none" stroke="#1d2236" strokeWidth="1.4" strokeLinecap="round" />
-      <circle cx="38.5" cy="22" r="1.6" fill="#d9481f" opacity=".5" />
+      <path d="M14 34L1 30l4 9 11 3z" fill="#1d2236" />
+      <ellipse cx="33" cy="39" rx="21" ry="13" fill="#fff" stroke="#1d2236" strokeWidth="2" />
+      <path className="caricamento-ala" d="M18 34c6-6 18-7 26-2-6 6-16 9-26 7z" fill="#b7bed3" stroke="#1d2236" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M18 34l-6 3 7 1z" fill="#1d2236" />
+      <circle cx="55" cy="24" r="11" fill="#fff" stroke="#1d2236" strokeWidth="2" />
+      <path d="M64 23l15 4-15 5z" fill="#f7b538" stroke="#1d2236" strokeWidth="1.6" strokeLinejoin="round" />
+      <circle cx="71" cy="28.5" r="1.6" fill="#d9481f" />
+      <circle cx="58" cy="21" r="2.4" fill="#1d2236" />
+      <circle cx="58.8" cy="20.2" r=".8" fill="#fff" />
+      <path d="M54 16.5l7 2" stroke="#1d2236" strokeWidth="1.8" strokeLinecap="round" />
+      <path className="caricamento-goccia" d="M47 12c-2 3-2 5 0 6 2-1 2-3 0-6z" fill="#7fb5e8" />
     </svg>
   )
 }
 
-/** Schermata di caricamento al primo ingresso: una barra che arriva al 100% spinta dal gattino */
+/** Schermata di caricamento al primo ingresso: una barra che arriva al 100% spinta dal gabbiano */
 export default function Caricamento() {
   const [percento, setPercento] = useState(0)
   const [visibile, setVisibile] = useState(true)
@@ -89,8 +86,8 @@ export default function Caricamento() {
       <p className="font-display text-2xl font-bold tracking-tight text-inchiostro md:text-3xl">Soluzione Affitto</p>
       <p className="mt-1 text-sm text-pietra">Stiamo aprendo le porte di casa…</p>
       <div className="relative mt-16 w-full max-w-sm">
-        <div className="absolute bottom-full mb-1" style={{ left: `calc(${p}% - 4.6rem)` }}>
-          <Gattino />
+        <div className="absolute bottom-full mb-1" style={{ left: `max(0px, calc(${p}% - 5.2rem))` }}>
+          <Gabbiano />
         </div>
         <div className="h-4 overflow-hidden rounded-full bg-sabbia">
           <div className="h-full rounded-full bg-corallo" style={{ width: `${p}%` }} />

@@ -48,7 +48,7 @@ function FotoHero({ foto, prima }: { foto: (typeof FOTO)[number]; prima: boolean
   return (
     <picture>
       <source media="(min-width: 768px)" srcSet={orizzontale} sizes="100vw" />
-      <img {...resto} srcSet={verticale} alt={foto.alt} className="absolute inset-0 size-full object-cover" />
+      <img {...resto} srcSet={verticale} alt={foto.alt} className="absolute inset-0 size-full object-cover max-md:brightness-90 max-md:contrast-90 max-md:saturate-[.85]" />
     </picture>
   )
 }
@@ -120,6 +120,9 @@ export default function Hero() {
       </motion.div>
       <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-notte/80 via-notte/40 to-notte/5" />
       <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-notte/70 to-transparent" />
+      {/* su telefono il testo copre tutta la foto: velatura più scura perché si legga sempre */}
+      <div aria-hidden="true" className="absolute inset-0 bg-notte/35 md:hidden" />
+      <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-notte/90 via-notte/60 to-transparent md:hidden" />
 
       <motion.div style={{ y: yTesto }} className="contenitore relative grid flex-1 items-end gap-10 pt-32 pb-12 lg:grid-cols-[1.25fr_1fr] lg:items-center lg:pb-20">
         <div>

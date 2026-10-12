@@ -39,10 +39,12 @@ CORREZIONE_PREZZO = 0.88
 # Milano rende meno di quanto dicono i dati: -15% nel centro, -20% negli altri quartieri (dalle case che gestiamo)
 RIDUZIONE_MILANO_CENTRO = 0.85
 RIDUZIONE_MILANO_ALTRE = 0.80
-# Monolocali e bilocali (0–1 camere) a Roma: tarati sulle case che gestiamo nel centro storico,
-# 1 camera 45–52k € l'anno al netto delle commissioni dei portali (Via Leonina, Monti: 48k)
-RIDUZIONE_ROMA_PICCOLI = 0.80
-# Un monolocale rende il 5–10% meno di un 1 camera nella stessa zona
+# Monolocali e bilocali (0–1 camere) a Roma: nel centro storico tarati sulle case che gestiamo,
+# 1 camera 45–52k € l'anno al netto delle commissioni dei portali (Via Leonina, Monti: 48k);
+# fuori dal centro resta la taratura prudente di prima
+RIDUZIONE_ROMA_PICCOLI_CENTRO = 0.80
+RIDUZIONE_ROMA_PICCOLI = 0.73
+# Nel centro storico un monolocale rende il 5–10% meno di un 1 camera nella stessa zona
 MONOLOCALE_SU_UNA_CAMERA = 0.92
 # Stagionalità di Roma dalle nostre case: maggio, settembre e ottobre i mesi migliori,
 # marzo meglio di aprile, gennaio, febbraio e agosto i più tranquilli
@@ -130,7 +132,7 @@ def statistiche(s):
     }
 
 
-def costruisci(df, gruppi, limita_monolocale=False):
+def costruisci(df, gruppi, limita_monolocale=()):
     tutti = statistiche(df)
     rapporti = {c: statistiche(df[df.camere == c]) for c in ['0', '1', '2', '3']}
     zone = []
@@ -155,7 +157,7 @@ def costruisci(df, gruppi, limita_monolocale=False):
                         'notti': base['notti'],
                         'stimata': True,
                     }
-            if limita_monolocale:
+            if nome in limita_monolocale:
                 uno = camere['1']
                 for k in ('min', 'max'):
                     camere['0'][k] = min(camere['0'][k], arrotonda(uno[k] * MONOLOCALE_SU_UNA_CAMERA, 500))
@@ -174,7 +176,9 @@ def main():
     roma['zona'] = roma.apply(zona_roma, axis=1)
     centro = roma.zona.isin(RIONI_ROMA.keys())
     roma.loc[centro, 'notti'] = roma.loc[centro, 'notti'].clip(lower=365 * OCCUPAZIONE_MINIMA_CENTRO_ROMA)
-    roma['prezzo'] = np.where(roma.camere.isin(['0', '1']), roma.prezzo * RIDUZIONE_ROMA_PICCOLI, roma.prezzo)
+    piccoli = roma.camere.isin(['0', '1'])
+    fattore = np.where(centro, RIDUZIONE_ROMA_PICCOLI_CENTRO, RIDUZIONE_ROMA_PICCOLI)
+    roma['prezzo'] = np.where(piccoli, roma.prezzo * fattore, roma.prezzo)
     roma['incasso'] = roma.notti * roma.prezzo
 
     milano = carica('milan')
@@ -194,7 +198,7 @@ def main():
                 'zone': costruisci(roma, [
                     ('Centro storico', sorted(RIONI_ROMA)),
                     ('Altri quartieri', sorted(MUNICIPI_ROMA.values())),
-                ], limita_monolocale=True),
+                ], limita_monolocale=set(RIONI_ROMA)),
             },
             'milano': {
                 'nome': 'Milano',

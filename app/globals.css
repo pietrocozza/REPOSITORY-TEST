@@ -204,7 +204,23 @@ input[type="range"].cursore-range::-moz-range-thumb {
 .caricamento-zampe-avanti {
   animation: caricamento-passo 0.35s ease-in-out infinite reverse;
 }
-.caricamento-coda {
-  transform-origin: 8px 26px;
-  animation: caricamento-coda 0.7s ease-in-out infinite;
+.caricamento-ala {
+  transform-origin: 20px 34px;
+  animation: caricamento-coda 0.5s ease-in-out infinite;
+}
+@keyframes caricamento-goccia {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-6px, 8px);
+  }
+}
+.caricamento-goccia {
+  animation: caricamento-goccia 1.1s ease-in infinite;
 }
