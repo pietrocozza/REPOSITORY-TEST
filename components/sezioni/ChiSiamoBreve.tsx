@@ -30,12 +30,9 @@ export default function ChiSiamoBreve() {
           ))}
         </ul>
         <div className="mx-auto mt-10 max-w-2xl text-center md:mt-12">
-          <h2 className="font-display text-[clamp(1.6rem,6vw,2.75rem)] leading-tight font-bold tracking-tight">
-            Piacere, siamo <span className="italic text-corallo">Pietro e Francesco.</span>
-          </h2>
-          <Link href="/chi-siamo" className="group mt-4 inline-flex items-center gap-2 text-lg font-semibold text-corallo underline-offset-4 hover:underline">
-            Ci presentiamo
-            <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
+          <Link href="/chi-siamo" className="group font-display text-[clamp(1.35rem,5vw,2.25rem)] leading-tight font-bold tracking-tight">
+            Ciao! Siamo <span className="italic text-corallo">Pietro e Francesco</span>, due amici che…
+            <span aria-hidden="true" className="ml-2 inline-block text-corallo transition-transform duration-300 group-hover:translate-x-1">
               →
             </span>
           </Link>
