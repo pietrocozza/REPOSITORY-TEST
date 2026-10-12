@@ -34,7 +34,7 @@ export default function ChiSiamoBreve() {
             Piacere, siamo <span className="italic text-corallo">Pietro e Francesco.</span>
           </h2>
           <p className="mt-4 text-lg text-inchiostro/80">
-            Due ragazzi che da quattro anni hanno fatto della passione per l’immobiliare un mestiere…{' '}
+            Due ragazzi che da quattro anni hanno fatto della passione per…{' '}
             <Link href="/chi-siamo" className="font-semibold text-corallo underline underline-offset-4">
               continua a leggere
             </Link>
