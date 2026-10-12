@@ -12,18 +12,6 @@ export default function ChiSiamoBreve() {
   return (
     <section aria-label="Chi siamo" className="bg-sabbia">
       <div className="contenitore pt-6 pb-16 md:pt-8 md:pb-20">
-        <div className="mx-auto mb-8 max-w-2xl text-center md:mb-10">
-          <h2 className="font-display text-[clamp(1.6rem,6vw,2.75rem)] leading-tight font-bold tracking-tight">
-            Piacere, siamo <span className="italic text-corallo">Pietro e Francesco.</span>
-          </h2>
-          <p className="mt-4 text-lg text-inchiostro/80">
-            Due ragazzi che da quattro anni hanno fatto della passione per l’immobiliare un mestiere. Ci piace conoscere chi ci affida la casa, parlare chiaro e trattare ogni
-            appartamento come se fosse nostro.{' '}
-            <Link href="/chi-siamo" className="font-semibold text-corallo underline underline-offset-4">
-              La nostra storia
-            </Link>
-          </p>
-        </div>
         <ul className="mx-auto grid max-w-3xl grid-cols-2 gap-4 lg:max-w-5xl lg:gap-6">
           {PERSONE.map((p, i) => (
             <Rivela as="li" key={p.nome} ritardo={i * 0.12} className={`flex flex-col items-center rounded-[2rem] p-5 text-center md:p-8 ${p.colore}`}>
@@ -41,6 +29,18 @@ export default function ChiSiamoBreve() {
             </Rivela>
           ))}
         </ul>
+        <div className="mx-auto mt-10 max-w-2xl text-center md:mt-12">
+          <h2 className="font-display text-[clamp(1.6rem,6vw,2.75rem)] leading-tight font-bold tracking-tight">
+            Piacere, siamo <span className="italic text-corallo">Pietro e Francesco.</span>
+          </h2>
+          <p className="mt-4 text-lg text-inchiostro/80">
+            Due ragazzi che da quattro anni hanno fatto della passione per l’immobiliare un mestiere. Ci piace conoscere chi ci affida la casa, parlare chiaro e trattare ogni
+            appartamento come se fosse nostro.{' '}
+            <Link href="/chi-siamo" className="font-semibold text-corallo underline underline-offset-4">
+              La nostra storia
+            </Link>
+          </p>
+        </div>
       </div>
     </section>
   )
