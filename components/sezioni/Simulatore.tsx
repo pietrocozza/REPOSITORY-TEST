@@ -379,15 +379,28 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
           </div>
         </div>
 
-        <p className="mt-4 px-2 text-xs leading-relaxed text-pietra">
-          Stima, non garanzia di guadagno: incassi al netto delle commissioni dei portali; il netto in tasca è già tassato con la cedolare al 21%.{' '}
-          {citta === 'roma' && 'Nel centro storico l’occupazione parte dall’80%, il minimo delle case che gestiamo. '}Stima prudente, sulla fascia centrale delle case intere attive
-          in zona avviate e attive tutto l’anno (almeno 80 recensioni, 12 nell’ultimo anno), {punti(c.annunci)} annunci a {c.nome}. Dati{' '}
-          <a href="https://insideairbnb.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
-            Inside Airbnb
-          </a>{' '}
-          (licenza CC BY 4.0), rilevazione di {MESI_ESTESI[Number(DATI.rilevazione.slice(5)) - 1]} {DATI.rilevazione.slice(0, 4)}.
-        </p>
+        {/* Le note sui dati restano a portata di mano ma chiuse: si aprono toccando "Disclaimer" */}
+        <details className="group mt-4 px-2 text-xs text-pietra">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full py-1 font-semibold underline-offset-4 hover:text-inchiostro hover:underline [&::-webkit-details-marker]:hidden">
+            <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M12 11v5m0-8.5v.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Disclaimer: come calcoliamo la stima
+            <svg viewBox="0 0 24 24" className="size-3.5 transition-transform duration-300 group-open:rotate-180" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </summary>
+          <p className="mt-2 leading-relaxed">
+            Stima, non garanzia di guadagno: incassi al netto delle commissioni dei portali; il netto in tasca è già tassato con la cedolare al 21%.{' '}
+            {citta === 'roma' && 'Nel centro storico l’occupazione parte dall’80%, il minimo delle case che gestiamo. '}Stima prudente, sulla fascia centrale delle case intere
+            attive in zona avviate e attive tutto l’anno (almeno 80 recensioni, 12 nell’ultimo anno), {punti(c.annunci)} annunci a {c.nome}. Dati{' '}
+            <a href="https://insideairbnb.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+              Inside Airbnb
+            </a>{' '}
+            (licenza CC BY 4.0), rilevazione di {MESI_ESTESI[Number(DATI.rilevazione.slice(5)) - 1]} {DATI.rilevazione.slice(0, 4)}.
+          </p>
+        </details>
       </div>
     </div>
   )
