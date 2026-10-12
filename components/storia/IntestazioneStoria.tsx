@@ -9,7 +9,7 @@ import { EASE_LUSSO } from '@/lib/animazioni'
 export default function IntestazioneStoria() {
   return (
     <section className="overflow-hidden bg-crema">
-      <div className="contenitore grid items-center gap-12 pt-32 pb-12 md:pt-40 lg:grid-cols-[1.1fr_1fr]">
+      <div className="contenitore grid items-center gap-12 pt-32 pb-4 md:pt-40 lg:grid-cols-[1.1fr_1fr] lg:pb-12">
         <div>
           <motion.p
             className="mb-6 inline-flex items-center gap-2 rounded-full bg-salvia px-4 py-2 text-xs font-bold"
@@ -22,7 +22,7 @@ export default function IntestazioneStoria() {
           <TestoDiviso as="h1" subito ritardo={0.6} testo="E se la ristrutturazione *la facessimo noi?*" className="titolo-hero max-w-[12ch] max-sm:text-[2.35rem]" />
           <motion.a
             href="#lavori"
-            className="group mt-10 inline-flex items-center gap-3 font-semibold"
+            className="group mt-8 inline-flex items-center gap-3 font-semibold lg:mt-10"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.4 }}
@@ -34,7 +34,7 @@ export default function IntestazioneStoria() {
             </span>
             Guarda i lavori che facciamo
           </motion.a>
-          <p className="mt-6 text-xs text-pietra">Le immagini del “prima” sono ricostruzioni illustrative dello stato iniziale.</p>
+          <p className="mt-6 text-xs text-pietra max-lg:hidden">Le immagini del “prima” sono ricostruzioni illustrative dello stato iniziale.</p>
         </div>
 
         <div className="relative h-[22rem] max-lg:hidden sm:h-[28rem]">

@@ -27,7 +27,7 @@ export default function RistrutturaGratis() {
 
       {/* I lavori che facciamo */}
       <section id="lavori" aria-labelledby="titolo-lavori" className="scroll-mt-24 bg-crema">
-        <div className="contenitore grid gap-12 py-20 md:py-28 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+        <div className="contenitore grid gap-12 pt-12 pb-20 md:py-28 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
             <Etichetta className="mb-6 text-corallo">I lavori</Etichetta>
             <h2 id="titolo-lavori" className="titolo-xl">
