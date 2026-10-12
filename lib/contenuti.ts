@@ -283,11 +283,11 @@ export const CANTIERI_BREVI: Record<string, string> = {
 
 // Come lavoriamo: le risposte alle domande che ogni proprietario fa al primo incontro
 export const COME_LAVORIAMO = [
-  { icona: 'documento', titolo: 'Un contratto chiaro', testo: 'La casa resta tua. Firmiamo un mandato di gestione: incassiamo noi le prenotazioni per tuo conto.' },
-  { icona: 'euro', titolo: 'Ti paghiamo ogni mese', testo: 'Bonifico mensile con un report chiaro: prenotazioni, incassi, spese e recensioni. Le spese le scaliamo dagli incassi: non anticipi nulla.' },
-  { icona: 'carta', titolo: 'Tasse già versate', testo: 'Facciamo noi da sostituto d’imposta: tratteniamo e versiamo il 21% e a marzo ti diamo la Certificazione Unica.' },
-  { icona: 'chiave', titolo: 'Burocrazia a carico nostro', testo: 'SUAR, CIR e CIN per partire. Poi Alloggiati Web, imposta di soggiorno e ISTAT: ce ne occupiamo noi, tu non entri in nessun portale.' },
-  { icona: 'scudo', titolo: 'Danni e imprevisti', testo: 'Ospiti selezionati e pagamenti anticipati. Danni gestiti con i portali e copertura assicurativa, artigiani di fiducia.' },
-  { icona: 'calendario', titolo: 'La casa quando vuoi', testo: 'Ci dici le date e le blocchiamo nel calendario. Basta avvisarci per tempo.' },
+  { icona: 'documento', titolo: 'Un contratto chiaro', punti: ['La casa resta tua', 'Firmiamo un mandato di gestione', 'Incassiamo noi le prenotazioni per tuo conto'] },
+  { icona: 'euro', titolo: 'Ti paghiamo ogni mese', punti: ['Bonifico mensile', 'Report con prenotazioni, incassi, spese e recensioni', 'Non anticipi nulla: le spese le scaliamo dagli incassi'] },
+  { icona: 'carta', titolo: 'Tasse già versate', punti: ['Facciamo noi da sostituto d’imposta', 'Tratteniamo e versiamo il 21%', 'A marzo ricevi la Certificazione Unica'] },
+  { icona: 'chiave', titolo: 'Burocrazia a carico nostro', punti: ['SUAR, CIR e CIN per partire', 'Alloggiati Web, imposta di soggiorno e ISTAT', 'Tu non entri in nessun portale'] },
+  { icona: 'scudo', titolo: 'Danni e imprevisti', punti: ['Ospiti selezionati che pagano in anticipo', 'Danni gestiti con i portali e l’assicurazione', 'Artigiani di fiducia'] },
+  { icona: 'calendario', titolo: 'La casa quando vuoi', punti: ['Ci dici le date', 'Le blocchiamo nel calendario', 'Basta avvisarci per tempo'] },
 ] as const
 
