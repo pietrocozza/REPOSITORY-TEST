@@ -12,7 +12,7 @@ const BADGE = [
 ]
 
 // Bordo a strati e ombra: la scheda bianca sembra spessa e appoggiata sulla pagina
-export const RILIEVO = 'inset 0 1px 0 rgba(255,255,255,1), 0 1px 0 #ece3d6, 0 2px 0 #e4d9c8, 0 3px 0 #dccfbc, 0 4px 0 #d3c5b0, 0 16px 26px -10px rgba(29,34,54,0.4)'
+const RILIEVO = 'inset 0 1px 0 rgba(255,255,255,1), 0 1px 0 #ece3d6, 0 2px 0 #e4d9c8, 0 3px 0 #dccfbc, 0 4px 0 #d3c5b0, 0 16px 26px -10px rgba(29,34,54,0.4)'
 
 export default function Partner() {
   return (
