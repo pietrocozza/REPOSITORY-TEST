@@ -1,6 +1,6 @@
 'use client'
 
-import Image from 'next/image'
+import Image, { getImageProps } from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useMotionValue, useScroll, useSpring, useTransform } from 'motion/react'
 import TestoDiviso from '@/components/ui/TestoDiviso'
@@ -10,15 +10,48 @@ import Nastro from '@/components/ui/Nastro'
 import { EASE_LUSSO } from '@/lib/animazioni'
 import { useRiduciMovimento } from '@/lib/hooks'
 
-// Foto che si alternano dietro al titolo, con un lento zoom
+// Foto di Roma che si alternano dietro al titolo, con un lento zoom: orizzontali su computer, verticali su telefono
 const FOTO = [
-  { src: '/img/roma/san-pietro-tevere.jpg', alt: 'Il Tevere, Ponte Sant’Angelo e la cupola di San Pietro' },
-  { src: '/img/hero/leonina-sala.jpg', alt: 'Suite Leonina, Rione Monti' },
-  { src: '/img/roma/colosseo-sera.jpg', alt: 'Il Colosseo al tramonto' },
-  { src: '/img/leonina/camera-ampia.jpg', alt: 'Una camera di Via Leonina, Rione Monti' },
-  { src: '/img/hero/don-bosco.jpg', alt: 'Suite Don Bosco, Roma' },
-  { src: '/img/roma/fontana-di-trevi.jpg', alt: 'Fontana di Trevi' },
+  {
+    src: '/img/hero/roma/colosseo-tramonto.jpg',
+    w: 2400,
+    h: 1794,
+    verticale: '/img/hero/roma/colosseo-tramonto-verticale.jpg',
+    alt: 'Il Colosseo al tramonto',
+  },
+  {
+    src: '/img/hero/roma/san-pietro-cupola.jpg',
+    w: 2400,
+    h: 1596,
+    verticale: '/img/hero/roma/san-pietro-basilica-verticale.jpg',
+    alt: 'La cupola di San Pietro sopra i tetti di Roma',
+  },
+  {
+    src: '/img/hero/roma/fontana-di-trevi.jpg',
+    w: 2400,
+    h: 1601,
+    verticale: '/img/hero/roma/fontana-di-trevi-verticale.jpg',
+    alt: 'Fontana di Trevi',
+  },
+  { src: '/img/roma/pantheon-hd.jpg', w: 2400, h: 1600, verticale: '/img/hero/roma/vicolo-verticale.jpg', alt: 'Il Pantheon e i vicoli del centro di Roma' },
 ]
+
+/** Una foto in due versioni: il browser scarica solo quella adatta allo schermo */
+function FotoHero({ foto, prima }: { foto: (typeof FOTO)[number]; prima: boolean }) {
+  const comune = { alt: foto.alt, sizes: '100vw', quality: 75, preload: prima }
+  const {
+    props: { srcSet: orizzontale },
+  } = getImageProps({ ...comune, src: foto.src, width: foto.w, height: foto.h })
+  const {
+    props: { srcSet: verticale, ...resto },
+  } = getImageProps({ ...comune, src: foto.verticale, width: 1080, height: 1920 })
+  return (
+    <picture>
+      <source media="(min-width: 768px)" srcSet={orizzontale} sizes="100vw" />
+      <img {...resto} srcSet={verticale} alt={foto.alt} className="absolute inset-0 size-full object-cover" />
+    </picture>
+  )
+}
 
 const NASTRO = ['Zero limiti', 'Zero rischi', 'Zero anticipi', 'Pagamenti anticipati', 'Protezione fino a 3 mln €', 'Roma', 'Milano']
 
@@ -81,7 +114,7 @@ export default function Hero() {
             exit={{ opacity: 0 }}
             transition={{ opacity: { duration: 1.4 }, scale: { duration: 7, ease: 'linear' } }}
           >
-            <Image src={FOTO[indice].src} alt={FOTO[indice].alt} fill preload={indice === 0} quality={90} sizes="100vw" className="object-cover" />
+            <FotoHero foto={FOTO[indice]} prima={indice === 0} />
           </motion.div>
         </AnimatePresence>
       </motion.div>
@@ -114,8 +147,12 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: EASE_LUSSO, delay: 1.5 }}
           >
-            <Pulsante href="/calcola-guadagno" variante="corallo">Prova il simulatore</Pulsante>
-            <Pulsante href="/gestione" variante="vetro">Come funziona</Pulsante>
+            <Pulsante href="/calcola-guadagno" variante="corallo">
+              Prova il simulatore
+            </Pulsante>
+            <Pulsante href="/gestione" variante="vetro">
+              Come funziona
+            </Pulsante>
           </motion.div>
         </div>
 

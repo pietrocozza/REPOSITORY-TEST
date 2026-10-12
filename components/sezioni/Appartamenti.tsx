@@ -12,7 +12,7 @@ export default function Appartamenti() {
       <div className="contenitore flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <Etichetta className="mb-6 text-azzurro">Appartamenti</Etichetta>
-          <TestoDiviso as="h2" testo="Case che *gestiamo.*" className="titolo-xl" accento="text-azzurro" />
+          <TestoDiviso as="h2" testo="Alcune case che *gestiamo.*" className="titolo-xl" accento="text-azzurro" />
           <span id="titolo-appartamenti" className="sr-only">Appartamenti gestiti</span>
         </div>
         <p className="max-w-xs text-pietra">Dal Rione Monti a Brera, tra Roma e Milano.</p>

@@ -93,7 +93,7 @@ export default async function ZonaRoma({ params }: PageProps<'/gestione-affitti-
           <h2 id="titolo-piani" className="titolo-xl mb-12">
             Gestiamo tutto noi, <span className="italic text-corallo">anche a {z.nome}</span>
           </h2>
-          <Piani conExtra={false} />
+          <Piani conRistruttura={false} />
         </div>
       </section>
 

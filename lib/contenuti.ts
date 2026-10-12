@@ -70,12 +70,6 @@ export const PIANI = [
 // La commissione può cambiare da casa a casa: lo diciamo in piccolo sotto il prezzo
 export const NOTA_COMMISSIONE = 'La commissione può variare in base all’immobile.'
 
-export const EXTRA = [
-  'Consulenza per le strategie di prezzo e occupazione',
-  'Consulenza di interior design per affitti brevi',
-  'Affitto garantito con sublocazione direttamente a noi (solo immobili selezionati)',
-] as const
-
 // ───────── Recensioni (verificate da Trustindex sul sito attuale, tutte 5 stelle) ─────────
 
 export type Recensione = { nome: string; data: string; testo: string; lingua?: string; foto?: string }

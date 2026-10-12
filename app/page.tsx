@@ -66,7 +66,7 @@ export default function Home() {
           <span id="titolo-piani" className="sr-only">
             Piani di gestione
           </span>
-          <Piani conExtra={false} />
+          <Piani conRistruttura={false} />
         </div>
       </section>
 
@@ -74,13 +74,16 @@ export default function Home() {
 
       {/* Ristruttura gratis */}
       <section aria-labelledby="titolo-ristruttura" className="bg-salvia">
-        <div className="contenitore grid gap-12 py-20 md:py-28 lg:grid-cols-[1fr_1.3fr] lg:items-center">
+        <div className="contenitore grid gap-10 py-16 md:py-20 lg:grid-cols-[1fr_1.3fr] lg:items-center">
           <div>
             <Etichetta className="mb-6 text-inchiostro/70">Ristruttura gratis</Etichetta>
             <TestoDiviso as="h2" testo="Casa da sistemare? *La rinnoviamo noi.*" className="titolo-xl" />
             <span id="titolo-ristruttura" className="sr-only">
               Ristrutturazione gratuita
             </span>
+            <p className="mt-5 max-w-lg text-lg text-inchiostro/75">
+              Se ce la dai in affitto, la ristrutturiamo a spese nostre: bagni, cucina e arredi nuovi. Tu ricevi l’affitto ogni mese.
+            </p>
             <ul className="mt-8 flex flex-wrap gap-3">
               {RISULTATI.map((r, i) => (
                 <Rivela as="li" key={r.testo} ritardo={i * 0.1} className="flex items-center gap-2.5 rounded-full bg-white px-4 py-2.5 font-semibold">

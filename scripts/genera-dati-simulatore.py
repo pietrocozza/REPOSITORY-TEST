@@ -39,9 +39,14 @@ CORREZIONE_PREZZO = 0.88
 # Milano rende meno di quanto dicono i dati: -15% nel centro, -20% negli altri quartieri (dalle case che gestiamo)
 RIDUZIONE_MILANO_CENTRO = 0.85
 RIDUZIONE_MILANO_ALTRE = 0.80
-# Monolocali e bilocali (0–1 camere) a Roma: tarati sul nostro bilocale di Via Leonina (Monti),
-# 48k € l'anno al netto delle commissioni Airbnb, tra i migliori della zona
-RIDUZIONE_ROMA_PICCOLI = 0.73
+# Monolocali e bilocali (0–1 camere) a Roma: tarati sulle case che gestiamo nel centro storico,
+# 1 camera 45–52k € l'anno al netto delle commissioni dei portali (Via Leonina, Monti: 48k)
+RIDUZIONE_ROMA_PICCOLI = 0.80
+# Un monolocale rende il 5–10% meno di un 1 camera nella stessa zona
+MONOLOCALE_SU_UNA_CAMERA = 0.92
+# Stagionalità di Roma dalle nostre case: maggio, settembre e ottobre i mesi migliori,
+# marzo meglio di aprile, gennaio, febbraio e agosto i più tranquilli
+STAGIONALITA_ROMA = [0.046, 0.048, 0.094, 0.090, 0.122, 0.100, 0.087, 0.062, 0.114, 0.116, 0.068, 0.053]
 
 # Rioni del Municipio I: ogni annuncio va al centro più vicino
 RIONI_ROMA = {
@@ -125,7 +130,7 @@ def statistiche(s):
     }
 
 
-def costruisci(df, gruppi):
+def costruisci(df, gruppi, limita_monolocale=False):
     tutti = statistiche(df)
     rapporti = {c: statistiche(df[df.camere == c]) for c in ['0', '1', '2', '3']}
     zone = []
@@ -150,6 +155,10 @@ def costruisci(df, gruppi):
                         'notti': base['notti'],
                         'stimata': True,
                     }
+            if limita_monolocale:
+                uno = camere['1']
+                for k in ('min', 'max'):
+                    camere['0'][k] = min(camere['0'][k], arrotonda(uno[k] * MONOLOCALE_SU_UNA_CAMERA, 500))
             zone.append({'nome': nome, 'gruppo': gruppo, 'n': int(len(z)), 'camere': camere})
     return zone
 
@@ -181,11 +190,11 @@ def main():
             'roma': {
                 'nome': 'Roma',
                 'annunci': int(len(roma)),
-                'stagionalita': stagionalita('rome', roma.id),
+                'stagionalita': STAGIONALITA_ROMA,
                 'zone': costruisci(roma, [
                     ('Centro storico', sorted(RIONI_ROMA)),
                     ('Altri quartieri', sorted(MUNICIPI_ROMA.values())),
-                ]),
+                ], limita_monolocale=True),
             },
             'milano': {
                 'nome': 'Milano',

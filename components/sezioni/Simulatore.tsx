@@ -183,7 +183,7 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
           </div>
         </Domanda>
 
-        {!vetrina && (
+        {
           <Domanda numero={4} titolo="Oggi la affitti? (facoltativo)">
             <label htmlFor={idCanone} className="mb-2 block text-sm text-pietra">
               Canone mensile dell’affitto tradizionale
@@ -200,7 +200,7 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
               <span className="text-sm font-semibold text-pietra">€/mese</span>
             </div>
           </Domanda>
-        )}
+        }
       </div>
 
       {/* Risultato */}
@@ -303,12 +303,18 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
               <p className="mt-2 font-display text-3xl font-bold tracking-tight">
                 <Numero valore={nettoMin} /> – <Numero valore={nettoMax} /> €
               </p>
-              <p className="mt-3 text-xs text-inchiostro/65">Quello che ti metti in tasca: media dell’anno, già tolte le tasse, la nostra commissione del {completa}% + IVA (può variare in base all’immobile) e le spese della casa. Le pulizie le pagano gli ospiti.</p>
-              <p className="mt-2 text-xs text-inchiostro/65">Tasse calcolate nel modo più prudente: cedolare secca al 21% su tutto quello che l’ospite paga per il soggiorno, pulizie e commissioni dei portali comprese, come prevede la norma per chi affitta senza partita IVA. Per chi affitta più case l’aliquota può essere diversa: per la tua situazione senti il tuo commercialista.</p>
+              <p className="mt-3 text-xs text-inchiostro/65">
+                Quello che ti metti in tasca: media dell’anno, già tolte le tasse, la nostra commissione del {completa}% + IVA (può variare in base all’immobile) e le spese della
+                casa. Le pulizie le pagano gli ospiti.
+              </p>
+              <p className="mt-2 text-xs text-inchiostro/65">
+                Tasse calcolate nel modo più prudente: cedolare secca al 21% su tutto quello che l’ospite paga per il soggiorno, pulizie e commissioni dei portali comprese, come
+                prevede la norma per chi affitta senza partita IVA. Per chi affitta più case l’aliquota può essere diversa: per la tua situazione senti il tuo commercialista.
+              </p>
             </div>
 
             <AnimatePresence initial={false}>
-              {!vetrina && volte > 0 && (
+              {volte > 0 && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -343,8 +349,9 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
         </div>
 
         <p className="mt-4 px-2 text-xs leading-relaxed text-pietra">
-          Stima, non garanzia di guadagno: incassi al netto delle commissioni dei portali; il netto in tasca è già tassato con la cedolare al 21%. {citta === 'roma' && 'Nel centro storico l’occupazione parte dall’80%, il minimo delle case che gestiamo. '}Stima prudente, sulla fascia centrale delle case intere attive in zona
-          avviate e attive tutto l’anno (almeno 80 recensioni, 12 nell’ultimo anno), {punti(c.annunci)} annunci a {c.nome}. Dati{' '}
+          Stima, non garanzia di guadagno: incassi al netto delle commissioni dei portali; il netto in tasca è già tassato con la cedolare al 21%.{' '}
+          {citta === 'roma' && 'Nel centro storico l’occupazione parte dall’80%, il minimo delle case che gestiamo. '}Stima prudente, sulla fascia centrale delle case intere attive
+          in zona avviate e attive tutto l’anno (almeno 80 recensioni, 12 nell’ultimo anno), {punti(c.annunci)} annunci a {c.nome}. Dati{' '}
           <a href="https://insideairbnb.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
             Inside Airbnb
           </a>{' '}

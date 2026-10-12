@@ -3,11 +3,14 @@
 import { motion } from 'motion/react'
 import Pulsante from '@/components/ui/Pulsante'
 import Contatore from '@/components/ui/Contatore'
-import { EXTRA, NOTA_COMMISSIONE, PIANI } from '@/lib/contenuti'
+import { NOTA_COMMISSIONE, PIANI } from '@/lib/contenuti'
 import { EASE_LUSSO } from '@/lib/animazioni'
 
-/** La formula di gestione: una sola, tutto incluso */
-export default function Piani({ conExtra = true }: { conExtra?: boolean }) {
+// Amministrazione inclusa nella commissione
+const CONTABILITA = ['Contabilità e incassi con mandato all’incasso', 'Report mensile di incassi e spese', 'Possiamo fare da sostituto d’imposta']
+
+/** La formula di gestione: una sola, tutto incluso. Con `conRistruttura` rimanda alla ristrutturazione gratuita */
+export default function Piani({ conRistruttura = true }: { conRistruttura?: boolean }) {
   const p = PIANI[0]
   return (
     <div>
@@ -39,19 +42,30 @@ export default function Piani({ conExtra = true }: { conExtra?: boolean }) {
               </li>
             ))}
           </ul>
+          <ul className="mt-6 space-y-2">
+            {CONTABILITA.map((v) => (
+              <li key={v} className="flex items-start gap-2.5 text-sm font-semibold">
+                <svg viewBox="0 0 24 24" className="mt-0.5 size-4 shrink-0 text-sole" aria-hidden="true">
+                  <path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {v}
+              </li>
+            ))}
+          </ul>
           <div className="mt-8">
-            <Pulsante href="/contatti" variante="chiaro">Scopri di più</Pulsante>
+            <Pulsante href="/contatti" variante="chiaro">
+              Scopri di più
+            </Pulsante>
           </div>
         </div>
       </motion.article>
-      {conExtra && (
-        <div className="mt-5 grid gap-3 rounded-[2rem] bg-limone p-7 md:grid-cols-[8rem_1fr] md:items-center md:p-10">
-          <p className="font-display text-3xl font-bold tracking-tight">Extra</p>
-          <ul className="flex flex-wrap gap-2">
-            {EXTRA.map((e) => (
-              <li key={e} className="rounded-full bg-white px-4 py-2 text-sm font-medium">{e}</li>
-            ))}
-          </ul>
+      {conRistruttura && (
+        <div className="mt-5 grid gap-5 rounded-[2rem] bg-limone p-7 md:grid-cols-[1fr_auto] md:items-center md:p-10">
+          <div>
+            <p className="font-display text-2xl font-bold tracking-tight md:text-3xl">La casa ha bisogno di lavori?</p>
+            <p className="mt-2 max-w-2xl text-inchiostro/75">Se ce la dai in affitto, la ristrutturiamo noi a spese nostre: bagni, cucina e arredi nuovi.</p>
+          </div>
+          <Pulsante href="/ristruttura-gratis">Ristruttura gratis</Pulsante>
         </div>
       )}
     </div>

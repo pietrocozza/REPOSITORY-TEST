@@ -7,6 +7,7 @@ import WhatsAppFisso from '@/components/layout/WhatsAppFisso'
 import Cursore from '@/components/layout/Cursore'
 import Grana from '@/components/layout/Grana'
 import BannerCookie from '@/components/layout/BannerCookie'
+import Caricamento from '@/components/layout/Caricamento'
 import { Analytics } from '@vercel/analytics/next'
 import { SITO } from '@/lib/site'
 import './globals.css'
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
     template: '%s · Soluzione Affitto',
   },
   description: SITO.descrizione,
-    openGraph: {
+  openGraph: {
     title: 'Gestione affitti brevi a Roma e Milano | Soluzione Affitto',
     description: SITO.descrizione,
     locale: 'it_IT',
@@ -77,8 +78,18 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="it" className={`${display.variable} ${accento.variable} ${testo.variable} antialiased`}>
       <body>
+        {/* Chi ha già visto la schermata di caricamento in questa visita non la rivede */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(sessionStorage.getItem('caricamento-visto')==='1'||matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('senza-caricamento')}catch(e){}",
+          }}
+        />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
-        <a href="#contenuto" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:rounded-full focus:bg-inchiostro focus:px-5 focus:py-3 focus:text-crema">
+        <a
+          href="#contenuto"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:rounded-full focus:bg-inchiostro focus:px-5 focus:py-3 focus:text-crema"
+        >
           Vai al contenuto
         </a>
         <Providers>
@@ -89,6 +100,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           <Cursore />
           <Grana />
           <BannerCookie />
+          <Caricamento />
         </Providers>
         <Analytics />
       </body>

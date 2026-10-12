@@ -175,3 +175,36 @@ input[type="range"].cursore-range::-moz-range-thumb {
     display: none;
   }
 }
+
+/* Schermata di caricamento: nascosta subito a chi l'ha già vista */
+.senza-caricamento #caricamento {
+  display: none;
+}
+@keyframes caricamento-passo {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-3px);
+  }
+}
+@keyframes caricamento-coda {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-14deg);
+  }
+}
+.caricamento-zampe-dietro {
+  animation: caricamento-passo 0.35s ease-in-out infinite;
+}
+.caricamento-zampe-avanti {
+  animation: caricamento-passo 0.35s ease-in-out infinite reverse;
+}
+.caricamento-coda {
+  transform-origin: 8px 26px;
+  animation: caricamento-coda 0.7s ease-in-out infinite;
+}

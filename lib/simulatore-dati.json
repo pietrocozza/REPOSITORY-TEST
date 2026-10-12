@@ -5,18 +5,18 @@
    "nome": "Roma",
    "annunci": 6465,
    "stagionalita": [
-    0.0545,
-    0.0593,
-    0.0816,
-    0.0952,
-    0.1123,
-    0.1055,
-    0.0895,
-    0.0725,
-    0.1005,
-    0.1076,
-    0.0692,
-    0.0523
+    0.046,
+    0.048,
+    0.094,
+    0.09,
+    0.122,
+    0.1,
+    0.087,
+    0.062,
+    0.114,
+    0.116,
+    0.068,
+    0.053
    ],
    "zone": [
     {
@@ -26,17 +26,17 @@
      "camere": {
       "0": {
        "n": 4,
-       "min": 31000,
-       "max": 38500,
-       "tariffa": 110,
+       "min": 33000,
+       "max": 39000,
+       "tariffa": 115,
        "notti": 292,
        "stimata": true
       },
       "1": {
        "n": 156,
-       "min": 32500,
-       "max": 39000,
-       "tariffa": 110,
+       "min": 36000,
+       "max": 42500,
+       "tariffa": 120,
        "notti": 292,
        "stimata": false
       },
@@ -65,17 +65,17 @@
      "camere": {
       "0": {
        "n": 19,
-       "min": 37000,
-       "max": 42500,
-       "tariffa": 130,
+       "min": 40500,
+       "max": 45000,
+       "tariffa": 140,
        "notti": 292,
        "stimata": true
       },
       "1": {
        "n": 285,
-       "min": 40000,
-       "max": 49000,
-       "tariffa": 140,
+       "min": 44000,
+       "max": 53500,
+       "tariffa": 155,
        "notti": 292,
        "stimata": false
       },
@@ -104,17 +104,17 @@
      "camere": {
       "0": {
        "n": 2,
-       "min": 37000,
-       "max": 44000,
-       "tariffa": 130,
+       "min": 32500,
+       "max": 39000,
+       "tariffa": 140,
        "notti": 292,
        "stimata": true
       },
       "1": {
        "n": 57,
-       "min": 32500,
-       "max": 38500,
-       "tariffa": 105,
+       "min": 35500,
+       "max": 42500,
+       "tariffa": 120,
        "notti": 292,
        "stimata": false
       },
@@ -128,9 +128,9 @@
       },
       "3": {
        "n": 20,
-       "min": 102000,
-       "max": 134000,
-       "tariffa": 380,
+       "min": 99000,
+       "max": 129000,
+       "tariffa": 375,
        "notti": 292,
        "stimata": true
       }
@@ -143,17 +143,17 @@
      "camere": {
       "0": {
        "n": 5,
-       "min": 35500,
-       "max": 43500,
-       "tariffa": 125,
+       "min": 38000,
+       "max": 44000,
+       "tariffa": 140,
        "notti": 328,
        "stimata": true
       },
       "1": {
        "n": 172,
-       "min": 38000,
-       "max": 43500,
-       "tariffa": 125,
+       "min": 41500,
+       "max": 48000,
+       "tariffa": 140,
        "notti": 328,
        "stimata": false
       },
@@ -182,7 +182,7 @@
      "camere": {
       "0": {
        "n": 2,
-       "min": 30500,
+       "min": 29500,
        "max": 34000,
        "tariffa": 105,
        "notti": 292,
@@ -190,9 +190,9 @@
       },
       "1": {
        "n": 43,
-       "min": 29500,
-       "max": 34000,
-       "tariffa": 105,
+       "min": 32000,
+       "max": 37000,
+       "tariffa": 115,
        "notti": 292,
        "stimata": false
       },
@@ -206,9 +206,9 @@
       },
       "3": {
        "n": 17,
-       "min": 84000,
-       "max": 104000,
-       "tariffa": 295,
+       "min": 81000,
+       "max": 100500,
+       "tariffa": 275,
        "notti": 292,
        "stimata": true
       }
@@ -221,17 +221,17 @@
      "camere": {
       "0": {
        "n": 8,
-       "min": 32000,
-       "max": 39000,
-       "tariffa": 110,
+       "min": 33000,
+       "max": 39500,
+       "tariffa": 120,
        "notti": 322,
        "stimata": true
       },
       "1": {
        "n": 182,
-       "min": 33000,
-       "max": 39000,
-       "tariffa": 115,
+       "min": 36000,
+       "max": 43000,
+       "tariffa": 125,
        "notti": 322,
        "stimata": false
       },
@@ -260,17 +260,17 @@
      "camere": {
       "0": {
        "n": 15,
-       "min": 37000,
-       "max": 45000,
-       "tariffa": 130,
+       "min": 40000,
+       "max": 48500,
+       "tariffa": 140,
        "notti": 322,
        "stimata": true
       },
       "1": {
        "n": 335,
-       "min": 40000,
-       "max": 48000,
-       "tariffa": 140,
+       "min": 43500,
+       "max": 52500,
+       "tariffa": 155,
        "notti": 315,
        "stimata": false
       },
@@ -299,17 +299,17 @@
      "camere": {
       "0": {
        "n": 12,
-       "min": 37000,
-       "max": 47500,
-       "tariffa": 130,
+       "min": 41500,
+       "max": 49000,
+       "tariffa": 140,
        "notti": 292,
        "stimata": true
       },
       "1": {
        "n": 319,
-       "min": 41000,
-       "max": 48500,
-       "tariffa": 145,
+       "min": 45000,
+       "max": 53000,
+       "tariffa": 155,
        "notti": 292,
        "stimata": false
       },
@@ -338,17 +338,17 @@
      "camere": {
       "0": {
        "n": 6,
-       "min": 36000,
-       "max": 44000,
-       "tariffa": 130,
+       "min": 34500,
+       "max": 41500,
+       "tariffa": 140,
        "notti": 292,
        "stimata": true
       },
       "1": {
        "n": 129,
-       "min": 34500,
-       "max": 41000,
-       "tariffa": 120,
+       "min": 37500,
+       "max": 45000,
+       "tariffa": 135,
        "notti": 292,
        "stimata": false
       },
@@ -377,17 +377,17 @@
      "camere": {
       "0": {
        "n": 8,
-       "min": 25500,
-       "max": 27500,
-       "tariffa": 90,
+       "min": 28000,
+       "max": 31500,
+       "tariffa": 100,
        "notti": 292,
        "stimata": true
       },
       "1": {
        "n": 86,
-       "min": 30500,
-       "max": 37000,
-       "tariffa": 110,
+       "min": 33500,
+       "max": 40500,
+       "tariffa": 120,
        "notti": 292,
        "stimata": false
       },
@@ -401,9 +401,9 @@
       },
       "3": {
        "n": 3,
-       "min": 70500,
-       "max": 84000,
-       "tariffa": 250,
+       "min": 71000,
+       "max": 87500,
+       "tariffa": 255,
        "notti": 292,
        "stimata": true
       }
@@ -416,17 +416,17 @@
      "camere": {
       "0": {
        "n": 18,
-       "min": 33000,
-       "max": 37500,
-       "tariffa": 110,
+       "min": 37000,
+       "max": 41500,
+       "tariffa": 125,
        "notti": 292,
        "stimata": true
       },
       "1": {
        "n": 333,
-       "min": 38000,
-       "max": 45000,
-       "tariffa": 130,
+       "min": 41500,
+       "max": 49500,
+       "tariffa": 145,
        "notti": 292,
        "stimata": false
       },
@@ -456,16 +456,16 @@
       "0": {
        "n": 11,
        "min": 43500,
-       "max": 58000,
-       "tariffa": 160,
+       "max": 53500,
+       "tariffa": 170,
        "notti": 292,
        "stimata": true
       },
       "1": {
        "n": 242,
-       "min": 43000,
-       "max": 53000,
-       "tariffa": 150,
+       "min": 47500,
+       "max": 58000,
+       "tariffa": 165,
        "notti": 292,
        "stimata": false
       },
@@ -494,17 +494,17 @@
      "camere": {
       "0": {
        "n": 12,
-       "min": 22000,
-       "max": 28500,
-       "tariffa": 95,
+       "min": 21500,
+       "max": 28000,
+       "tariffa": 105,
        "notti": 270,
        "stimata": true
       },
       "1": {
        "n": 169,
-       "min": 21000,
-       "max": 28000,
-       "tariffa": 100,
+       "min": 23500,
+       "max": 30500,
+       "tariffa": 110,
        "notti": 278,
        "stimata": false
       },
@@ -533,17 +533,17 @@
      "camere": {
       "0": {
        "n": 4,
-       "min": 18500,
+       "min": 16500,
        "max": 24000,
-       "tariffa": 75,
+       "tariffa": 85,
        "notti": 285,
        "stimata": true
       },
       "1": {
        "n": 53,
-       "min": 16500,
-       "max": 24000,
-       "tariffa": 80,
+       "min": 18000,
+       "max": 26000,
+       "tariffa": 90,
        "notti": 255,
        "stimata": false
       },
@@ -557,9 +557,9 @@
       },
       "3": {
        "n": 9,
-       "min": 51000,
-       "max": 72500,
-       "tariffa": 220,
+       "min": 49500,
+       "max": 71500,
+       "tariffa": 225,
        "notti": 285,
        "stimata": true
       }
@@ -572,33 +572,33 @@
      "camere": {
       "0": {
        "n": 0,
-       "min": 14500,
-       "max": 18500,
-       "tariffa": 70,
+       "min": 12500,
+       "max": 21000,
+       "tariffa": 75,
        "notti": 240,
        "stimata": true
       },
       "1": {
        "n": 26,
-       "min": 12000,
-       "max": 21500,
-       "tariffa": 75,
+       "min": 13500,
+       "max": 23500,
+       "tariffa": 85,
        "notti": 184,
        "stimata": false
       },
       "2": {
        "n": 21,
-       "min": 28000,
-       "max": 38500,
-       "tariffa": 135,
+       "min": 26000,
+       "max": 40000,
+       "tariffa": 130,
        "notti": 240,
        "stimata": true
       },
       "3": {
        "n": 6,
-       "min": 40500,
-       "max": 56500,
-       "tariffa": 200,
+       "min": 37500,
+       "max": 58500,
+       "tariffa": 195,
        "notti": 240,
        "stimata": true
       }
@@ -611,17 +611,17 @@
      "camere": {
       "0": {
        "n": 6,
-       "min": 17500,
-       "max": 22000,
-       "tariffa": 90,
+       "min": 18500,
+       "max": 24500,
+       "tariffa": 100,
        "notti": 244,
        "stimata": true
       },
       "1": {
        "n": 143,
-       "min": 18000,
-       "max": 25000,
-       "tariffa": 100,
+       "min": 20000,
+       "max": 27500,
+       "tariffa": 110,
        "notti": 232,
        "stimata": false
       },
@@ -650,23 +650,23 @@
      "camere": {
       "0": {
        "n": 4,
-       "min": 10000,
-       "max": 12000,
-       "tariffa": 55,
+       "min": 10500,
+       "max": 13000,
+       "tariffa": 60,
        "notti": 195,
        "stimata": true
       },
       "1": {
        "n": 35,
-       "min": 11000,
-       "max": 15000,
-       "tariffa": 65,
+       "min": 12000,
+       "max": 16500,
+       "tariffa": 75,
        "notti": 195,
        "stimata": false
       },
       "2": {
        "n": 22,
-       "min": 19000,
+       "min": 18500,
        "max": 25000,
        "tariffa": 105,
        "notti": 195,
@@ -674,7 +674,7 @@
       },
       "3": {
        "n": 6,
-       "min": 27500,
+       "min": 26500,
        "max": 36500,
        "tariffa": 160,
        "notti": 195,
@@ -689,17 +689,17 @@
      "camere": {
       "0": {
        "n": 4,
-       "min": 20000,
-       "max": 24500,
-       "tariffa": 90,
+       "min": 21000,
+       "max": 26000,
+       "tariffa": 100,
        "notti": 262,
        "stimata": true
       },
       "1": {
        "n": 172,
-       "min": 21000,
-       "max": 26500,
-       "tariffa": 95,
+       "min": 23000,
+       "max": 29000,
+       "tariffa": 100,
        "notti": 255,
        "stimata": false
       },
@@ -728,17 +728,17 @@
      "camere": {
       "0": {
        "n": 14,
-       "min": 14000,
-       "max": 17000,
-       "tariffa": 60,
+       "min": 15500,
+       "max": 18500,
+       "tariffa": 70,
        "notti": 262,
        "stimata": true
       },
       "1": {
        "n": 169,
-       "min": 16500,
-       "max": 22000,
-       "tariffa": 75,
+       "min": 18000,
+       "max": 24500,
+       "tariffa": 80,
        "notti": 270,
        "stimata": false
       },
@@ -754,7 +754,7 @@
        "n": 10,
        "min": 38500,
        "max": 51500,
-       "tariffa": 180,
+       "tariffa": 175,
        "notti": 262,
        "stimata": true
       }
@@ -767,33 +767,33 @@
      "camere": {
       "0": {
        "n": 2,
-       "min": 14000,
-       "max": 17500,
-       "tariffa": 70,
+       "min": 14500,
+       "max": 19000,
+       "tariffa": 80,
        "notti": 221,
        "stimata": true
       },
       "1": {
        "n": 31,
-       "min": 14000,
-       "max": 19000,
-       "tariffa": 80,
+       "min": 15500,
+       "max": 21000,
+       "tariffa": 85,
        "notti": 210,
        "stimata": false
       },
       "2": {
        "n": 21,
        "min": 26500,
-       "max": 36500,
-       "tariffa": 135,
+       "max": 36000,
+       "tariffa": 140,
        "notti": 221,
        "stimata": true
       },
       "3": {
        "n": 4,
        "min": 38500,
-       "max": 53500,
-       "tariffa": 200,
+       "max": 52500,
+       "tariffa": 205,
        "notti": 221,
        "stimata": true
       }
@@ -806,17 +806,17 @@
      "camere": {
       "0": {
        "n": 4,
-       "min": 19500,
-       "max": 24000,
-       "tariffa": 85,
+       "min": 20500,
+       "max": 26000,
+       "tariffa": 90,
        "notti": 285,
        "stimata": true
       },
       "1": {
        "n": 218,
-       "min": 20500,
-       "max": 27000,
-       "tariffa": 90,
+       "min": 22500,
+       "max": 29500,
+       "tariffa": 100,
        "notti": 292,
        "stimata": false
       },
@@ -845,33 +845,33 @@
      "camere": {
       "0": {
        "n": 4,
-       "min": 17000,
-       "max": 19000,
-       "tariffa": 65,
+       "min": 18500,
+       "max": 20000,
+       "tariffa": 70,
        "notti": 270,
        "stimata": true
       },
       "1": {
        "n": 26,
-       "min": 21000,
-       "max": 23000,
-       "tariffa": 75,
+       "min": 23000,
+       "max": 25000,
+       "tariffa": 85,
        "notti": 278,
        "stimata": false
       },
       "2": {
        "n": 15,
-       "min": 32500,
-       "max": 39500,
+       "min": 32000,
+       "max": 38000,
        "tariffa": 125,
        "notti": 270,
        "stimata": true
       },
       "3": {
        "n": 4,
-       "min": 47000,
-       "max": 57500,
-       "tariffa": 190,
+       "min": 46500,
+       "max": 55500,
+       "tariffa": 185,
        "notti": 270,
        "stimata": true
       }

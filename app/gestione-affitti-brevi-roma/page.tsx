@@ -95,7 +95,7 @@ export default function GestioneRoma() {
           <h2 id="titolo-piani" className="titolo-xl mb-12">
             Una formula, <span className="italic text-corallo">tutto incluso.</span>
           </h2>
-          <Piani conExtra={false} />
+          <Piani conRistruttura={false} />
         </div>
       </section>
 
