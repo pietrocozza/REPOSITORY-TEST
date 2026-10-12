@@ -10,7 +10,7 @@ const PERSONE = [
 export default function ChiSiamoBreve() {
   return (
     <section aria-label="Chi siamo" className="bg-sabbia">
-      <div className="contenitore py-16 md:py-20">
+      <div className="contenitore pt-6 pb-16 md:pt-8 md:pb-20">
         <ul className="mx-auto grid max-w-3xl grid-cols-2 gap-4">
           {PERSONE.map((p, i) => (
             <Rivela as="li" key={p.nome} ritardo={i * 0.12} className={`flex flex-col items-center rounded-[2rem] p-5 text-center md:p-8 ${p.colore}`}>
