@@ -36,6 +36,8 @@ export type Articolo = {
   copertina: string
   minuti: number
   blocchi: Blocco[]
+  /** Titolo e descrizione per Google (più ricchi di parole cercate); se mancano si usano titolo ed estratto */
+  seo?: { titolo: string; descrizione: string }
 }
 
 export const ARTICOLI: Articolo[] = [
@@ -47,6 +49,7 @@ export const ARTICOLI: Articolo[] = [
     estratto: 'Tenersi tutto l’incasso o pagare una commissione? I conti onesti, i compiti nascosti e cosa dicono i dati degli annunci di Roma.',
     copertina: '/img/blog/calcolatrice.jpg',
     minuti: 5,
+    seo: { titolo: 'Property manager per affitti brevi a Roma: conviene?', descrizione: 'Gestire da soli o affidarsi a un property manager a Roma? Commissione, compiti nascosti e dati reali degli annunci per decidere cosa conviene davvero.' },
     blocchi: [
       { t: 'p', testo: 'È la domanda che ci fanno tutti al primo incontro: “Perché dovrei darvi il 20% se posso farlo da solo?”. Risposta sincera: a volte conviene davvero fare da sé. Dipende da quanto tempo hai, da quanto abiti vicino alla casa e da quanto vuoi che renda.' },
       { t: 'h2', testo: 'Cosa c’è dietro ogni prenotazione' },
@@ -94,6 +97,7 @@ export const ARTICOLI: Articolo[] = [
     estratto: 'Sei euro a persona per notte, fino a dieci notti. Chi la incassa, quando si versa al Comune e cosa succede se non lo fai.',
     copertina: '/img/blog/turisti-roma.jpg',
     minuti: 4,
+    seo: { titolo: 'Tassa di soggiorno a Roma per affitti brevi: guida', descrizione: 'Tassa di soggiorno a Roma per case vacanza e affitti brevi: quanto si paga a persona per notte, chi la incassa, come si versa e cosa si rischia.' },
     blocchi: [
       { t: 'p', testo: 'A Roma il contributo di soggiorno lo paga l’ospite, ma chi affitta la casa ha il compito di incassarlo, dichiararlo e versarlo al Comune. Per le locazioni brevi la tariffa è di 6 € a persona per notte, per un massimo di 10 notti.' },
       { t: 'numeri', voci: [{ valore: '6 €', etichetta: 'a persona per notte' }, { valore: '10', etichetta: 'notti al massimo' }, { valore: '4', etichetta: 'versamenti l’anno, uno a trimestre' }] },
@@ -123,6 +127,7 @@ export const ARTICOLI: Articolo[] = [
     estratto: 'Oltre 33 milioni di pellegrini, più delle attese. Cosa ha significato per chi affitta a Roma e cosa resta dopo la chiusura della Porta Santa.',
     copertina: '/img/roma/san-pietro-tevere.jpg',
     minuti: 4,
+    seo: { titolo: 'Giubileo 2025 a Roma: il bilancio per gli affitti brevi', descrizione: 'Oltre 33 milioni di pellegrini a Roma per il Giubileo 2025: cosa ha significato per chi affitta casa ai turisti e cosa resta dopo la chiusura della Porta Santa.' },
     blocchi: [
       { t: 'p', testo: 'L’Anno Santo si è chiuso con un numero che pochi avevano messo in conto: secondo il bilancio presentato dalla Santa Sede, i pellegrini arrivati a Roma sono stati 33.475.369, da 185 Paesi.' },
       {
@@ -161,6 +166,7 @@ export const ARTICOLI: Articolo[] = [
     estratto: 'La circolare del Viminale aveva vietato il riconoscimento a distanza degli ospiti. A maggio il TAR del Lazio l’ha annullata. Ecco la vicenda in breve.',
     copertina: '/img/roma/vicolo.jpg',
     minuti: 3,
+    seo: { titolo: 'Self check-in e keybox: la sentenza del TAR Lazio', descrizione: 'Il TAR del Lazio ha annullato la circolare del Viminale sul riconoscimento a distanza degli ospiti: cosa cambia per self check-in e keybox negli affitti brevi.' },
     blocchi: [
       { t: 'p', testo: 'Per mesi gli host hanno dovuto accogliere ogni ospite di persona. Il motivo era una circolare del Ministero dell’Interno che chiedeva di verificare di persona l’identità di chi entra in casa.' },
       {
@@ -192,6 +198,7 @@ export const ARTICOLI: Articolo[] = [
     estratto: 'Le recensioni decidono le prenotazioni. Ecco cosa guardano gli ospiti e cosa ci hanno scritto davvero.',
     copertina: '/img/blog/camera-hotel.jpg',
     minuti: 4,
+    seo: { titolo: 'Recensioni a 5 stelle su Airbnb: le abitudini giuste', descrizione: 'Cosa guardano davvero gli ospiti e le abitudini che portano recensioni a cinque stelle su Airbnb e Booking, con le recensioni reali dei nostri appartamenti.' },
     blocchi: [
       { t: 'p', testo: 'Su Airbnb ogni soggiorno viene valutato su sei aspetti: pulizia, precisione dell’annuncio, check-in, comunicazione, posizione e qualità-prezzo. Basta un punto debole per perdere la quinta stella.' },
       {
@@ -227,6 +234,7 @@ export const ARTICOLI: Articolo[] = [
     estratto: 'Più arrivi, più notti, nuovo massimo storico. I numeri ufficiali del 2024 e cosa dicono a chi ha una casa in centro.',
     copertina: '/img/blog/pantheon-portico.jpg',
     minuti: 3,
+    seo: { titolo: 'Turismo a Roma 2024: record di presenze', descrizione: '51,4 milioni di presenze turistiche a Roma nel 2024, nuovo record. I numeri ufficiali e cosa significano per chi ha una casa da affittare in centro.' },
     blocchi: [
       { t: 'p', testo: 'Il 2024 è stato l’anno migliore di sempre per il turismo a Roma: 22,2 milioni di arrivi e 51,4 milioni di presenze, cioè di notti trascorse in città.' },
       {
@@ -256,6 +264,7 @@ export const ARTICOLI: Articolo[] = [
     estratto: 'Anche a Roma l’occupazione cambia molto da un mese all’altro. Una tariffa unica lascia soldi sul tavolo nei mesi pieni e camere vuote in quelli tranquilli.',
     copertina: '/img/blog/agenda.jpg',
     minuti: 4,
+    seo: { titolo: 'Prezzi dinamici per affitti brevi: perché servono', descrizione: 'Perché una tariffa fissa fa perdere soldi: come funzionano i prezzi dinamici su Airbnb e Booking e come cambia l’occupazione a Roma mese per mese.' },
     blocchi: [
       { t: 'p', testo: 'Nel 2023, nelle strutture ricettive di Roma, l’occupazione dei posti letto è andata da un minimo del 32% a un massimo del 53,2% a seconda del mese. Una differenza di oltre 20 punti.' },
       {
@@ -289,6 +298,7 @@ export const ARTICOLI: Articolo[] = [
     estratto: 'Dal 1° gennaio 2025 ogni casa in affitto breve deve avere il Codice Identificativo Nazionale. Chi è coinvolto, dove va esposto e cosa si rischia.',
     copertina: '/img/blog/firma.jpg',
     minuti: 3,
+    seo: { titolo: 'CIN affitti brevi: obblighi, esposizione e sanzioni', descrizione: 'Codice Identificativo Nazionale obbligatorio dal 2025 per affitti brevi e case vacanza: chi deve averlo, dove va esposto e quali sanzioni si rischiano.' },
     blocchi: [
       { t: 'p', testo: 'Il CIN è un codice unico assegnato dal Ministero del Turismo a ogni immobile destinato a locazione turistica o breve. Lo prevede l’articolo 13-ter del decreto legge 145/2023.' },
       {
@@ -325,6 +335,7 @@ export const ARTICOLI: Articolo[] = [
     estratto: 'La legge di bilancio 2024 ha alzato l’aliquota per gli affitti brevi. L’Agenzia delle Entrate ha chiarito: il 21% resta per un immobile.',
     copertina: '/img/blog/calcolatrice.jpg',
     minuti: 4,
+    seo: { titolo: 'Cedolare secca affitti brevi: 21% o 26%?', descrizione: 'Cedolare secca sugli affitti brevi: quando si paga il 21% e quando il 26% dal secondo immobile, secondo la legge di bilancio e l’Agenzia delle Entrate.' },
     blocchi: [
       { t: 'p', testo: 'Dal 1° gennaio 2024 la cedolare secca sui redditi da locazione breve sale al 26%. Ma non per tutti: la circolare 10/E del 10 maggio 2024 chiarisce che il 21% si applica ancora a un immobile, scelto dal proprietario.' },
       {
@@ -360,6 +371,7 @@ export const ARTICOLI: Articolo[] = [
     estratto: 'Con la delibera 255/2023 Roma aggiorna il contributo di soggiorno. Quanto pagano gli ospiti di B&B, case vacanza e affittacamere.',
     copertina: '/img/blog/turisti-roma.jpg',
     minuti: 3,
+    seo: { titolo: 'Contributo di soggiorno Roma: tariffe extralberghiero', descrizione: 'Le tariffe del contributo di soggiorno a Roma per B&B, case vacanza e affittacamere dopo la delibera 255/2023: quanto pagano gli ospiti per notte.' },
     blocchi: [
       { t: 'p', testo: 'Il contributo lo paga l’ospite, a persona e a notte, fino a un massimo di 10 notti consecutive. Chi gestisce la casa lo incassa, lo dichiara e lo versa al Comune.' },
       {
@@ -394,6 +406,7 @@ export const ARTICOLI: Articolo[] = [
     estratto: 'Non serve rifare tutto. Luce, colori, tessili e qualche arredo scelto bene cambiano le foto e quindi le prenotazioni.',
     copertina: '/img/blog/soggiorno-staging.jpg',
     minuti: 4,
+    seo: { titolo: 'Home staging per affitti brevi: idee che funzionano', descrizione: 'Luce, colori, tessili e qualche arredo scelto bene: le idee di home staging che migliorano le foto dell’annuncio e fanno aumentare le prenotazioni.' },
     blocchi: [
       { t: 'p', testo: 'L’ospite sceglie in pochi secondi, scorrendo le foto. Lo home staging serve a questo: far capire subito com’è vivere quella casa.' },
       { t: 'prima-dopo', prima: '/img/ristrutturazione/cucina-prima-confronto.jpg', dopo: '/img/ristrutturazione/cucina-dopo-confronto.jpg', alt: 'Una cucina prima e dopo il nostro intervento' },
@@ -420,6 +433,7 @@ export const ARTICOLI: Articolo[] = [
     estratto: 'Con i turisti fermi, studenti e lavoratori in trasferta diventano gli ospiti ideali. Le formule di contratto da conoscere.',
     copertina: '/img/blog/calendario.jpg',
     minuti: 4,
+    seo: { titolo: 'Affitti di media durata: contratti e vantaggi', descrizione: 'Studenti e lavoratori in trasferta come alternativa ai turisti: come funzionano gli affitti di media durata e quali contratti usare.' },
     blocchi: [
       { t: 'p', testo: 'In un anno come questo, una casa vuota non è un destino. Tra l’affitto breve e il classico 4+4 ci sono soluzioni intermedie, pensate per chi deve restare in città qualche mese.' },
       {
@@ -453,6 +467,7 @@ export const ARTICOLI: Articolo[] = [
     estratto: 'Con la ripartenza, la pulizia diventa il primo motivo di scelta. I passaggi per preparare una casa tra un ospite e l’altro.',
     copertina: '/img/blog/pulizie.jpg',
     minuti: 3,
+    seo: { titolo: 'Pulizie negli affitti brevi: protocollo in 5 passi', descrizione: 'Come preparare la casa tra un ospite e l’altro: il nostro protocollo di pulizie e sanificazione in cinque passi per avere ospiti soddisfatti.' },
     blocchi: [
       { t: 'p', testo: 'Gli ospiti che tornano a viaggiare vogliono una cosa prima di tutto: sapere che la casa è stata pulita a fondo. Un protocollo scritto, uguale per ogni casa, è il modo più semplice per garantirlo.' },
       {
@@ -477,6 +492,7 @@ export const ARTICOLI: Articolo[] = [
     estratto: 'Due modi di mettere a reddito la stessa casa. Tasse, flessibilità e rischi a confronto.',
     copertina: '/img/blog/contratto.jpg',
     minuti: 4,
+    seo: { titolo: 'Affitto breve o 4+4: cosa conviene al proprietario', descrizione: 'Affitto breve o contratto 4+4? Tasse, guadagni, flessibilità e rischi a confronto per decidere come mettere a reddito la tua casa.' },
     blocchi: [
       { t: 'p', testo: 'Chi ha un appartamento libero a Roma di solito si fa una domanda: meglio un inquilino fisso o gli ospiti a breve termine? La risposta dipende da quanto tempo vuoi dedicarci e da quanto ti serve la casa.' },
       {

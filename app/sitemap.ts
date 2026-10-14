@@ -16,8 +16,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       '/cookie',
     ]),
   ]
+  // Per gli articoli Google riceve anche la data, così sa quando ripassare
+  const date = new Map(ARTICOLI.map((a) => [`/blog/${a.slug}`, a.data]))
   return pagine.map((p) => ({
     url: `${SITO.url}${p === '/' ? '' : p}`,
+    ...(date.has(p) && { lastModified: date.get(p) }),
     changeFrequency: 'monthly',
     priority: p === '/' ? 1 : principali.includes(p) ? 0.9 : 0.6,
   }))
