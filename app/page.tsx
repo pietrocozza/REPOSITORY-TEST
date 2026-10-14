@@ -78,7 +78,7 @@ export default function Home() {
         <div className="contenitore grid gap-10 py-16 md:py-20 lg:grid-cols-[1fr_1.3fr] lg:items-center">
           <div>
             <Etichetta className="mb-6 text-inchiostro/70">Ristruttura gratis</Etichetta>
-            <TestoDiviso as="h2" testo="Casa da sistemare? *La rinnoviamo noi.*" className="titolo-xl" />
+            <TestoDiviso as="h2" testo="Casa da sistemare? *La ristrutturiamo noi.*" className="titolo-xl" />
             <span id="titolo-ristruttura" className="sr-only">
               Ristrutturazione gratuita
             </span>

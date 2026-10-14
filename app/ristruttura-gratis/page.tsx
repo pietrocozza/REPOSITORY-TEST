@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/ristruttura-gratis' },
   title: 'Ristruttura gratis',
   description:
-    'Hai una casa a Roma in zona centrale da ristrutturare? La rinnoviamo a nostre spese, la prendiamo in locazione a lungo termine e ti paghiamo l’affitto in anticipo.',
+    'Hai una casa a Roma in zona centrale da sistemare? La ristrutturiamo a nostre spese, la prendiamo in locazione a lungo termine e ti paghiamo l’affitto in anticipo.',
 }
 
 export default function RistrutturaGratis() {

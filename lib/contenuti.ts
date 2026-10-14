@@ -256,7 +256,7 @@ export const LAVORI_RISTRUTTURAZIONE = [
 ] as const
 
 export const VANTAGGI_LOCAZIONE_BREVI = [
-  { icona: 'casa', titolo: 'Casa rivalutata', testo: 'La rinnoviamo con un designer, senza spese per te.' },
+  { icona: 'casa', titolo: 'Casa rivalutata', testo: 'La ristrutturiamo con un designer, senza spese per te.' },
   { icona: 'grafico', titolo: 'Canone più alto', testo: 'Valutiamo di aumentarlo rispetto a quello di oggi.' },
   { icona: 'divano', titolo: 'Arredo incluso', testo: 'A fine locazione il nuovo arredamento resta a te.' },
   { icona: 'scudo', titolo: 'Zero morosità', testo: 'Contratti strutturati e clausole rescissorie.' },
