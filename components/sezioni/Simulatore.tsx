@@ -26,21 +26,18 @@ const MESI_ESTESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno
 // Formato italiano scritto a mano: identico sul server e nel browser (12.500)
 const punti = (v: number) => String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 const arrotonda = (v: number, passo = 500) => Math.round(v / passo) * passo
-// Calcolo prudente, come prevede la norma per il proprietario privato in cedolare secca:
-// il 21% si paga su tutto quello che l’ospite versa per il soggiorno, senza scalare nessun costo
+// Fatturazione separata: i nostri servizi, le pulizie e le commissioni dei portali sono a carico dell’ospite
+// e li fatturiamo noi con IVA. Il proprietario riceve solo l’affitto e paga la cedolare al 21% su quello
 const CEDOLARE = 0.21
 // Cedolare sul canone concordato (3+2) a Roma e Milano
 const CEDOLARE_CONCORDATO = 0.1
-// Commissione media dei portali: l’incasso dei dati è già al netto, ma le tasse si pagano sul lordo
-const COMMISSIONE_PORTALI = 0.15
-// Pulizie pagate dagli ospiti nella prenotazione: le giriamo alla ditta, ma per il fisco sono affitto del proprietario
-const PULIZIE: Record<Camere, number> = { '0': 450, '1': 450, '2': 600, '3': 800 }
 // Spese medie al mese a carico del proprietario (utenze, internet, consumabili)
 const SPESE: Record<Camere, number> = { '0': 100, '1': 100, '2': 100, '3': 100 }
-// Quanto resta in tasca al mese: incasso – nostra commissione con IVA (non recuperabile) – tasse – spese
+// Quanto resta in tasca al mese: incasso già al netto dei portali – nostra commissione con IVA = affitto ricevuto,
+// poi cedolare su quell’affitto e spese della casa. Le pulizie le paga l’ospite e non passano dal proprietario
 const nettoAlMese = (anno: number, percentuale: number, camere: Camere) => {
-  const tasse = CEDOLARE * (anno / (1 - COMMISSIONE_PORTALI) + PULIZIE[camere] * 12)
-  return arrotonda((anno * (1 - (percentuale / 100) * 1.22) - tasse) / 12 - SPESE[camere], 50)
+  const affitto = anno * (1 - (percentuale / 100) * 1.22)
+  return arrotonda((affitto * (1 - CEDOLARE)) / 12 - SPESE[camere], 50)
 }
 
 /** Numero che scorre dal valore precedente al nuovo */
@@ -323,8 +320,9 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
                 casa. Le pulizie le pagano gli ospiti.
               </p>
               <p className="mt-2 text-xs text-inchiostro/65">
-                Tasse calcolate nel modo più prudente: cedolare secca al 21% su tutto quello che l’ospite paga per il soggiorno, pulizie e commissioni dei portali comprese, come
-                prevede la norma per chi affitta senza partita IVA. Per chi affitta più case l’aliquota può essere diversa: per la tua situazione senti il tuo commercialista.
+                Tasse calcolate con la fatturazione separata: i nostri servizi, le pulizie e le commissioni dei portali sono a carico dell’ospite e li fatturiamo noi, con IVA. Tu
+                paghi la cedolare secca al 21% solo sull’affitto che ricevi, e la tratteniamo e versiamo noi come sostituto d’imposta. Lo schema si imposta nel contratto di
+                gestione. Per chi affitta più case l’aliquota può essere diversa: per la tua situazione senti il tuo commercialista.
               </p>
             </div>
 
@@ -392,9 +390,10 @@ export default function Simulatore({ vetrina = false, cittaIniziale = 'roma', zo
             </svg>
           </summary>
           <p className="mt-2 leading-relaxed">
-            Stima, non garanzia di guadagno: incassi al netto delle commissioni dei portali; il netto in tasca è già tassato con la cedolare al 21%.{' '}
-            {citta === 'roma' && 'Nel centro storico l’occupazione parte dall’80%, il minimo delle case che gestiamo. '}Stima prudente, sulla fascia centrale delle case intere
-            attive in zona avviate e attive tutto l’anno (almeno 80 recensioni, 12 nell’ultimo anno), {punti(c.annunci)} annunci a {c.nome}. Dati{' '}
+            Stima, non garanzia di guadagno: incassi al netto delle commissioni dei portali; il netto in tasca è già tassato con la cedolare al 21% sull’affitto che ricevi, con la
+            fatturazione separata dei servizi all’ospite. {citta === 'roma' && 'Nel centro storico l’occupazione parte dall’80%, il minimo delle case che gestiamo. '}Stima
+            prudente, sulla fascia centrale delle case intere attive in zona avviate e attive tutto l’anno (almeno 80 recensioni, 12 nell’ultimo anno), {punti(c.annunci)} annunci a{' '}
+            {c.nome}. Dati{' '}
             <a href="https://insideairbnb.com" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
               Inside Airbnb
             </a>{' '}
