@@ -5,7 +5,6 @@ import Recensioni from '@/components/sezioni/Recensioni'
 import InvitoFinale from '@/components/sezioni/InvitoFinale'
 import Rivela from '@/components/ui/Rivela'
 import Etichetta from '@/components/ui/Etichetta'
-import TestoDiviso from '@/components/ui/TestoDiviso'
 import Icona from '@/components/ui/Icona'
 import { SITO } from '@/lib/site'
 
@@ -62,11 +61,10 @@ export default function ChiSiamo() {
         <div className="contenitore grid gap-10 pt-20 md:pt-28 lg:grid-cols-[1fr_1.3fr] lg:gap-16">
           <div>
             <Etichetta className="mb-6 text-corallo">La nostra storia</Etichetta>
-            <TestoDiviso as="h2" testo="Due ragazzi e la passione *per l’immobiliare.*" className="titolo-xl" />
-            <span id="titolo-storia" className="sr-only">
+            <h2 id="titolo-storia" className="sr-only">
               La nostra storia
-            </span>
-            <ul className="mt-8 flex flex-wrap gap-2">
+            </h2>
+            <ul className="flex flex-wrap gap-2">
               {STORIA_DATI.map((d) => (
                 <li key={d} className="rounded-full bg-pesca px-4 py-2 text-sm font-bold">
                   {d}
