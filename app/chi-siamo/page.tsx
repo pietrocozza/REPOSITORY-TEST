@@ -35,12 +35,13 @@ const TEAM = [
 ]
 
 const STORIA = [
-  'Siamo Pietro e Francesco. Quattro anni fa abbiamo trasformato l’interesse e la passione per l’immobiliare in un mestiere.',
-  'Siamo giovani, e si vede: usiamo gli strumenti più nuovi per prezzi, prenotazioni e check-in.',
-  'Ma prima della tecnologia vengono le persone. Ci piace conoscere chi ci affida la casa, ascoltare e spiegare tutto con parole semplici. E trattiamo ogni appartamento come se fosse nostro.',
+  'Siamo Pietro e Francesco, due amici che hanno trasformato la passione per l’immobiliare in un mestiere: gestiamo case a Roma e a Milano.',
+  'Siamo giovani, ma lo facciamo da cinque anni: conosciamo a fondo le piattaforme e gli strumenti con cui oggi si affitta una casa, dai prezzi alle prenotazioni ai check-in.',
+  'Ci siamo divisi il lavoro. Pietro segue Roma: pagamenti, pratiche e ospiti. Francesco segue Milano: rapporti con i proprietari, pulizie e manutenzione. Chi ci affida la casa sa sempre chi ha davanti.',
+  'In questi anni diversi proprietari ci hanno affidato le loro case e ci hanno lasciato referenze firmate.',
   'Vuoi conoscerci? Passa a trovarci a Roma o a Milano: il caffè lo offriamo noi.',
 ]
-const STORIA_DATI = ['4 anni di attività', 'Roma e Milano', 'Rispondiamo di persona']
+const STORIA_DATI = ['5 anni di attività', 'Roma e Milano', 'Referenze firmate', 'Rispondiamo di persona']
 
 const VALORI = [
   { icona: 'casa', testo: 'Esperienza maturata con le nostre strutture' },
