@@ -18,7 +18,6 @@ export const metadata: Metadata = {
 const TEAM = [
   {
     nome: 'Pietro Cozza',
-    compiti: ['Pagamenti puntuali', 'Adempimenti normativi', 'Ospiti 24/24'],
     contatto: { label: `WhatsApp ${SITO.whatsapp.numero}`, href: SITO.whatsapp.href },
     colore: 'bg-pesca',
     foto: '/img/team/pietro.jpg',
@@ -26,7 +25,6 @@ const TEAM = [
   },
   {
     nome: 'Francesco Ignoti',
-    compiti: ['Rapporti con i proprietari', 'Logistica pulizie', 'Manutenzione'],
     contatto: { label: SITO.telefono.numero, href: SITO.telefono.href },
     colore: 'bg-cielo',
     foto: '/img/team/francesco.jpg',
@@ -35,10 +33,9 @@ const TEAM = [
 ]
 
 const STORIA = [
-  'Siamo Pietro e Francesco, due amici che hanno trasformato la passione per l’immobiliare in un mestiere: gestiamo case a Roma e a Milano.',
-  'Siamo giovani, ma lo facciamo da cinque anni: conosciamo a fondo le piattaforme e gli strumenti con cui oggi si affitta una casa, dai prezzi alle prenotazioni ai check-in.',
-  'Ci siamo divisi il lavoro. Pietro segue Roma: pagamenti, pratiche e ospiti. Francesco segue Milano: rapporti con i proprietari, pulizie e manutenzione. Chi ci affida la casa sa sempre chi ha davanti.',
-  'In questi anni diversi proprietari ci hanno affidato le loro case e ci hanno lasciato referenze firmate.',
+  'Siamo Pietro e Francesco, due amici che hanno trasformato la passione per l’immobiliare in un mestiere.',
+  'Siamo giovani, ma lo facciamo da cinque anni. E abbiamo fatto esperienza prima di tutto con le nostre case.',
+  'In questi anni diversi proprietari ci hanno affidato la loro e ci hanno lasciato una referenza firmata. Per noi vale più di qualsiasi recensione online: chi l’ha scritta ci ha messo nome e firma, dopo averci visto lavorare sulla propria casa.',
   'Vuoi conoscerci? Passa a trovarci a Roma o a Milano: il caffè lo offriamo noi.',
 ]
 const STORIA_DATI = ['5 anni di attività', 'Roma e Milano', 'Referenze firmate', 'Rispondiamo di persona']
@@ -117,13 +114,6 @@ export default function ChiSiamo() {
                   </svg>
                   Lavora a {t.citta}
                 </p>
-                <ul className="mt-5 flex flex-wrap justify-center gap-2">
-                  {t.compiti.map((c) => (
-                    <li key={c} className="rounded-full bg-white px-3 py-1.5 text-sm font-medium">
-                      {c}
-                    </li>
-                  ))}
-                </ul>
                 <a href={t.contatto.href} className="mt-6 inline-block text-sm font-bold underline-offset-4 hover:text-corallo hover:underline">
                   {t.contatto.label}
                 </a>
