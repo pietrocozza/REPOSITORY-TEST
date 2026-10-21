@@ -52,13 +52,11 @@ export default function ChiSiamo() {
         etichetta="Chi siamo"
         titolo="Ogni casa ha la sua *identità.*"
         sottotitolo="Gestiamo affitti brevi a Roma e Milano. Ogni proprietario ha esigenze diverse: per questo lavoriamo su misura."
-        foto="/img/leonina/camera-ampia.jpg"
-        altFoto="Camera della Suite Leonina, Rione Monti"
       />
 
       {/* La nostra storia: chi siamo davvero, in parole semplici */}
       <section aria-labelledby="titolo-storia" className="bg-crema">
-        <div className="contenitore grid gap-10 pt-20 md:pt-28 lg:grid-cols-[1fr_1.3fr] lg:gap-16">
+        <div className="contenitore grid gap-10 pt-6 md:pt-10 lg:grid-cols-[1fr_1.3fr] lg:gap-16">
           <div>
             <Etichetta className="mb-6 text-corallo">La nostra storia</Etichetta>
             <h2 id="titolo-storia" className="sr-only">
