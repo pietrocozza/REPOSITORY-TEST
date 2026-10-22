@@ -61,7 +61,7 @@ export default function PropostaImmobile() {
         </label>
         <label className="grid gap-2 text-sm font-semibold">
           In che zona di Roma?
-          <input className={campo} placeholder="es. Monti, Prati, San Giovanni" value={zona} onChange={(e) => setZona(e.target.value.slice(0, 60))} />
+          <input className={campo} placeholder="es. Monti, Prati, Trastevere" value={zona} onChange={(e) => setZona(e.target.value.slice(0, 60))} />
         </label>
       </div>
       <Pillole titolo="In che stato è?" opzioni={STATI} valore={stato} onChange={setStato} />

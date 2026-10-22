@@ -115,7 +115,7 @@ export default function RistrutturaGratis() {
               Hai una casa da <span className="italic text-corallo">sistemare?</span>
             </h2>
             <p className="mt-6 max-w-md text-lg text-pietra">
-              Raccontaci com’è in un minuto. Non tutte le case sono adatte agli affitti brevi: lo valutiamo insieme, poi organizziamo un sopralluogo gratuito.
+              Valutiamo solo case nelle zone centrali di Roma e Milano. Raccontaci com’è in un minuto: lo valutiamo insieme, poi organizziamo un sopralluogo gratuito.
             </p>
           </div>
           <PropostaImmobile />

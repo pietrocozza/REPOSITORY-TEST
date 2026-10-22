@@ -85,6 +85,7 @@ export default function Home() {
             <p className="mt-5 max-w-lg text-lg text-inchiostro/75">
               Se ce la dai in affitto, la ristrutturiamo a spese nostre: bagni, cucina e arredi nuovi. Tu ricevi l’affitto ogni mese.
             </p>
+            <p className="mt-3 font-semibold">Solo per case nelle zone centrali di Roma e Milano.</p>
             <ul className="mt-8 flex flex-wrap gap-3">
               {RISULTATI.map((r, i) => (
                 <Rivela as="li" key={r.testo} ritardo={i * 0.1} className="flex items-center gap-2.5 rounded-full bg-white px-4 py-2.5 font-semibold">

@@ -15,7 +15,7 @@ export default function DaDovePartiamo() {
           </svg>
         </span>
         <span>
-          Casa da sistemare? <span className="underline decoration-white/50 underline-offset-4">Te la ristrutturiamo gratis</span>
+          Casa da sistemare in centro? <span className="underline decoration-white/50 underline-offset-4">Te la ristrutturiamo gratis</span>
         </span>
         <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
           →

@@ -63,7 +63,7 @@ export default function Piani({ conRistruttura = true }: { conRistruttura?: bool
         <div className="mt-5 grid gap-5 rounded-[2rem] bg-limone p-7 md:grid-cols-[1fr_auto] md:items-center md:p-10">
           <div>
             <p className="font-display text-2xl font-bold tracking-tight md:text-3xl">La casa ha bisogno di lavori?</p>
-            <p className="mt-2 max-w-2xl text-inchiostro/75">Se ce la dai in affitto, la ristrutturiamo noi a spese nostre: bagni, cucina e arredi nuovi.</p>
+            <p className="mt-2 max-w-2xl text-inchiostro/75">Se ce la dai in affitto, la ristrutturiamo noi a spese nostre: bagni, cucina e arredi nuovi. Solo per case nelle zone centrali.</p>
           </div>
           <Pulsante href="/ristruttura-gratis">Ristruttura gratis</Pulsante>
         </div>

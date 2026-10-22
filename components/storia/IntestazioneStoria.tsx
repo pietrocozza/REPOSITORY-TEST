@@ -20,9 +20,21 @@ export default function IntestazioneStoria() {
             Ristruttura gratis · Una storia vera
           </motion.p>
           <TestoDiviso as="h1" subito ritardo={0.6} testo="E se la ristrutturazione *la facessimo noi?*" className="titolo-hero max-w-[12ch] max-sm:text-[2.35rem]" />
+          <motion.p
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold shadow-sm"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, ease: EASE_LUSSO, delay: 1.2 }}
+          >
+            <svg viewBox="0 0 24 24" className="size-4 text-corallo" aria-hidden="true">
+              <path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z" fill="currentColor" />
+              <circle cx="12" cy="9.5" r="2.5" fill="white" />
+            </svg>
+            Solo per case nelle zone centrali di Roma e Milano
+          </motion.p>
           <motion.a
             href="#lavori"
-            className="group mt-8 inline-flex items-center gap-3 font-semibold lg:mt-10"
+            className="group mt-8 flex w-fit items-center gap-3 font-semibold lg:mt-10"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.4 }}
