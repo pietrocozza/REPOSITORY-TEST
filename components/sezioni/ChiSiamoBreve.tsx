@@ -31,7 +31,7 @@ export default function ChiSiamoBreve() {
         </ul>
         <div className="mx-auto mt-5 max-w-2xl text-center">
           <Link href="/chi-siamo" className="group text-base font-semibold text-inchiostro/80 hover:text-inchiostro md:text-lg">
-            Ciao! Siamo <span className="italic text-corallo">Pietro e Francesco</span>, due amici che…
+            La nostra <span className="italic text-corallo">storia</span>…
             <span aria-hidden="true" className="ml-1.5 inline-block text-corallo transition-transform duration-300 group-hover:translate-x-1">
               →
             </span>
