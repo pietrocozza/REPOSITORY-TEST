@@ -64,6 +64,7 @@ RIONI_ROMA = {
     'Borgo e Vaticano': (41.9025, 12.4570),
     'Della Vittoria e Mazzini': (41.9195, 12.4610),
     'Castro Pretorio': (41.9060, 12.5020),
+    'Cipro': (41.9070, 12.4475),
 }
 MUNICIPI_ROMA = {
     'II Parioli/Nomentano': 'Parioli e Nomentano',
@@ -81,6 +82,8 @@ MUNICIPI_ROMA = {
     'XIV Monte Mario': 'Monte Mario',
     'XV Cassia/Flaminia': 'Cassia e Flaminio',
 }
+# Zone periferiche o senza metro: non le gestiamo, quindi non compaiono nel simulatore
+ESCLUSE_ROMA = {'Ostia e Acilia', 'Monte Mario', 'Monteverde', 'Portuense e Magliana'}
 # Quartieri di Milano (NIL) mostrati per primi; gli altri finiscono in "Altre zone"
 CENTRO_MILANO = {
     'DUOMO': 'Duomo', 'BRERA': 'Brera', 'GUASTALLA': 'Guastalla', 'MAGENTA - S. VITTORE': 'Magenta e San Vittore',
@@ -197,7 +200,7 @@ def main():
                 'stagionalita': STAGIONALITA_ROMA,
                 'zone': costruisci(roma, [
                     ('Centro storico', sorted(RIONI_ROMA)),
-                    ('Altri quartieri', sorted(MUNICIPI_ROMA.values())),
+                    ('Altri quartieri', sorted(set(MUNICIPI_ROMA.values()) - ESCLUSE_ROMA)),
                 ], limita_monolocale=set(RIONI_ROMA)),
             },
             'milano': {

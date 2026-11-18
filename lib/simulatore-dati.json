@@ -22,39 +22,39 @@
     {
      "nome": "Borgo e Vaticano",
      "gruppo": "Centro storico",
-     "n": 330,
+     "n": 114,
      "camere": {
       "0": {
-       "n": 4,
-       "min": 33000,
-       "max": 39000,
-       "tariffa": 115,
-       "notti": 292,
+       "n": 2,
+       "min": 35500,
+       "max": 41500,
+       "tariffa": 130,
+       "notti": 300,
        "stimata": true
       },
       "1": {
-       "n": 156,
-       "min": 36000,
-       "max": 42500,
-       "tariffa": 120,
-       "notti": 292,
+       "n": 61,
+       "min": 39500,
+       "max": 45000,
+       "tariffa": 135,
+       "notti": 300,
        "stimata": false
       },
       "2": {
-       "n": 122,
-       "min": 58000,
-       "max": 73500,
-       "tariffa": 210,
+       "n": 39,
+       "min": 70500,
+       "max": 83500,
+       "tariffa": 260,
        "notti": 292,
        "stimata": false
       },
       "3": {
-       "n": 48,
-       "min": 75000,
-       "max": 89000,
-       "tariffa": 265,
-       "notti": 292,
-       "stimata": false
+       "n": 12,
+       "min": 91000,
+       "max": 125000,
+       "tariffa": 335,
+       "notti": 300,
+       "stimata": true
       }
      }
     },
@@ -137,6 +137,45 @@
      }
     },
     {
+     "nome": "Cipro",
+     "gruppo": "Centro storico",
+     "n": 267,
+     "camere": {
+      "0": {
+       "n": 2,
+       "min": 32000,
+       "max": 37000,
+       "tariffa": 110,
+       "notti": 292,
+       "stimata": true
+      },
+      "1": {
+       "n": 125,
+       "min": 35000,
+       "max": 40000,
+       "tariffa": 120,
+       "notti": 292,
+       "stimata": false
+      },
+      "2": {
+       "n": 98,
+       "min": 54000,
+       "max": 66500,
+       "tariffa": 190,
+       "notti": 300,
+       "stimata": false
+      },
+      "3": {
+       "n": 42,
+       "min": 74500,
+       "max": 94000,
+       "tariffa": 275,
+       "notti": 292,
+       "stimata": false
+      }
+     }
+    },
+    {
      "nome": "Colosseo e Celio",
      "gruppo": "Centro storico",
      "n": 337,
@@ -178,36 +217,36 @@
     {
      "nome": "Della Vittoria e Mazzini",
      "gruppo": "Centro storico",
-     "n": 102,
+     "n": 77,
      "camere": {
       "0": {
        "n": 2,
-       "min": 29500,
-       "max": 34000,
+       "min": 30000,
+       "max": 33500,
        "tariffa": 105,
        "notti": 292,
        "stimata": true
       },
       "1": {
-       "n": 43,
-       "min": 32000,
-       "max": 37000,
+       "n": 30,
+       "min": 32500,
+       "max": 36500,
        "tariffa": 115,
        "notti": 292,
        "stimata": false
       },
       "2": {
-       "n": 40,
-       "min": 49500,
-       "max": 60500,
-       "tariffa": 170,
+       "n": 32,
+       "min": 46000,
+       "max": 56500,
+       "tariffa": 165,
        "notti": 308,
        "stimata": false
       },
       "3": {
-       "n": 17,
-       "min": 81000,
-       "max": 101500,
+       "n": 13,
+       "min": 79000,
+       "max": 100500,
        "tariffa": 275,
        "notti": 292,
        "stimata": true
@@ -334,36 +373,36 @@
     {
      "nome": "Prati",
      "gruppo": "Centro storico",
-     "n": 293,
+     "n": 267,
      "camere": {
       "0": {
        "n": 6,
-       "min": 34500,
-       "max": 41500,
+       "min": 35000,
+       "max": 42000,
        "tariffa": 140,
        "notti": 292,
        "stimata": true
       },
       "1": {
-       "n": 129,
-       "min": 37500,
-       "max": 45000,
+       "n": 112,
+       "min": 38000,
+       "max": 45500,
        "tariffa": 135,
        "notti": 292,
        "stimata": false
       },
       "2": {
-       "n": 92,
-       "min": 62500,
+       "n": 85,
+       "min": 63000,
        "max": 76000,
        "tariffa": 220,
        "notti": 292,
        "stimata": false
       },
       "3": {
-       "n": 66,
+       "n": 64,
        "min": 102500,
-       "max": 138000,
+       "max": 139500,
        "tariffa": 370,
        "notti": 292,
        "stimata": false
@@ -566,123 +605,6 @@
      }
     },
     {
-     "nome": "Monte Mario",
-     "gruppo": "Altri quartieri",
-     "n": 53,
-     "camere": {
-      "0": {
-       "n": 0,
-       "min": 14500,
-       "max": 19000,
-       "tariffa": 70,
-       "notti": 240,
-       "stimata": true
-      },
-      "1": {
-       "n": 26,
-       "min": 12000,
-       "max": 21500,
-       "tariffa": 75,
-       "notti": 184,
-       "stimata": false
-      },
-      "2": {
-       "n": 21,
-       "min": 26000,
-       "max": 37000,
-       "tariffa": 125,
-       "notti": 240,
-       "stimata": true
-      },
-      "3": {
-       "n": 6,
-       "min": 37500,
-       "max": 54000,
-       "tariffa": 185,
-       "notti": 240,
-       "stimata": true
-      }
-     }
-    },
-    {
-     "nome": "Monteverde",
-     "gruppo": "Altri quartieri",
-     "n": 250,
-     "camere": {
-      "0": {
-       "n": 6,
-       "min": 17500,
-       "max": 23000,
-       "tariffa": 90,
-       "notti": 244,
-       "stimata": true
-      },
-      "1": {
-       "n": 143,
-       "min": 18000,
-       "max": 25000,
-       "tariffa": 100,
-       "notti": 232,
-       "stimata": false
-      },
-      "2": {
-       "n": 75,
-       "min": 34500,
-       "max": 48000,
-       "tariffa": 170,
-       "notti": 270,
-       "stimata": false
-      },
-      "3": {
-       "n": 26,
-       "min": 39500,
-       "max": 59500,
-       "tariffa": 200,
-       "notti": 225,
-       "stimata": false
-      }
-     }
-    },
-    {
-     "nome": "Ostia e Acilia",
-     "gruppo": "Altri quartieri",
-     "n": 67,
-     "camere": {
-      "0": {
-       "n": 4,
-       "min": 10000,
-       "max": 12500,
-       "tariffa": 55,
-       "notti": 195,
-       "stimata": true
-      },
-      "1": {
-       "n": 35,
-       "min": 11000,
-       "max": 15000,
-       "tariffa": 65,
-       "notti": 195,
-       "stimata": false
-      },
-      "2": {
-       "n": 22,
-       "min": 17500,
-       "max": 24000,
-       "tariffa": 100,
-       "notti": 195,
-       "stimata": true
-      },
-      "3": {
-       "n": 6,
-       "min": 25500,
-       "max": 35000,
-       "tariffa": 150,
-       "notti": 195,
-       "stimata": true
-      }
-     }
-    },
-    {
      "nome": "Parioli e Nomentano",
      "gruppo": "Altri quartieri",
      "n": 336,
@@ -756,45 +678,6 @@
        "max": 49500,
        "tariffa": 165,
        "notti": 262,
-       "stimata": true
-      }
-     }
-    },
-    {
-     "nome": "Portuense e Magliana",
-     "gruppo": "Altri quartieri",
-     "n": 58,
-     "camere": {
-      "0": {
-       "n": 2,
-       "min": 14000,
-       "max": 18000,
-       "tariffa": 70,
-       "notti": 221,
-       "stimata": true
-      },
-      "1": {
-       "n": 31,
-       "min": 14000,
-       "max": 19000,
-       "tariffa": 80,
-       "notti": 210,
-       "stimata": false
-      },
-      "2": {
-       "n": 21,
-       "min": 24500,
-       "max": 35000,
-       "tariffa": 125,
-       "notti": 221,
-       "stimata": true
-      },
-      "3": {
-       "n": 4,
-       "min": 35500,
-       "max": 51000,
-       "tariffa": 185,
-       "notti": 221,
        "stimata": true
       }
      }
