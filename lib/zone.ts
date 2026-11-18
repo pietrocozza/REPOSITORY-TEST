@@ -20,6 +20,7 @@ const DESCRIZIONI_ROMA: Record<string, string> = {
   'Trevi e Piazza di Spagna': 'Tra Fontana di Trevi, Piazza di Spagna e Via Condotti: le grandi icone di Roma e le vie dello shopping.',
   Aurelio: 'Alle spalle del Vaticano e servito dalla metro A: un buon equilibrio tra richiesta e tranquillità.',
   'Garbatella, Ostiense e Appia': 'Garbatella, Ostiense e l’Appia Antica: quartieri vivaci, con la metro B e tanti locali.',
+  Monteverde: 'Quartiere residenziale sopra Trastevere, tra Villa Pamphili e Villa Sciarra.',
   'Parioli e Nomentano': 'Quartieri eleganti tra Villa Borghese, Villa Ada e Villa Torlonia.',
   'Pigneto, Prenestino e Centocelle': 'Quartieri vivaci a est, serviti dalla metro C e amati da chi cerca la Roma più giovane.',
   'San Giovanni e Cinecittà': 'Da San Giovanni in Laterano a Cinecittà, lungo la metro A: in pochi minuti al centro.',

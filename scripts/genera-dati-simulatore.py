@@ -82,8 +82,9 @@ MUNICIPI_ROMA = {
     'XIV Monte Mario': 'Monte Mario',
     'XV Cassia/Flaminia': 'Cassia e Flaminio',
 }
-# Zone periferiche o senza metro: non le gestiamo, quindi non compaiono nel simulatore
-ESCLUSE_ROMA = {'Ostia e Acilia', 'Monte Mario', 'Monteverde', 'Portuense e Magliana'}
+# Zone periferiche: non le gestiamo, quindi non compaiono nel simulatore
+# (i quartieri buoni restano anche senza metro, come Parioli e Monteverde)
+ESCLUSE_ROMA = {'Ostia e Acilia', 'Monte Mario', 'Portuense e Magliana'}
 # Quartieri di Milano (NIL) mostrati per primi; gli altri finiscono in "Altre zone"
 CENTRO_MILANO = {
     'DUOMO': 'Duomo', 'BRERA': 'Brera', 'GUASTALLA': 'Guastalla', 'MAGENTA - S. VITTORE': 'Magenta e San Vittore',

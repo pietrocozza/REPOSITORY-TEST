@@ -605,6 +605,45 @@
      }
     },
     {
+     "nome": "Monteverde",
+     "gruppo": "Altri quartieri",
+     "n": 250,
+     "camere": {
+      "0": {
+       "n": 6,
+       "min": 17500,
+       "max": 23000,
+       "tariffa": 90,
+       "notti": 244,
+       "stimata": true
+      },
+      "1": {
+       "n": 143,
+       "min": 18000,
+       "max": 25000,
+       "tariffa": 100,
+       "notti": 232,
+       "stimata": false
+      },
+      "2": {
+       "n": 75,
+       "min": 34500,
+       "max": 48000,
+       "tariffa": 170,
+       "notti": 270,
+       "stimata": false
+      },
+      "3": {
+       "n": 26,
+       "min": 39500,
+       "max": 59500,
+       "tariffa": 200,
+       "notti": 225,
+       "stimata": false
+      }
+     }
+    },
+    {
      "nome": "Parioli e Nomentano",
      "gruppo": "Altri quartieri",
      "n": 336,
