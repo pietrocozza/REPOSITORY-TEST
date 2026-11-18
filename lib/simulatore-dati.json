@@ -26,8 +26,8 @@
      "camere": {
       "0": {
        "n": 2,
-       "min": 35500,
-       "max": 41500,
+       "min": 36500,
+       "max": 43500,
        "tariffa": 130,
        "notti": 300,
        "stimata": true
@@ -35,7 +35,7 @@
       "1": {
        "n": 61,
        "min": 39500,
-       "max": 45000,
+       "max": 47500,
        "tariffa": 135,
        "notti": 300,
        "stimata": false
@@ -50,8 +50,8 @@
       },
       "3": {
        "n": 12,
-       "min": 91000,
-       "max": 125000,
+       "min": 106500,
+       "max": 145000,
        "tariffa": 335,
        "notti": 300,
        "stimata": true
@@ -245,8 +245,8 @@
       },
       "3": {
        "n": 13,
-       "min": 79000,
-       "max": 100500,
+       "min": 71500,
+       "max": 90500,
        "tariffa": 275,
        "notti": 292,
        "stimata": true

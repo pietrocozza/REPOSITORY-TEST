@@ -82,6 +82,13 @@ MUNICIPI_ROMA = {
     'XIV Monte Mario': 'Monte Mario',
     'XV Cassia/Flaminia': 'Cassia e Flaminio',
 }
+# Intorno al Vaticano rende di più chi è più vicino a San Pietro: Borgo, poi Prati, poi Cipro, poi Della Vittoria.
+# Dove i dati dicono il contrario (pochi annunci, stime) si corregge: ogni zona almeno il 4% sopra la successiva
+ORDINE_VATICANO = ['Borgo e Vaticano', 'Prati', 'Cipro', 'Della Vittoria e Mazzini']
+SCARTO_ORDINE = 1.04
+# Castro Pretorio (oltre Termini) rende bene, ma non più di Borgo: al massimo il 95% di Borgo
+TETTO_CASTRO_PRETORIO = 0.95
+
 # Zone periferiche: non le gestiamo, quindi non compaiono nel simulatore
 # (i quartieri buoni restano anche senza metro, come Parioli e Monteverde)
 ESCLUSE_ROMA = {'Ostia e Acilia', 'Monte Mario', 'Portuense e Magliana'}
@@ -169,6 +176,27 @@ def costruisci(df, gruppi, limita_monolocale=()):
     return zone
 
 
+def ordina_vaticano(zone):
+    per_nome = {z['nome']: z for z in zone}
+    catena = [per_nome[n] for n in ORDINE_VATICANO if n in per_nome]
+    for c in ['0', '1', '2', '3']:
+        # dal fondo verso Borgo: se una zona non supera la successiva, si alza lei
+        # (o si abbassa la successiva quando il suo dato è solo stimato)
+        for alta, bassa in reversed(list(zip(catena, catena[1:]))):
+            a, b = alta['camere'][c], bassa['camere'][c]
+            for k in ('min', 'max'):
+                if a[k] < b[k] * SCARTO_ORDINE:
+                    if b['stimata'] and not a['stimata']:
+                        b[k] = arrotonda(a[k] / SCARTO_ORDINE, 500)
+                    else:
+                        a[k] = arrotonda(b[k] * SCARTO_ORDINE, 500)
+        if 'Castro Pretorio' in per_nome and 'Borgo e Vaticano' in per_nome:
+            cp, borgo = per_nome['Castro Pretorio']['camere'][c], per_nome['Borgo e Vaticano']['camere'][c]
+            for k in ('min', 'max'):
+                cp[k] = min(cp[k], arrotonda(borgo[k] * TETTO_CASTRO_PRETORIO, 500))
+    return zone
+
+
 def main():
     km = lambda la, lo, a, b: np.hypot((la - a) * 111, (lo - b) * 83)
 
@@ -199,10 +227,10 @@ def main():
                 'nome': 'Roma',
                 'annunci': int(len(roma)),
                 'stagionalita': STAGIONALITA_ROMA,
-                'zone': costruisci(roma, [
+                'zone': ordina_vaticano(costruisci(roma, [
                     ('Centro storico', sorted(RIONI_ROMA)),
                     ('Altri quartieri', sorted(set(MUNICIPI_ROMA.values()) - ESCLUSE_ROMA)),
-                ], limita_monolocale=set(RIONI_ROMA)),
+                ], limita_monolocale=set(RIONI_ROMA))),
             },
             'milano': {
                 'nome': 'Milano',
